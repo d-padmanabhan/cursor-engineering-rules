@@ -1,0 +1,840 @@
+---
+title: TypeScript Best Practices & Patterns
+description: Modern TypeScript patterns, type safety, advanced types, and production-ready configuration
+priority: 165
+alwaysApply: false
+files:
+  include:
+    - "**/*.ts"
+    - "**/*.tsx"
+    - "**/tsconfig.json"
+    - "**/tsconfig.*.json"
+---
+
+# TypeScript Best Practices & Patterns
+
+## Guiding Principles
+
+1. **Type Safety**: Leverage strict mode, avoid `any`, use discriminated unions
+2. **Explicit Over Implicit**: Prefer explicit types for clarity and maintainability
+3. **Progressive Enhancement**: Start with basic types, add complexity as needed
+4. **Developer Experience**: Fast builds, excellent editor support, clear error messages
+
+---
+
+## TypeScript Configuration
+
+### Strict tsconfig.json
+```json
+{
+  "compilerOptions": {
+    /* Language and Environment */
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    
+    /* Type Checking - STRICT */
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "useUnknownInCatchVariables": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    
+    /* Emit */
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "removeComments": true,
+    "importHelpers": true,
+    "downlevelIteration": true,
+    
+    /* Interop Constraints */
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    
+    /* Output */
+    "outDir": "./dist",
+    "rootDir": "./src",
+    
+    /* Advanced */
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    
+    /* Path Mapping */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@components/*": ["src/components/*"],
+      "@utils/*": ["src/utils/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.spec.ts", "**/*.test.ts"]
+}
+```
+
+### Node.js Backend Configuration
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "lib": ["ES2022"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "sourceMap": true,
+    "types": ["node"]
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
+```
+
+---
+
+## Type System Best Practices
+
+### Avoid `any` - Use Proper Types
+```typescript
+// ❌ BAD - Loses all type safety
+function processData(data: any): any {
+  return data.value;
+}
+
+// ✅ GOOD - Generic type
+function processData<T>(data: T): T {
+  return data;
+}
+
+// ✅ GOOD - Unknown for truly unknown types
+function processData(data: unknown): string {
+  if (typeof data === 'object' && data !== null && 'value' in data) {
+    return String((data as { value: unknown }).value);
+  }
+  throw new Error('Invalid data');
+}
+```
+
+### Use Discriminated Unions
+```typescript
+// ✅ EXCELLENT - Type-safe with discriminated unions
+type SuccessResponse = {
+  status: 'success';
+  data: { id: string; name: string };
+};
+
+type ErrorResponse = {
+  status: 'error';
+  error: { code: number; message: string };
+};
+
+type ApiResponse = SuccessResponse | ErrorResponse;
+
+function handleResponse(response: ApiResponse): void {
+  // TypeScript knows the shape based on discriminant
+  if (response.status === 'success') {
+    console.log(response.data.id); // ✅ Type-safe
+  } else {
+    console.log(response.error.message); // ✅ Type-safe
+  }
+}
+```
+
+### Prefer Interfaces for Objects, Types for Unions
+```typescript
+// ✅ GOOD - Interface for object shapes
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+// ✅ GOOD - Type for unions and computed types
+type Status = 'pending' | 'active' | 'inactive';
+type Nullable<T> = T | null;
+type ReadonlyUser = Readonly<User>;
+```
+
+### Use Utility Types
+```typescript
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  createdAt: Date;
+}
+
+// Partial - all properties optional
+type UserUpdate = Partial<User>;
+
+// Pick - select specific properties
+type UserCredentials = Pick<User, 'email' | 'password'>;
+
+// Omit - exclude specific properties
+type UserPublic = Omit<User, 'password'>;
+
+// Required - all properties required
+type UserRequired = Required<User>;
+
+// Readonly - all properties readonly
+type UserImmutable = Readonly<User>;
+
+// Record - key-value mapping
+type UserMap = Record<string, User>;
+
+// ReturnType - extract return type
+function getUser(): User { /* ... */ }
+type GetUserReturn = ReturnType<typeof getUser>; // User
+
+// Parameters - extract parameter types
+type GetUserParams = Parameters<typeof getUser>; // []
+```
+
+---
+
+## Advanced Type Patterns
+
+### Branded Types (Nominal Typing)
+```typescript
+// Create distinct types from primitives
+type UserId = string & { readonly brand: unique symbol };
+type Email = string & { readonly brand: unique symbol };
+
+function createUserId(id: string): UserId {
+  // Validate and brand
+  if (!id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-/)) {
+    throw new Error('Invalid user ID format');
+  }
+  return id as UserId;
+}
+
+function createEmail(email: string): Email {
+  if (!email.includes('@')) {
+    throw new Error('Invalid email format');
+  }
+  return email as Email;
+}
+
+// ✅ Type-safe - can't mix up IDs and emails
+function getUser(userId: UserId): User { /* ... */ }
+function sendEmail(email: Email): void { /* ... */ }
+
+const userId = createUserId('12345678-1234-5678-1234-567812345678');
+const email = createEmail('user@acme.com');
+
+getUser(userId); // ✅ OK
+getUser(email);  // ❌ Compile error!
+```
+
+### Template Literal Types
+```typescript
+// Route patterns
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
+type ApiRoute = `/api/${string}`;
+
+function makeRequest<M extends HttpMethod>(
+  method: M,
+  route: ApiRoute
+): Promise<Response> {
+  return fetch(route, { method });
+}
+
+makeRequest('GET', '/api/users'); // ✅ OK
+makeRequest('GET', '/users');     // ❌ Error: must start with /api/
+
+// Event names with type safety
+type EventName = `on${Capitalize<string>}`;
+type ClickEvent = `onClick${Capitalize<string>}`;
+
+const handler: Record<ClickEvent, () => void> = {
+  onClickButton: () => console.log('Button clicked'),
+  onClickLink: () => console.log('Link clicked'),
+};
+```
+
+### Conditional Types
+```typescript
+// Extract array element type
+type ArrayElement<T> = T extends (infer E)[] ? E : T;
+
+type Numbers = ArrayElement<number[]>; // number
+type Strings = ArrayElement<string[]>; // string
+type Single = ArrayElement<number>;    // number
+
+// Flatten nested arrays
+type Flatten<T> = T extends (infer U)[]
+  ? U extends (infer V)[]
+    ? Flatten<V>
+    : U
+  : T;
+
+type Nested = number[][][];
+type Flat = Flatten<Nested>; // number
+
+// Async return type
+type Awaited<T> = T extends Promise<infer U> ? U : T;
+
+async function fetchUser(): Promise<User> { /* ... */ }
+type UserType = Awaited<ReturnType<typeof fetchUser>>; // User
+```
+
+### Mapped Types
+```typescript
+// Make all properties optional recursively
+type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
+};
+
+interface Config {
+  server: {
+    port: number;
+    host: string;
+  };
+  database: {
+    url: string;
+    poolSize: number;
+  };
+}
+
+type PartialConfig = DeepPartial<Config>;
+// {
+//   server?: {
+//     port?: number;
+//     host?: string;
+//   };
+//   database?: {
+//     url?: string;
+//     poolSize?: number;
+//   };
+// }
+
+// Make all properties mutable
+type Mutable<T> = {
+  -readonly [P in keyof T]: T[P];
+};
+
+// Add nullable to all properties
+type Nullable<T> = {
+  [P in keyof T]: T[P] | null;
+};
+```
+
+---
+
+## Function Patterns
+
+### Function Overloads
+```typescript
+// ✅ GOOD - Clear overload signatures
+function createElement(tag: 'img'): HTMLImageElement;
+function createElement(tag: 'input'): HTMLInputElement;
+function createElement(tag: 'div'): HTMLDivElement;
+function createElement(tag: string): HTMLElement;
+function createElement(tag: string): HTMLElement {
+  return document.createElement(tag);
+}
+
+const img = createElement('img');   // HTMLImageElement
+const div = createElement('div');   // HTMLDivElement
+const custom = createElement('x-custom'); // HTMLElement
+```
+
+### Generic Constraints
+```typescript
+// ✅ GOOD - Constrain generic types
+function getProperty<T, K extends keyof T>(obj: T, key: K): T[K] {
+  return obj[key];
+}
+
+const user = { id: '123', name: 'John' };
+getProperty(user, 'name');  // ✅ OK - returns string
+getProperty(user, 'age');   // ❌ Error: 'age' not in user
+
+// Multiple constraints
+function merge<T extends object, U extends object>(obj1: T, obj2: U): T & U {
+  return { ...obj1, ...obj2 };
+}
+
+// Default generic parameters
+function createArray<T = string>(length: number, value: T): T[] {
+  return Array(length).fill(value);
+}
+
+const strings = createArray(3, 'hello'); // string[]
+const numbers = createArray(3, 42);      // number[]
+```
+
+### Assertion Functions
+```typescript
+// Type assertions that narrow types
+function assertIsDefined<T>(value: T): asserts value is NonNullable<T> {
+  if (value === undefined || value === null) {
+    throw new Error('Value is not defined');
+  }
+}
+
+function processUser(user: User | undefined) {
+  assertIsDefined(user);
+  // TypeScript now knows user is User (not undefined)
+  console.log(user.name); // ✅ OK
+}
+
+// Type guard with assertion
+function isString(value: unknown): value is string {
+  return typeof value === 'string';
+}
+
+function assertIsString(value: unknown): asserts value is string {
+  if (!isString(value)) {
+    throw new Error('Value is not a string');
+  }
+}
+```
+
+---
+
+## Class Patterns
+
+### Modern Class with Access Modifiers
+```typescript
+// ✅ GOOD - Clear encapsulation
+class User {
+  // Public by default
+  readonly id: string;
+  
+  // Private (truly private, not accessible even via bracket notation)
+  #password: string;
+  
+  // Protected (accessible in subclasses)
+  protected createdAt: Date;
+  
+  // Private (TypeScript only, accessible via bracket notation)
+  private email: string;
+  
+  constructor(id: string, email: string, password: string) {
+    this.id = id;
+    this.email = email;
+    this.#password = password;
+    this.createdAt = new Date();
+  }
+  
+  // Getter
+  get displayEmail(): string {
+    return this.email.replace(/(.{2}).*(@.*)/, '$1***$2');
+  }
+  
+  // Setter with validation
+  set displayEmail(value: string) {
+    if (!value.includes('@')) {
+      throw new Error('Invalid email');
+    }
+    this.email = value;
+  }
+  
+  // Private method
+  #hashPassword(password: string): string {
+    return `hashed_${password}`;
+  }
+  
+  // Public method
+  verifyPassword(password: string): boolean {
+    return this.#hashPassword(password) === this.#password;
+  }
+}
+```
+
+### Abstract Classes and Interfaces
+```typescript
+// Abstract base class
+abstract class BaseRepository<T> {
+  abstract findById(id: string): Promise<T | null>;
+  abstract create(data: Omit<T, 'id'>): Promise<T>;
+  abstract update(id: string, data: Partial<T>): Promise<T>;
+  abstract delete(id: string): Promise<void>;
+  
+  // Common implementation
+  async findAll(): Promise<T[]> {
+    // Default implementation
+    return [];
+  }
+}
+
+// Concrete implementation
+class UserRepository extends BaseRepository<User> {
+  async findById(id: string): Promise<User | null> {
+    // Implementation
+    return null;
+  }
+  
+  async create(data: Omit<User, 'id'>): Promise<User> {
+    // Implementation
+    return { id: '123', ...data };
+  }
+  
+  async update(id: string, data: Partial<User>): Promise<User> {
+    // Implementation
+    return { id, ...data } as User;
+  }
+  
+  async delete(id: string): Promise<void> {
+    // Implementation
+  }
+}
+```
+
+---
+
+## React with TypeScript
+
+### Functional Components with Props
+```typescript
+// ✅ GOOD - Explicit prop types
+interface ButtonProps {
+  label: string;
+  onClick: () => void;
+  variant?: 'primary' | 'secondary' | 'danger';
+  disabled?: boolean;
+  children?: React.ReactNode;
+}
+
+export const Button: React.FC<ButtonProps> = ({
+  label,
+  onClick,
+  variant = 'primary',
+  disabled = false,
+  children,
+}) => {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`btn btn-${variant}`}
+    >
+      {label}
+      {children}
+    </button>
+  );
+};
+
+// Usage
+<Button label="Click me" onClick={() => console.log('Clicked')} />
+```
+
+### Generic Components
+```typescript
+// Generic list component
+interface ListProps<T> {
+  items: T[];
+  renderItem: (item: T, index: number) => React.ReactNode;
+  keyExtractor: (item: T) => string;
+}
+
+export function List<T>({ items, renderItem, keyExtractor }: ListProps<T>) {
+  return (
+    <ul>
+      {items.map((item, index) => (
+        <li key={keyExtractor(item)}>
+          {renderItem(item, index)}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// Usage
+<List
+  items={users}
+  renderItem={(user) => <div>{user.name}</div>}
+  keyExtractor={(user) => user.id}
+/>
+```
+
+### Hooks with TypeScript
+```typescript
+// useState with explicit type
+const [user, setUser] = useState<User | null>(null);
+
+// Custom hook with types
+function useLocalStorage<T>(key: string, initialValue: T) {
+  const [storedValue, setStoredValue] = useState<T>(() => {
+    try {
+      const item = window.localStorage.getItem(key);
+      return item ? JSON.parse(item) : initialValue;
+    } catch (error) {
+      console.error(error);
+      return initialValue;
+    }
+  });
+
+  const setValue = (value: T | ((val: T) => T)) => {
+    try {
+      const valueToStore = value instanceof Function ? value(storedValue) : value;
+      setStoredValue(valueToStore);
+      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  return [storedValue, setValue] as const;
+}
+
+// Usage
+const [name, setName] = useLocalStorage<string>('name', 'John');
+```
+
+---
+
+## API & Data Fetching Patterns
+
+### Type-Safe Fetch Wrapper
+```typescript
+// API response types
+type ApiResponse<T> =
+  | { success: true; data: T }
+  | { success: false; error: { message: string; code: number } };
+
+// Type-safe fetch function
+async function fetchApi<T>(
+  url: string,
+  options?: RequestInit
+): Promise<T> {
+  try {
+    const response = await fetch(url, options);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data: ApiResponse<T> = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error.message);
+    }
+    
+    return data.data;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Unknown error occurred');
+  }
+}
+
+// Usage with automatic type inference
+const user = await fetchApi<User>('/api/users/123');
+console.log(user.name); // ✅ Type-safe
+```
+
+### Zod for Runtime Validation
+```typescript
+import { z } from 'zod';
+
+// Define schema
+const UserSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).max(100),
+  email: z.string().email(),
+  age: z.number().int().positive().optional(),
+  roles: z.array(z.enum(['admin', 'user', 'guest'])),
+});
+
+// Infer TypeScript type from schema
+type User = z.infer<typeof UserSchema>;
+
+// Validate data
+async function createUser(data: unknown): Promise<User> {
+  // Throws ZodError if validation fails
+  const validUser = UserSchema.parse(data);
+  
+  // Or return success/error result
+  const result = UserSchema.safeParse(data);
+  if (!result.success) {
+    console.error(result.error.issues);
+    throw new Error('Invalid user data');
+  }
+  
+  return result.data;
+}
+```
+
+---
+
+## Error Handling Patterns
+
+### Custom Error Classes
+```typescript
+// Base error class
+class AppError extends Error {
+  constructor(
+    message: string,
+    public readonly code: string,
+    public readonly statusCode: number = 500
+  ) {
+    super(message);
+    this.name = this.constructor.name;
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+// Specific error types
+class ValidationError extends AppError {
+  constructor(message: string) {
+    super(message, 'VALIDATION_ERROR', 400);
+  }
+}
+
+class NotFoundError extends AppError {
+  constructor(resource: string) {
+    super(`${resource} not found`, 'NOT_FOUND', 404);
+  }
+}
+
+class UnauthorizedError extends AppError {
+  constructor(message: string = 'Unauthorized') {
+    super(message, 'UNAUTHORIZED', 401);
+  }
+}
+
+// Type guard for error handling
+function isAppError(error: unknown): error is AppError {
+  return error instanceof AppError;
+}
+
+// Error handler
+function handleError(error: unknown): void {
+  if (isAppError(error)) {
+    console.error(`[${error.code}] ${error.message}`);
+    // Send appropriate HTTP response
+  } else if (error instanceof Error) {
+    console.error(`Unexpected error: ${error.message}`);
+  } else {
+    console.error('Unknown error occurred');
+  }
+}
+```
+
+### Result Type Pattern
+```typescript
+// Result type for operations that can fail
+type Result<T, E = Error> =
+  | { ok: true; value: T }
+  | { ok: false; error: E };
+
+function divide(a: number, b: number): Result<number, string> {
+  if (b === 0) {
+    return { ok: false, error: 'Division by zero' };
+  }
+  return { ok: true, value: a / b };
+}
+
+// Usage
+const result = divide(10, 2);
+if (result.ok) {
+  console.log(result.value); // ✅ Type-safe access
+} else {
+  console.error(result.error); // ✅ Type-safe access
+}
+```
+
+---
+
+## Best Practices
+
+### Code Organization
+```typescript
+// ✅ GOOD - Explicit exports
+export type { User, UserCredentials, UserPublic };
+export { createUser, updateUser, deleteUser };
+export default UserService;
+
+// ❌ BAD - Export * loses tree-shaking benefits
+export * from './user';
+```
+
+### Avoid Type Assertions When Possible
+```typescript
+// ❌ BAD - Unsafe type assertion
+const user = data as User;
+
+// ✅ GOOD - Type guard with validation
+function isUser(data: unknown): data is User {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'id' in data &&
+    'name' in data &&
+    'email' in data
+  );
+}
+
+if (isUser(data)) {
+  console.log(data.name); // ✅ Type-safe
+}
+```
+
+### Use const Assertions
+```typescript
+// ✅ GOOD - Readonly and literal types
+const COLORS = {
+  primary: '#007bff',
+  secondary: '#6c757d',
+  danger: '#dc3545',
+} as const;
+
+type Color = typeof COLORS[keyof typeof COLORS];
+// type Color = "#007bff" | "#6c757d" | "#dc3545"
+
+// ✅ GOOD - Readonly array
+const ROLES = ['admin', 'user', 'guest'] as const;
+type Role = typeof ROLES[number];
+// type Role = "admin" | "user" | "guest"
+```
+
+---
+
+## Naming Conventions
+
+- **Interfaces/Types**: PascalCase (`User`, `ApiResponse`)
+- **Enums**: PascalCase for enum, UPPER_SNAKE_CASE for values
+- **Type Parameters**: Single uppercase letter (`T`, `K`, `V`) or PascalCase (`TData`, `TError`)
+- **Files**: kebab-case (`user-service.ts`, `api-client.ts`)
+- **Folders**: kebab-case (`user-management`, `api-utils`)
+- **Domain Names**: Always use `acme.com` for examples (never `example.com`)
+
+---
+
+## Related Files
+
+- `170-javascript.mdc` - JavaScript patterns (many apply to TypeScript)
+- `160-python.mdc` - Type hints in Python (similar philosophy)
+- `180-go.mdc` - Strong typing in Go
+
+---
+
+**Last Updated**: December 2025  
+**Purpose**: Modern TypeScript patterns and type safety best practices

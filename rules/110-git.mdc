@@ -1,0 +1,232 @@
+---
+title: Git & Commit Standards
+description: Conventional commits, PR hygiene, branch naming, release notes, and foundational GitHub repository scaffolding requirements.
+alwaysApply: true
+priority: 110
+---
+
+# 🧾 Commit Message Standards
+
+**Goal:** clean, conventional, descriptive commits that communicate intent and feed changelogs.
+
+## Format
+
+```
+
+<type>(<scope>): <short summary>
+
+<bulleted list of key changes>
+
+<optional explanatory paragraph>
+```
+
+* First line ≤ **72 chars**, imperative mood (“add”, “fix”, “update”).
+* Bullets: start with a **capital letter**, **no period**.
+* Add a short **rationale paragraph** when the change is non-obvious.
+* Use issue refs when helpful (`Fixes #123`, `Refs #456`).
+
+### Canonical Example
+
+```
+docs(upgrade): reorganize and enhance v3.4→v3.8 upgrade guide
+
+- Prioritize ANF-disabled path (Path A)
+- Add rationale for route table rotation logic
+- Include Q-chat verification prompt
+- Add ANF cost caution in Path B
+- Remove duplicate ANF-disabled section
+- Improve flow to reduce confusion
+
+Improves upgrade experience by making common path primary and documenting motivation behind state changes.
+```
+
+---
+
+## Commit Types (Conventional Commits)
+
+| type         | purpose                             |
+| ------------ | ----------------------------------- |
+| **feat**     | new feature or enhancement          |
+| **fix**      | bug fix                             |
+| **docs**     | documentation changes               |
+| **refactor** | restructure without behavior change |
+| **perf**     | performance improvement             |
+| **test**     | add/update tests                    |
+| **ci**       | GitHub Actions / build infra        |
+| **chore**    | dependencies, cleanup               |
+| **revert**   | revert a previous commit            |
+
+> **BREAKING CHANGES** require:
+> `feat(api)!: ...` + footer:
+>
+> ```
+> BREAKING CHANGE: renamed output vpc_id to lattice_vpc_id
+> ```
+
+---
+
+## Scopes (suggested)
+
+Use a concise noun oriented around the domain:
+
+Example scopes:
+`terraform`, `aws`, `gha`, `cli`, `lattice`, `cloudflare`, `module/<name>`, `docs`, `security`
+
+> If working from a Jira branch: use the ticket as the scope (`PROJ-1234`)
+
+Examples:
+
+```
+feat(terraform): add vpc lattice service network module
+fix(gha): correct permissions for PR comment
+perf(python): cache IAM role lookups
+```
+
+---
+
+# 🔀 Branch & Merge Policy
+
+## Branch Naming
+
+```
+<type>/<scope>-<short-topic>[-issue-<n>]
+```
+
+Examples:
+
+```
+feat/terraform-lattice-issue-421
+fix/gha-permissions-pr-comment
+docs/upgrade-guide-3-8
+```
+
+## History Hygiene
+
+* Prefer small, logically cohesive commits
+* Squash only noisy/WIP histories
+* Rebase onto `main` before merge (unless policy forbids)
+* Separate mechanical formatting from logical changes
+
+---
+
+# 🧩 Pull Request Standards
+
+**PR Title** mirrors commit header:
+
+```
+<type>(<scope>): <concise summary>
+```
+
+**Body** must include:
+
+* **What & Why**
+* **Risk / Impact** (breaking changes, migrations)
+* **Tests** (added/updated + any manual validation)
+* **Screenshots or artifacts** where relevant (e.g., plan/apply output)
+* **Linked Issues** (`Fixes #123`)
+
+**Labels & Reviewers**: Ensure correct ownership and review coverage.
+
+---
+
+# 🛡️ Sign-off & Security
+
+* Signed commits if mandated by project
+* DCO sign-off if required
+* No secrets in commits, diffs, PRs, or screenshots
+* Large binaries → artifacts, not git
+
+---
+
+# 🧱 Repository Scaffolding & Hygiene
+
+Every repo **must** contain the following foundational files with project-appropriate content:
+
+| File                               | Requirement                                                           |
+| ---------------------------------- | --------------------------------------------------------------------- |
+| `.gitignore`                       | Based on language/framework presets (GitHub templates)                |
+| `.editorconfig`                    | Enforce consistent indentation, LF, charset                           |
+| `.gitattributes`                   | Normalize line endings, set diff behavior for binaries                |
+| `.pre-commit-config.yaml`          | **Must include top-level `name:`** and proper language-specific hooks |
+| `.markdownlint.yaml`               | Align with workspace Markdown rules                                   |
+| `.commitlintrc.yaml`               | Enforce commit conventions                                            |
+| `.dependabot.yaml`                 | Automated dependency update checks                                    |
+| `CODEOWNERS`                       | Assign ownership to enforce review policy                             |
+| `.github/PULL_REQUEST_TEMPLATE.md` | Enforce PR format above                                               |
+
+> [!TIP]
+> Add a periodic maintenance step like:
+>
+> ```
+> pre-commit autoupdate
+> ```
+>
+> to keep hooks updated.
+
+---
+
+### Repo Creation Checklist
+
+* [ ] Meta files exist and follow best practices
+* [ ] Pre-commit hooks enabled and documented
+* [ ] Codeowners enforce mandatory reviews
+* [ ] PR template references testing + security checks
+* [ ] Dependabot and automation enabled as needed
+* [ ] No secrets or credentials in history
+
+---
+
+# 🧪 Commit Examples
+
+```
+feat(terraform): add lattice service network module
+
+- Create module with snake_case vars and pinned providers
+- Add staging/prod examples
+- Document IAM boundary and least privilege
+```
+
+```
+fix(gha): correct issues:write for PR comment updates
+
+- Permissions moved to job-level
+- Add retry and missing-token fallback
+```
+
+```
+perf(python): memoize sts.get_caller_identity result
+
+- Add runtime cache using lru_cache
+```
+
+```
+refactor(go): extract S3 client init
+
+- Decouple AWS region/provider from business logic
+- Add tests for timeout and retry config
+```
+
+---
+
+# 📌 Optional Tooling
+
+* **commitlint** for CI validation of headers
+* **auto-changelog** from conventional commits
+* **actionlint** for `.github/workflows/**`
+
+---
+
+# ✅ Reviewer Checklist (copy/paste into PR)
+
+* [ ] Correct type(scope) in title
+* [ ] Summary ≤72 chars, imperative mood
+* [ ] Bulleted change list included
+* [ ] Rationale paragraph provided if non-obvious change
+* [ ] Security reviewed; no secrets exposed
+* [ ] Tests updated/added
+* [ ] Repo scaffolding is compliant (for new repos)
+
+
+---
+
+**Last Updated**: December 2025

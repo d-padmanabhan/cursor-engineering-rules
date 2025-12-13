@@ -1,0 +1,371 @@
+---
+title: Bash Engineering Ruleset
+description: Production-grade Bash standards for portability, safety, performance, and maintainability.
+priority: 130
+alwaysApply: false
+files:
+  include:
+    - "**/*.sh"
+---
+
+# 📖 Bash Engineering Ruleset
+
+**Scope:** Guidance for writing robust, portable Bash scripts that are easy to read, test, and operate.
+**Principles:** DRY • KISS • Fail Fast • Zero Warnings.
+
+---
+
+## Quick Reference
+
+```bash
+set -euo pipefail           # Strict mode (fail-fast)
+set -uo pipefail            # Controlled mode (explicit error handling)
+set -Euo pipefail           # Strict + ERR trap propagation to functions
+command -v cmd >/dev/null   # Check if command exists (portable)
+trap 'cleanup' EXIT         # Always cleanup
+flock -n 200 || exit 1      # Prevent concurrent runs
+readonly VAR="value"        # Immutable constant
+local var="value"           # Function-local variable
+```
+
+---
+
+## 1) Core Standards
+
+- **Shebang:** `#!/usr/bin/env bash` (for portability) or `#!/bin/bash` (when bash-specific features required).
+- **Safety Mode:** Choose based on context:
+  - `set -euo pipefail` - Strict (fail-fast for simple scripts)
+  - `set -uo pipefail` - Controlled (explicit error handling for complex scripts)
+  - `set -Euo pipefail` - Strict + ERR trap propagation to functions
+- **Linting:** Must pass **`shellcheck`** with **0 errors/warnings**.
+- **Formatting:** Must pass **`shfmt -i 2 -ci -sr -bn`** (2-space indent, indent switch/case, simplify redirects, binary ops at line end).
+- **Extension:** Use `.sh` for scripts, no extension for executables in `bin/` is acceptable if documented.
+
+---
+
+## 2) Error Handling & Safety
+
+### Error Handling Modes
+
+**🟢 Strict Mode (Fail-Fast):**
+```bash
+set -euo pipefail  # Exit immediately on any error
+```
+Use for: Simple linear scripts, dependency installation, straightforward validation.
+
+**🟡 Controlled Mode (Explicit):**
+```bash
+set -uo pipefail  # No -e: you handle errors explicitly
+```
+Use for: Diagnostics, cleanup operations, commands where failure is expected (grep, curl with retries).
+
+**🔵 Strict + ERR Trap Propagation:**
+```bash
+set -Euo pipefail  # -E ensures ERR traps propagate to functions
+
+trap 'echo "ERROR in ${FUNCNAME[0]:-main} at line $LINENO"' ERR
+
+func1() {
+  false  # Will trigger ERR trap even inside function
+}
+```
+Use for: Production scripts with comprehensive error handling via ERR traps.
+
+### Best Practices
+
+- **Variables:** Always quote variables `"${VAR}"` to prevent word splitting (unless splitting is intended).
+- **Unset Vars:** `set -u` ensures you don't use undefined variables.
+- **Pipefail:** `set -o pipefail` catches errors in the middle of pipes.
+- **Temporary Files:** Use `mktemp` and `trap 'rm ...' EXIT` to clean up.
+- **Lockfiles:** Use `flock` to prevent concurrent runs:
+  ```bash
+  exec 200>"/tmp/${SCRIPT_NAME}.lock"
+  flock -n 200 || { echo "Already running"; exit 1; }
+  ```
+
+---
+
+## 3) Performance & Patterns
+
+### Process Substitution (Avoid Subshells)
+
+```bash
+# ❌ Wrong - subshell, variables don't persist
+count=0
+cat file.txt | while read -r line; do
+  count=$((count + 1))
+done
+echo "$count"  # Empty! (subshell issue)
+
+# ✅ Correct - process substitution, no subshell
+count=0
+while read -r line; do
+  count=$((count + 1))
+done < <(cat file.txt)
+echo "$count"  # Works! Variable persists
+```
+
+### Other Performance Tips
+
+- **Builtins:** Prefer `[[ ... ]]` over `[ ... ]` (test) for Bash.
+- **Subshells:** Avoid unnecessary `$(...)` or pipes if builtins work.
+- **Dependencies:** Check for required tools (`command -v tool`) at startup.
+- **Arrays:** Use arrays for lists of items instead of strings (Bash 4+).
+- **Native Operations:** Prefer `${var//old/new}` over `echo "$var" | sed 's/old/new/g'`.
+
+---
+
+## 4) Logging & Observability
+
+- **Standard Logging:** Use a helper function with UTC timestamps.
+- **Level:** INFO, WARN, ERROR.
+- **Output:** Stdout for info, Stderr for errors/logs.
+
+```bash
+log() {
+  local level="$1"
+  shift
+  # UTC ISO-8601-like timestamp
+  echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ') [$level] $*" >&2
+}
+```
+
+**Structured Error Logging:**
+```bash
+logmsg() {
+  local level="${1:-INFO}"; shift
+  local timestamp
+  timestamp=$(date -u +"%Y-%m-%d %T,%3N" 2>/dev/null || date -u +"%Y-%m-%d %T")
+  printf "%s: %s: %s\n" "$timestamp" "$level" "$*" | tee -a "$LOGFILE"
+  # Optional: JSON error log
+  [[ "$level" == "ERROR" ]] && printf '{"timestamp":"%s","level":"%s","message":"%s"}\n' \
+    "$timestamp" "$level" "$*" >> "$LOGFILE.errors"
+}
+```
+
+---
+
+## 5) Structure & Modularity
+
+- **Main Function:** Encapsulate logic in `main()` and call it at the end.
+- **Functions:** Use `function_name() { ... }` style.
+- **Locals:** Use `local` keyword for variables inside functions.
+- **Usage:** Provide a `usage()` function for help text.
+
+```bash
+usage() {
+  cat <<EOF
+Usage: $(basename "${BASH_SOURCE[0]}") [-h] [-v]
+
+Options:
+  -h    Show help
+  -v    Verbose mode
+EOF
+  exit 1
+}
+```
+
+---
+
+## 6) Common Pitfalls (Avoid These)
+
+### 1. Unquoted Variables
+```bash
+# ❌ Wrong
+if [ $var = "hello" ]; then  # Fails if var is empty or has spaces
+
+# ✅ Correct
+if [ "$var" = "hello" ]; then
+# Or use [[ (Bash-specific but safer)
+if [[ $var = "hello" ]]; then
+```
+
+### 2. Parsing `ls` Output
+```bash
+# ❌ Wrong
+for file in $(ls *.txt); do
+
+# ✅ Correct
+for file in *.txt; do
+  [ -f "$file" ] || continue
+```
+
+### 3. Exit Code Checking
+```bash
+# ❌ Wrong - only checks last command
+cmd1 && cmd2 && cmd3
+if [ $? -eq 0 ]; then  # Only checks cmd3!
+
+# ✅ Correct
+if cmd1 && cmd2 && cmd3; then
+  echo "All succeeded"
+fi
+```
+
+### 4. `cd` Without Error Checking
+```bash
+# ❌ Wrong
+cd "$some_dir"
+rm -rf *  # Disaster if cd failed!
+
+# ✅ Correct
+cd "$some_dir" || { echo "Failed to cd"; exit 1; }
+rm -rf *
+```
+
+### 5. Subshell Variable Scope
+```bash
+# ❌ Wrong - subshell doesn't persist
+echo "data" | while read -r line; do
+  count=$((count + 1))
+done
+echo "$count"  # Empty!
+
+# ✅ Correct - use process substitution
+while read -r line; do
+  count=$((count + 1))
+done < <(echo "data")
+echo "$count"  # Works!
+```
+
+---
+
+## 7) Security
+
+- **Sanitize Inputs:** Use `read -r` (no backslash escaping).
+- **Sensitive Data:** Use `read -s` for passwords.
+- **Avoid `eval`:** Never use `eval` with unsanitized input.
+- **Temp Files:** Use `mktemp` with `umask 077`:
+  ```bash
+  umask 077
+  TEMP=$(mktemp) || { echo "Failed to create temp file"; exit 1; }
+  trap 'rm -f "$TEMP"' EXIT
+  ```
+- **Validate Input:** Use `case` or regex:
+  ```bash
+  case "$input" in
+    [0-9]*) echo "Valid" ;;
+    *) echo "Invalid"; exit 1 ;;
+  esac
+  ```
+
+---
+
+## 8) Testing & Validation
+
+```bash
+# Static analysis
+shellcheck script.sh
+
+# Formatting
+shfmt -w -i 2 -ci -sr -bn .
+
+# Unit tests with BATS
+@test "check_dependency detects missing tool" {
+  run check_dependency "nonexistent_tool"
+  [ "$status" -eq 3 ]
+}
+```
+
+---
+
+## 9) Example: Robust Script Template
+
+```bash
+#!/usr/bin/env bash
+set -eEuo pipefail
+
+# Constants
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_NAME="$(basename "$0" .sh)"
+readonly LOG_FILE="${HOME}/log/${SCRIPT_NAME}_$(date -u +%Y%m%d_%H%M%S).log"
+
+# Logging Helper
+log() {
+  local level="$1"
+  shift
+  echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ') [$level] $*" | tee -a "$LOG_FILE" >&2
+}
+
+# Cleanup Helper
+cleanup() {
+  log "INFO" "Cleaning up..."
+  # Remove temp files, release locks, etc.
+}
+trap cleanup EXIT
+
+# Lockfile
+exec 200>"/tmp/${SCRIPT_NAME}.lock"
+flock -n 200 || { log "ERROR" "Already running"; exit 1; }
+
+# Dependency Check
+check_deps() {
+  for cmd in curl jq; do
+    if ! command -v "$cmd" &> /dev/null; then
+      log "ERROR" "Missing dependency: $cmd"
+      exit 1
+    fi
+  done
+}
+
+# Retry with exponential backoff
+retry_cmd() {
+  local max_attempts=5 delay=1 attempt=1
+  while ! "$@"; do
+    ((attempt++ > max_attempts)) && { log "ERROR" "Failed after $max_attempts: $*"; return 1; }
+    log "INFO" "Retry $attempt/$max_attempts in ${delay}s..."
+    sleep "$delay"
+    ((delay = delay * 2 > 32 ? 32 : delay * 2))
+  done
+}
+
+# Main Logic
+main() {
+  check_deps
+  
+  local url="https://api.github.com"
+  
+  log "INFO" "Starting job..."
+  
+  retry_cmd curl -sfSL "$url" > /dev/null || { log "ERROR" "Connectivity check failed"; return 1; }
+  log "INFO" "Connectivity check passed."
+  
+  log "INFO" "Job completed successfully."
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  main "$@"
+fi
+```
+
+---
+
+## 10) Anti-Patterns (Forbidden)
+
+- ❌ `eval` on user input.
+- ❌ Using unquoted variables in file paths.
+- ❌ Parsing `ls` output (use `find` or globs).
+- ❌ Swallowing errors (unless explicit `|| true`).
+- ❌ `echo` for logging (use specific log function targeting stderr).
+- ❌ `cd` without error checking before destructive operations.
+- ❌ Variables in pipes (use process substitution `< <(cmd)` instead).
+- ❌ Using aliases in scripts (use functions instead).
+
+---
+
+## 11) Cross-Platform Notes
+
+- **macOS ships with Bash 3.2** - install Bash 4+ via Homebrew for modern features (associative arrays, `${var,,}`, etc.)
+- **GNU vs BSD tools** - Provide fallbacks:
+  ```bash
+  # GNU (Linux)
+  SCRIPT=$(readlink -f "$0")
+  
+  # BSD/macOS fallback
+  SCRIPT=$(readlink -f "$0" 2>/dev/null || realpath "$0")
+  ```
+- **POSIX compliance** - For maximum portability, avoid `[[`, `${var,,}`, associative arrays
+- **Test on target platforms** - Use `dash` or `sh` for POSIX testing
+---
+
+**Last Updated**: December 2025

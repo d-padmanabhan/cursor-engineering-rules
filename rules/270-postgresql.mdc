@@ -1,0 +1,371 @@
+---
+title: PostgreSQL Engineering Ruleset
+description: Database naming conventions, schema patterns, and PostgreSQL best practices.
+priority: 270
+alwaysApply: false
+files:
+  include:
+    - "**/migrations/**/*.sql"
+    - "**/schema/**/*.sql"
+    - "**/db/**/*.sql"
+    - "**/*.sql"
+---
+
+# PostgreSQL Engineering Ruleset
+
+**Goal:** Consistent database schema design with clear naming conventions and maintainable patterns.
+
+## Naming Conventions
+
+### Tables
+
+**Tables use plural snake_case:**
+
+```sql
+-- ✅ GOOD: Plural snake_case
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE user_books (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    book_id BIGINT NOT NULL REFERENCES books(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, book_id)
+);
+
+-- ❌ BAD: Singular or camelCase
+CREATE TABLE User ( ... );
+CREATE TABLE userBooks ( ... );
+```
+
+### Columns
+
+**Columns use singular snake_case:**
+
+```sql
+-- ✅ GOOD: Singular snake_case
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    email_address VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ❌ BAD: Plural or camelCase
+CREATE TABLE users (
+    firstName VARCHAR(100),
+    EmailAddress VARCHAR(255)
+);
+```
+
+### Primary Keys
+
+**Primary keys are always named `id`:**
+
+```sql
+-- ✅ GOOD: Standard id column
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    ...
+);
+
+-- ❌ BAD: Custom primary key names
+CREATE TABLE users (
+    user_id BIGSERIAL PRIMARY KEY,
+    user_uuid UUID PRIMARY KEY
+);
+```
+
+### Foreign Keys
+
+**Foreign keys reference the table name in singular form plus `_id`:**
+
+```sql
+-- ✅ GOOD: user_id references users table
+CREATE TABLE orders (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    product_id BIGINT NOT NULL REFERENCES products(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ✅ GOOD: Self-referencing foreign key
+CREATE TABLE categories (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    parent_id BIGINT REFERENCES categories(id)
+);
+
+-- ❌ BAD: Inconsistent naming
+CREATE TABLE orders (
+    id BIGSERIAL PRIMARY KEY,
+    customer_id BIGINT REFERENCES users(id),  -- Should be user_id
+    item_id BIGINT REFERENCES products(id)     -- Should be product_id
+);
+```
+
+### Indexes
+
+**Indexes use descriptive names:**
+
+```sql
+-- ✅ GOOD: Descriptive index names
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_orders_user_id ON orders(user_id);
+CREATE INDEX idx_orders_created_at ON orders(created_at);
+CREATE UNIQUE INDEX idx_users_email_unique ON users(email);
+
+-- ❌ BAD: Generic or unclear names
+CREATE INDEX idx1 ON users(email);
+CREATE INDEX idx_users_1 ON users(user_id);
+```
+
+### Constraints
+
+**Constraints use descriptive names:**
+
+```sql
+-- ✅ GOOD: Named constraints
+ALTER TABLE users 
+    ADD CONSTRAINT users_email_unique UNIQUE (email),
+    ADD CONSTRAINT users_email_format CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$');
+
+-- ❌ BAD: Unnamed constraints (PostgreSQL will generate random names)
+ALTER TABLE users ADD UNIQUE (email);
+```
+
+## Schema Patterns
+
+### Timestamps
+
+**Always include `created_at` and `updated_at`:**
+
+```sql
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+);
+
+-- Trigger to auto-update updated_at
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_users_updated_at
+    BEFORE UPDATE ON users
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+```
+
+### Soft Deletes
+
+**Use `deleted_at` for soft deletes:**
+
+```sql
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    deleted_at TIMESTAMP WITH TIME ZONE NULL
+);
+
+-- Index for active records
+CREATE INDEX idx_users_deleted_at ON users(deleted_at) WHERE deleted_at IS NULL;
+
+-- Query active records
+SELECT * FROM users WHERE deleted_at IS NULL;
+```
+
+### Enums
+
+**Use PostgreSQL enums for fixed value sets:**
+
+```sql
+-- ✅ GOOD: Use ENUM type
+CREATE TYPE user_status AS ENUM ('active', 'inactive', 'suspended');
+CREATE TYPE order_status AS ENUM ('pending', 'processing', 'shipped', 'delivered', 'cancelled');
+
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    status user_status DEFAULT 'active' NOT NULL
+);
+
+CREATE TABLE orders (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    status order_status DEFAULT 'pending' NOT NULL
+);
+
+-- ❌ BAD: String with CHECK constraint (less efficient)
+CREATE TABLE users (
+    status VARCHAR(20) CHECK (status IN ('active', 'inactive', 'suspended'))
+);
+```
+
+## Migration Best Practices
+
+### Migration Files
+
+**Use timestamped migration files:**
+
+```sql
+-- migrations/20250115120000_create_users_table.sql
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+);
+
+-- migrations/20250115120001_add_user_status.sql
+CREATE TYPE user_status AS ENUM ('active', 'inactive', 'suspended');
+ALTER TABLE users ADD COLUMN status user_status DEFAULT 'active' NOT NULL;
+```
+
+### Reversible Migrations
+
+**Always provide both up and down migrations:**
+
+```sql
+-- Up migration
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE
+);
+
+-- Down migration
+DROP TABLE IF EXISTS users;
+```
+
+### Data Migrations
+
+**Separate schema and data migrations:**
+
+```sql
+-- Schema migration
+ALTER TABLE users ADD COLUMN status user_status;
+
+-- Data migration (separate file)
+UPDATE users SET status = 'active' WHERE status IS NULL;
+ALTER TABLE users ALTER COLUMN status SET NOT NULL;
+```
+
+## Performance Considerations
+
+### Indexes
+
+**Index foreign keys and frequently queried columns:**
+
+```sql
+-- Foreign keys should be indexed
+CREATE INDEX idx_orders_user_id ON orders(user_id);
+CREATE INDEX idx_orders_product_id ON orders(product_id);
+
+-- Frequently queried columns
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_orders_created_at ON orders(created_at);
+
+-- Composite indexes for common query patterns
+CREATE INDEX idx_orders_user_created ON orders(user_id, created_at DESC);
+```
+
+### Partial Indexes
+
+**Use partial indexes for filtered queries:**
+
+```sql
+-- Index only active users
+CREATE INDEX idx_users_active ON users(email) WHERE deleted_at IS NULL;
+
+-- Index only pending orders
+CREATE INDEX idx_orders_pending ON orders(created_at) WHERE status = 'pending';
+```
+
+## Security Best Practices
+
+### Parameterized Queries
+
+**Always use parameterized queries:**
+
+```python
+# ✅ GOOD: Parameterized query
+cursor.execute(
+    "SELECT * FROM users WHERE email = %s",
+    (email,)
+)
+
+# ❌ BAD: String concatenation (SQL injection risk)
+cursor.execute(f"SELECT * FROM users WHERE email = '{email}'")
+```
+
+### Row-Level Security
+
+**Use RLS for multi-tenant applications:**
+
+```sql
+-- Enable RLS
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Users can only see their own orders
+CREATE POLICY orders_user_policy ON orders
+    FOR ALL
+    USING (user_id = current_setting('app.user_id')::bigint);
+```
+
+### Connection Pooling
+
+**Use connection pooling:**
+
+```python
+# Using psycopg2 pool
+from psycopg2 import pool
+
+connection_pool = pool.SimpleConnectionPool(
+    1, 20,
+    host="localhost",
+    database="mydb",
+    user="user",
+    password="password"
+)
+```
+
+## Reference Implementations
+
+Study these projects for examples:
+
+- **[GitLab Database Schema](https://gitlab.com/gitlab-org/gitlab)** - Large-scale PostgreSQL patterns
+- **[Discourse](https://github.com/discourse/discourse)** - Rails + PostgreSQL conventions
+- **[Mastodon](https://github.com/mastodon/mastodon/blob/main/db/schema.rb)** - Complex social media schema
+
+## Review Checklist
+
+When reviewing PostgreSQL code, check:
+
+- [ ] Tables use plural snake_case
+- [ ] Columns use singular snake_case
+- [ ] Primary keys named `id`
+- [ ] Foreign keys follow `table_name_id` pattern
+- [ ] Indexes have descriptive names
+- [ ] Constraints are named
+- [ ] `created_at` and `updated_at` present
+- [ ] Foreign keys are indexed
+- [ ] Parameterized queries used (no SQL injection)
+- [ ] Migrations are reversible
+- [ ] Enums used for fixed value sets
+---
+
+**Last Updated**: December 2025

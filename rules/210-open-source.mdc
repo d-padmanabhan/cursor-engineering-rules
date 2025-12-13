@@ -1,0 +1,466 @@
+---
+title: Open Source Project Engineering Ruleset
+description: Best practices for open source projects including contribution guidelines, documentation, and community management.
+priority: 210
+alwaysApply: false
+files:
+  include:
+    - "CONTRIBUTING.md"
+    - "CONTRIBUTORS.md"
+    - ".all-contributorsrc"
+    - "LICENSE"
+    - "CHANGELOG.md"
+---
+
+# Open Source Project Engineering Ruleset
+
+**Goal:** Create welcoming, maintainable open source projects that encourage contributions and make it easy for others to use and contribute.
+
+## Essential Files
+
+### CONTRIBUTING.md
+
+**MUST** include:
+
+- How to set up development environment
+- How to run tests
+- Code style and formatting guidelines
+- How to submit pull requests
+- How to report bugs
+- Code of conduct reference
+
+**Template:**
+
+```markdown
+# Contributing
+
+Thank you for your interest in contributing!
+
+## Development Setup
+
+1. Fork the repository
+2. Clone your fork: `git clone https://github.com/your-username/project.git`
+3. Install dependencies: `make init`
+4. Run tests: `make test`
+
+## Making Changes
+
+1. Create a branch: `git checkout -b feature/your-feature`
+2. Make your changes
+3. Run tests: `make test`
+4. Run linter: `make lint`
+5. Commit using [conventional commits](https://www.conventionalcommits.org/)
+6. Push and open a pull request
+
+## Code Style
+
+- Follow the existing code style
+- Run `make lint` before committing
+- Add tests for new features
+- Update documentation as needed
+
+## Reporting Bugs
+
+Use GitHub Issues and include:
+- Description of the bug
+- Steps to reproduce
+- Expected vs actual behavior
+- Environment details (OS, version, etc.)
+
+## Questions?
+
+Open a GitHub Discussion or reach out to maintainers.
+```
+
+### LICENSE
+
+**MUST** include a license file. Common choices:
+
+- **MIT** - Permissive, widely used
+- **Apache 2.0** - Permissive with patent grant
+- **GPL v3** - Copyleft, requires derivative works to be open source
+- **BSD 3-Clause** - Permissive, similar to MIT
+
+### README.md
+
+**MUST** include:
+
+- Project description and purpose
+- Quick start / installation instructions
+- Basic usage examples
+- Link to full documentation
+- Contributing guidelines link
+- License information
+- Badges (build status, version, etc.)
+
+### CHANGELOG.md
+
+**SHOULD** maintain a changelog following [Keep a Changelog](https://keepachangelog.com/) format:
+
+```markdown
+# Changelog
+
+## [1.2.0] - 2025-01-15
+
+### Added
+- New feature X
+- Support for Y
+
+### Changed
+- Improved performance of Z
+
+### Fixed
+- Bug fix A
+- Bug fix B
+
+## [1.1.0] - 2025-01-01
+...
+```
+
+## Contribution Tracking
+
+### All Contributors
+
+Use [All Contributors](https://allcontributors.org/) to recognize contributions:
+
+**Installation:**
+
+```bash
+npm install -D all-contributors-cli
+```
+
+**Configuration (`.all-contributorsrc`):**
+
+```json
+{
+  "projectName": "my-project",
+  "projectOwner": "your-username",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": true,
+  "contributors": [],
+  "contributorsPerLine": 7
+}
+```
+
+**Usage:**
+
+```bash
+# Add a contributor
+npx all-contributors add username code,doc
+
+# Update README
+npx all-contributors generate
+```
+
+**Contribution Types:**
+
+- `code` - Code contributions
+- `doc` - Documentation
+- `bug` - Bug reports
+- `ideas` - Ideas/planning
+- `review` - Pull request reviews
+- `test` - Tests
+- `translation` - Translations
+- `question` - Answering questions
+- `maintenance` - Maintenance work
+
+### CONTRIBUTORS.md
+
+Alternative to All Contributors, manually maintained:
+
+```markdown
+# Contributors
+
+Thank you to all contributors!
+
+## Core Maintainers
+
+- [@username1](https://github.com/username1)
+- [@username2](https://github.com/username2)
+
+## Contributors
+
+- [@contributor1](https://github.com/contributor1) - Feature X, Bug fix Y
+- [@contributor2](https://github.com/contributor2) - Documentation improvements
+```
+
+## Code of Conduct
+
+**SHOULD** include a Code of Conduct. Use [Contributor Covenant](https://www.contributor-covenant.org/):
+
+```markdown
+# Contributor Covenant Code of Conduct
+
+## Our Pledge
+
+We pledge to make participation in our project a harassment-free experience...
+
+[Full text from contributor-covenant.org]
+```
+
+## Issue Templates
+
+Create `.github/ISSUE_TEMPLATE/`:
+
+### Bug Report Template
+
+```markdown
+---
+name: Bug Report
+about: Report a bug
+title: ''
+labels: bug
+assignees: ''
+---
+
+**Describe the bug**
+A clear description of what the bug is.
+
+**To Reproduce**
+Steps to reproduce:
+1. ...
+2. ...
+
+**Expected behavior**
+What you expected to happen.
+
+**Environment:**
+- OS: [e.g., macOS 14.0]
+- Version: [e.g., 1.2.3]
+- Other relevant details
+
+**Additional context**
+Any other context about the problem.
+```
+
+### Feature Request Template
+
+```markdown
+---
+name: Feature Request
+about: Suggest a new feature
+title: ''
+labels: enhancement
+assignees: ''
+---
+
+**Describe the feature**
+A clear description of what you want.
+
+**Use case**
+Why is this feature needed?
+
+**Proposed solution**
+How should this work?
+
+**Alternatives considered**
+Other solutions you've considered.
+```
+
+## Pull Request Template
+
+Create `.github/PULL_REQUEST_TEMPLATE.md`:
+
+```markdown
+## Description
+Brief description of changes
+
+## Type of Change
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Breaking change
+- [ ] Documentation update
+
+## Testing
+- [ ] Tests added/updated
+- [ ] Manual testing performed
+
+## Checklist
+- [ ] Code follows style guidelines
+- [ ] Self-review completed
+- [ ] Comments added for complex logic
+- [ ] Documentation updated
+- [ ] No new warnings generated
+- [ ] Tests pass locally
+```
+
+## Documentation Standards
+
+### API Documentation
+
+- Document all public APIs
+- Include examples
+- Document parameters and return values
+- Include error cases
+
+### Examples
+
+Provide working examples:
+
+```markdown
+## Examples
+
+### Basic Usage
+
+\`\`\`python
+from mylib import MyClass
+
+obj = MyClass()
+result = obj.do_something()
+\`\`\`
+
+### Advanced Usage
+
+\`\`\`python
+# More complex example
+...
+\`\`\`
+```
+
+## Release Management
+
+### Semantic Versioning
+
+Follow [Semantic Versioning](https://semver.org/):
+
+- **MAJOR** - Breaking changes
+- **MINOR** - New features (backward compatible)
+- **PATCH** - Bug fixes (backward compatible)
+
+### Release Process
+
+1. Update version in code
+2. Update CHANGELOG.md
+3. Create git tag: `git tag v1.2.0`
+4. Push tag: `git push origin v1.2.0`
+5. Create GitHub release
+6. Publish to package registry (if applicable)
+
+## Security
+
+### Security Policy
+
+Create `SECURITY.md`:
+
+```markdown
+# Security Policy
+
+## Supported Versions
+
+| Version | Supported          |
+| ------- | ------------------ |
+| 1.x.x   | :white_check_mark: |
+| < 1.0   | :x:                |
+
+## Reporting a Vulnerability
+
+Please report security vulnerabilities to security@acme.com
+Do not open public issues for security vulnerabilities.
+```
+
+### Dependency Management
+
+- Regularly update dependencies
+- Use Dependabot or similar
+- Audit for vulnerabilities
+- Pin versions in production
+
+## Community Management
+
+### Responding to Issues
+
+- Acknowledge issues promptly (within 48 hours)
+- Ask clarifying questions
+- Label issues appropriately
+- Close issues when resolved (with explanation)
+
+### Reviewing Pull Requests
+
+- Review within a week
+- Provide constructive feedback
+- Thank contributors
+- Merge when ready
+
+### Communication
+
+- Be welcoming and inclusive
+- Use inclusive language
+- Assume good intent
+- Be patient with newcomers
+
+## Automation
+
+### GitHub Actions
+
+Automate common tasks:
+
+- CI/CD pipelines
+- Dependency updates (Dependabot)
+- Release automation
+- Label management
+- Stale issue/PR management
+
+### Pre-commit Hooks
+
+Enforce code quality:
+
+```yaml
+# .pre-commit-config.yaml
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+```
+
+## Best Practices
+
+### Making It Easy to Contribute
+
+- Clear setup instructions
+- Good first issues labeled
+- Comprehensive documentation
+- Responsive maintainers
+
+### Maintaining Quality
+
+- Code reviews for all PRs
+- Automated testing
+- Linting and formatting
+- Documentation requirements
+
+### Building Community
+
+- Welcome new contributors
+- Recognize contributions
+- Regular communication
+- Clear project vision
+
+## Review Checklist
+
+When reviewing open source projects, check:
+
+- [ ] CONTRIBUTING.md exists and is comprehensive
+- [ ] LICENSE file is present
+- [ ] README.md is clear and helpful
+- [ ] CHANGELOG.md is maintained
+- [ ] Code of Conduct is present
+- [ ] Issue templates are set up
+- [ ] PR template is configured
+- [ ] Security policy exists
+- [ ] Contribution tracking is in place
+- [ ] Documentation is up to date
+- [ ] Examples are provided
+- [ ] CI/CD is configured
+- [ ] Dependencies are managed
+---
+
+**Last Updated**: December 2025

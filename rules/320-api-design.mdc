@@ -1,0 +1,324 @@
+---
+title: API Design Best Practices
+description: REST API design patterns, GraphQL, gRPC, versioning, authentication, and API documentation standards
+priority: 320
+alwaysApply: false
+files:
+  include:
+    - "**/*api*.ts"
+    - "**/*api*.js"
+    - "**/*api*.py"
+    - "**/*api*.go"
+    - "**/openapi.yaml"
+    - "**/swagger.yaml"
+    - "**/*.proto"
+---
+
+# API Design Best Practices
+
+## Guiding Principles
+
+1. **Consistency**: Follow REST/GraphQL conventions consistently
+2. **Developer Experience**: Easy to understand and use
+3. **Versioning**: Plan for API evolution
+4. **Security**: Authentication, authorization, rate limiting
+5. **Documentation**: Clear, accurate, up-to-date
+
+---
+
+## REST API Design
+
+### Resource Naming
+```
+✅ GOOD - Plural nouns, lowercase
+GET    /api/v1/users
+GET    /api/v1/users/{id}
+POST   /api/v1/users
+PUT    /api/v1/users/{id}
+DELETE /api/v1/users/{id}
+
+GET    /api/v1/users/{id}/posts
+GET    /api/v1/users/{id}/posts/{postId}
+
+❌ BAD - Verbs, mixed case
+GET    /api/v1/getUsers
+POST   /api/v1/createUser
+GET    /api/v1/Users
+```
+
+### HTTP Methods
+```
+GET    - Retrieve resource(s) (idempotent, safe)
+POST   - Create new resource
+PUT    - Replace entire resource (idempotent)
+PATCH  - Partial update (not always idempotent)
+DELETE - Remove resource (idempotent)
+```
+
+### Status Codes
+```
+2xx Success
+200 OK                 - Successful GET, PUT, PATCH
+201 Created            - Successful POST
+204 No Content         - Successful DELETE
+
+4xx Client Errors
+400 Bad Request        - Invalid input
+401 Unauthorized       - Missing/invalid auth
+403 Forbidden          - Authenticated but not authorized
+404 Not Found          - Resource doesn't exist
+409 Conflict           - Duplicate/conflict
+422 Unprocessable      - Validation error
+429 Too Many Requests  - Rate limit exceeded
+
+5xx Server Errors
+500 Internal Server    - Server error
+502 Bad Gateway        - Upstream error
+503 Service Unavailable - Maintenance/overload
+```
+
+---
+
+## Request/Response Patterns
+
+### JSON Request
+```json
+POST /api/v1/users
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "john@acme.com",
+  "role": "admin"
+}
+```
+
+### JSON Response (Success)
+```json
+HTTP/1.1 201 Created
+Content-Type: application/json
+Location: /api/v1/users/123
+
+{
+  "id": "123",
+  "name": "John Doe",
+  "email": "john@acme.com",
+  "role": "admin",
+  "createdAt": "2025-01-01T00:00:00Z",
+  "updatedAt": "2025-01-01T00:00:00Z"
+}
+```
+
+### Error Response (Standard Format)
+```json
+HTTP/1.1 400 Bad Request
+Content-Type: application/json
+
+{
+  "error": {
+    "code": "INVALID_INPUT",
+    "message": "Validation failed",
+    "details": [
+      {
+        "field": "email",
+        "message": "Invalid email format"
+      }
+    ],
+    "requestId": "req_abc123"
+  }
+}
+```
+
+---
+
+## Pagination
+
+### Offset-based
+```
+GET /api/v1/users?limit=20&offset=40
+
+Response:
+{
+  "data": [...],
+  "pagination": {
+    "limit": 20,
+    "offset": 40,
+    "total": 1000
+  }
+}
+```
+
+### Cursor-based (Better for large datasets)
+```
+GET /api/v1/users?limit=20&cursor=eyJpZCI6MTIzfQ==
+
+Response:
+{
+  "data": [...],
+  "pagination": {
+    "nextCursor": "eyJpZCI6MTQzfQ==",
+    "hasMore": true
+  }
+}
+```
+
+---
+
+## API Versioning
+
+### URL Versioning (Recommended)
+```
+/api/v1/users
+/api/v2/users
+```
+
+### Header Versioning
+```
+GET /api/users
+Accept: application/vnd.acme.v1+json
+```
+
+### Query Parameter
+```
+/api/users?version=1
+```
+
+---
+
+## Authentication & Authorization
+
+### Bearer Token (JWT)
+```
+GET /api/v1/users
+Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+```
+
+### API Key
+```
+GET /api/v1/users
+X-API-Key: your_api_key_here
+```
+
+### OAuth 2.0
+```
+1. Authorization request
+2. Token exchange
+3. Access with bearer token
+```
+
+---
+
+## Rate Limiting
+
+### Headers
+```
+HTTP/1.1 200 OK
+X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 999
+X-RateLimit-Reset: 1640995200
+
+HTTP/1.1 429 Too Many Requests
+Retry-After: 3600
+```
+
+---
+
+## OpenAPI Specification
+
+```yaml
+openapi: 3.0.0
+info:
+  title: Acme API
+  version: 1.0.0
+  description: API for managing users and resources
+
+servers:
+  - url: https://api.acme.com/v1
+    description: Production server
+
+paths:
+  /users:
+    get:
+      summary: List users
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+    post:
+      summary: Create user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: Created
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+```
+
+---
+
+## Best Practices Checklist
+
+- [ ] Use consistent resource naming (plural nouns)
+- [ ] Implement proper HTTP status codes
+- [ ] Version your API from day one
+- [ ] Use pagination for list endpoints
+- [ ] Implement rate limiting
+- [ ] Provide comprehensive error messages
+- [ ] Use HTTPS everywhere
+- [ ] Implement authentication and authorization
+- [ ] Document API with OpenAPI/Swagger
+- [ ] Validate all inputs
+- [ ] Use request IDs for tracing
+- [ ] Implement CORS properly
+- [ ] Cache responses where appropriate
+- [ ] Monitor API performance and errors
+
+---
+
+## Related Files
+
+- `310-security.mdc` - Security best practices
+- `160-python.mdc` - Python API patterns
+- `170-javascript.mdc` - JavaScript API patterns
+- `180-go.mdc` - Go API patterns
+- `185-rust.mdc` - Rust API patterns
+
+---
+
+**Last Updated**: December 2025  
+**Purpose**: API design patterns and best practices

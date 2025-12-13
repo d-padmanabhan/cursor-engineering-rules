@@ -1,0 +1,774 @@
+---
+title: Command-Line Utilities & Documentation Tools
+description: Essential CLI utilities (lynx, curl, jq, httpie) with tool selection guidance for reading documentation
+priority: 115
+alwaysApply: false
+files:
+  include:
+    - "**/*.sh"
+    - "**/*.bash"
+    - "**/Makefile"
+    - "**/*.md"
+---
+
+# Command-Line Utilities & Documentation Tools
+
+## Guiding Principle
+
+Choose the right tool for the job. For documentation reading, prefer fast text-based tools (lynx, curl) over heavy headless browsers. For data processing, use purpose-built utilities (jq for JSON, yq for YAML).
+
+---
+
+## Documentation Reading: Tool Selection 🏆
+
+### Default Tool: Lynx (Use 95% of the time)
+
+**Why Lynx is Best:**
+- ✅ Renders readable text (not raw HTML)
+- ✅ Fast & lightweight (~5MB memory)
+- ✅ Works for most docs (AWS, K8s, GitHub, Terraform, Cloudflare, Python, Go)
+- ✅ Clean text output with numbered links
+- ✅ Screen reader simulation (accessibility testing)
+- ✅ No JavaScript overhead
+
+**Example Commands:**
+```bash
+# Read and display documentation
+lynx -dump https://docs.aws.amazon.com/lambda/latest/dg/python-handler.html
+
+# Extract all links
+lynx -dump -listonly https://kubernetes.io/docs/concepts/
+
+# Save to file
+lynx -dump https://docs.github.com/en/actions > github-actions-docs.txt
+
+# Get specific section
+lynx -dump https://terraform.io/docs | grep -A 20 "Getting Started"
+```
+
+**Lynx Works Well For:**
+- AWS Documentation (docs.aws.amazon.com)
+- Kubernetes Documentation (kubernetes.io/docs)
+- GitHub Documentation (docs.github.com)
+- Terraform Registry (registry.terraform.io)
+- Cloudflare Documentation (developers.cloudflare.com)
+- Python Documentation (docs.python.org)
+- Go Documentation (go.dev/doc)
+- MDN Web Docs (developer.mozilla.org)
+- Static documentation generators (Hugo, Jekyll, MkDocs, Docusaurus)
+
+---
+
+### Fallback Tool 1: curl (When You Need Raw Data)
+
+**Use curl When:**
+- ✅ Need raw HTML to parse specific elements
+- ✅ API documentation with JSON responses
+- ✅ Quick existence/status checks (HTTP headers)
+- ✅ Downloading files (PDF, images)
+- ✅ Maximum speed required (no rendering)
+- ✅ Extract specific data with grep/sed/awk
+
+**Example Commands:**
+```bash
+# Get raw documentation HTML
+curl -s https://docs.aws.amazon.com/cli/latest/reference/
+
+# Get API documentation as JSON
+curl -s https://api.github.com/repos/kubernetes/kubernetes/readme | jq -r '.content' | base64 -d
+
+# Check if page exists
+curl -I https://docs.cloudflare.com/api/
+
+# Download PDF documentation
+curl -O https://docs.aws.amazon.com/pdfs/whitepapers/latest/overview.pdf
+
+# Extract specific elements
+curl -s https://registry.terraform.io/providers/hashicorp/aws/latest/docs | grep -oP 'data-source-\K[^"]*'
+```
+
+**curl Works Well For:**
+- API endpoint documentation
+- Checking if documentation exists (HTTP status)
+- Downloading resources (PDF, images)
+- GitHub API documentation
+- Simple, non-rendered content
+- Raw HTML when you know exact selectors
+
+---
+
+### Fallback Tool 2: LightPanda/Puppeteer (JavaScript-Heavy Sites)
+
+**Use LightPanda Only When:**
+- ❌ Lynx returns empty/incomplete content
+- ✅ Documentation requires JavaScript to render
+- ✅ Single-Page Application (SPA) documentation
+- ✅ Need to interact with page (click tabs, expand sections)
+- ✅ Screenshots needed
+- ✅ Complex dynamic content loading
+
+**Example Usage:**
+```javascript
+// Read JavaScript-heavy docs
+const { Browser } = require('@lightpanda-io/browser');
+
+async function readDocs() {
+  const browser = await Browser.launch();
+  const page = await browser.newPage();
+  
+  await page.goto('https://interactive-docs.acme.com');
+  await page.waitForSelector('.content-loaded');
+  
+  const content = await page.$eval('.documentation', 
+    el => el.textContent
+  );
+  
+  await browser.close();
+  return content;
+}
+```
+
+**LightPanda Works Well For:**
+- JavaScript-heavy documentation sites
+- Interactive tutorials requiring clicks
+- Documentation behind login/authentication
+- React/Vue-based docs that don't server-side render
+- When screenshots are needed
+
+---
+
+## Decision Matrix: Which Tool to Use
+
+| Documentation Site | Primary Tool | Fallback | Notes |
+|-------------------|--------------|----------|-------|
+| **AWS Docs** | Lynx | curl | Static, well-structured HTML |
+| **Cloudflare Docs** | Lynx | LightPanda | Mostly static, some dynamic sections |
+| **Kubernetes Docs** | Lynx | curl | Hugo static site, perfect for lynx |
+| **GitHub Docs** | Lynx | curl | Static, accessible, lynx-friendly |
+| **Terraform Registry** | Lynx | curl | Static documentation |
+| **Python Docs** | Lynx | curl | Sphinx-generated, static |
+| **Go Docs** | Lynx | curl | Static godoc pages |
+| **MDN Web Docs** | Lynx | curl | Static, excellent for lynx |
+| **DigitalOcean Tutorials** | Lynx | curl | Static content |
+| **Netlify Docs** | Lynx | curl | Static Docusaurus |
+| **Vercel Docs** | Lynx | LightPanda | React-based, may need JS |
+| **Stripe API Docs** | Lynx first | LightPanda | Try lynx, fallback to LightPanda |
+| **Auth0 Docs** | Lynx first | LightPanda | Try lynx, fallback to LightPanda |
+| **Interactive Tutorials** | LightPanda | N/A | Requires user interaction |
+| **API Reference (JSON)** | curl | lynx | Use curl + jq |
+
+---
+
+## Recommended Prompt Pattern
+
+### Default Pattern (Lynx First, Always with Fallback)
+
+```
+Use lynx to read [DOCUMENTATION_URL] and [TASK].
+
+If lynx fails or returns incomplete content, 
+fall back to LightPanda.
+```
+
+### Real-World Examples
+
+**Example 1: AWS Lambda Research**
+```
+Use lynx to read the AWS Lambda Python best practices at
+https://docs.aws.amazon.com/lambda/latest/dg/python-handler.html
+and summarize the key recommendations for error handling and logging.
+```
+
+**Example 2: Kubernetes Configuration**
+```
+Use lynx to read the Kubernetes Pod documentation at
+https://kubernetes.io/docs/concepts/workloads/pods/
+and extract all examples of Pod YAML configurations.
+```
+
+**Example 3: Terraform Provider**
+```
+Use lynx to read the Terraform AWS Provider documentation for 
+aws_vpc_lattice_service and provide a complete working example.
+```
+
+**Example 4: Comparison Task**
+```
+Use lynx to compare the AWS Lambda and Google Cloud Functions
+documentation. Summarize the key differences in runtime support,
+pricing models, and deployment methods.
+```
+
+---
+
+## Tool Performance Comparison
+
+### Speed
+```
+Lynx:         ⚡⚡⚡⚡⚡ (Fastest)
+curl:         ⚡⚡⚡⚡⚡ (Fastest, but raw HTML)
+LightPanda:   ⚡⚡⚡   (Slower, full browser)
+```
+
+### Memory Usage
+```
+Lynx:         ~5MB
+curl:         ~2MB
+LightPanda:   ~50MB
+```
+
+### Success Rate (Documentation Sites)
+```
+Lynx:         95% (Most static docs)
+curl:         85% (Raw HTML, needs parsing)
+LightPanda:   99% (Works everywhere, but overkill)
+```
+
+---
+
+## Anti-Patterns (What NOT to Do)
+
+### ❌ Don't Default to LightPanda
+```bash
+# BAD
+Use LightPanda to read AWS Lambda documentation...
+
+# GOOD
+Use lynx to read AWS Lambda documentation...
+```
+**Why:** LightPanda is slow and resource-intensive. Lynx is 10x faster for static docs.
+
+### ❌ Don't Use curl for Rendered Content
+```bash
+# BAD (you'll get messy HTML)
+Use curl to fetch and explain the Kubernetes documentation...
+
+# GOOD
+Use lynx to read and explain the Kubernetes documentation...
+```
+**Why:** curl returns raw HTML. Lynx renders it into readable text.
+
+### ❌ Don't Forget Fallback Strategy
+```bash
+# BAD (no fallback)
+Use lynx to read the documentation...
+
+# GOOD (with fallback)
+Use lynx to read the documentation. 
+If lynx fails, fall back to LightPanda.
+```
+**Why:** Some docs require JavaScript. Always have a fallback plan.
+
+---
+
+## Lynx Quick Reference
+
+### Installation
+```bash
+# macOS
+brew install lynx
+
+# Linux (Ubuntu/Debian)
+sudo apt install lynx
+
+# Linux (RHEL/CentOS/Fedora)
+sudo yum install lynx
+```
+
+### Common Options
+```bash
+-dump               # Non-interactive, dump to stdout
+-listonly           # Show only links
+-nonumbers          # Don't number links
+-useragent="..."    # Set user agent
+-accept_all_cookies # Accept all cookies
+-connect_timeout=N  # Connection timeout in seconds
+-source             # Dump raw HTML source
+-head               # Send HEAD request only
+```
+
+### Navigation Keys (Interactive Mode)
+```
+Arrow Up/Down       Navigate between links
+Arrow Right/Enter   Follow highlighted link
+Arrow Left          Go back
+Space/Page Down     Scroll down
+b/Page Up           Scroll up
+g                   Go to URL
+q                   Quit
+/                   Search forward
+```
+
+---
+
+## curl Quick Reference
+
+### Basic Operations
+```bash
+# Simple GET
+curl https://acme.com
+
+# Download file
+curl -O https://acme.com/file.zip
+curl -o custom-name.zip https://acme.com/file.zip
+
+# Follow redirects
+curl -L https://acme.com
+
+# Show headers only
+curl -I https://acme.com
+
+# Show headers and body
+curl -i https://acme.com
+
+# Silent mode (no progress bar)
+curl -s https://acme.com
+
+# Show errors only
+curl -sS https://acme.com
+```
+
+### HTTP Methods
+```bash
+# GET (default)
+curl https://api.acme.com/users
+
+# POST with data
+curl -X POST -d "name=John&age=30" https://api.acme.com/users
+
+# POST JSON
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"name":"John","age":30}' \
+  https://api.acme.com/users
+
+# PUT
+curl -X PUT -d "name=Jane" https://api.acme.com/users/123
+
+# DELETE
+curl -X DELETE https://api.acme.com/users/123
+
+# PATCH
+curl -X PATCH \
+  -H "Content-Type: application/json" \
+  -d '{"age":31}' \
+  https://api.acme.com/users/123
+```
+
+### Headers & Authentication
+```bash
+# Add headers
+curl -H "Authorization: Bearer TOKEN" https://api.acme.com/data
+curl -H "Accept: application/json" https://api.acme.com/data
+
+# Multiple headers
+curl -H "Authorization: Bearer TOKEN" \
+     -H "Content-Type: application/json" \
+     https://api.acme.com/data
+
+# Basic auth
+curl -u username:password https://api.acme.com/data
+
+# Bearer token
+curl -H "Authorization: Bearer YOUR_TOKEN" https://api.acme.com/data
+```
+
+### Advanced Options
+```bash
+# Timeout (seconds)
+curl --connect-timeout 10 --max-time 30 https://acme.com
+
+# Retry on failure
+curl --retry 3 --retry-delay 2 https://acme.com
+
+# User agent
+curl -A "Mozilla/5.0" https://acme.com
+
+# Cookies
+curl -b cookies.txt -c cookies.txt https://acme.com
+
+# Upload file
+curl -F "file=@/path/to/file.txt" https://acme.com/upload
+
+# Debug (verbose)
+curl -v https://acme.com
+```
+
+---
+
+## jq Quick Reference
+
+### Basic Usage
+```bash
+# Pretty print JSON
+cat data.json | jq '.'
+curl -s https://api.acme.com/users | jq '.'
+
+# Extract field
+jq '.name' data.json
+jq '.users[0].name' data.json
+
+# Multiple fields
+jq '.name, .age' data.json
+
+# Raw output (no quotes)
+jq -r '.name' data.json
+```
+
+### Array Operations
+```bash
+# Iterate array
+jq '.[]' array.json
+jq '.users[]' data.json
+
+# Filter array
+jq '.users[] | select(.age > 25)' data.json
+
+# Map array
+jq '.users[] | .name' data.json
+
+# Array slice
+jq '.[1:5]' array.json
+
+# Length
+jq '.users | length' data.json
+```
+
+### Object Operations
+```bash
+# Get keys
+jq 'keys' data.json
+
+# Check if key exists
+jq 'has("email")' data.json
+
+# Delete key
+jq 'del(.password)' data.json
+
+# Add/modify field
+jq '. + {new_field: "value"}' data.json
+```
+
+### Advanced Filters
+```bash
+# Conditional
+jq 'if .age > 18 then "adult" else "minor" end' data.json
+
+# Select with multiple conditions
+jq '.users[] | select(.age > 25 and .active == true)' data.json
+
+# Sort
+jq '.users | sort_by(.age)' data.json
+
+# Unique
+jq '.tags | unique' data.json
+
+# Group by
+jq 'group_by(.category)' data.json
+
+# Map and collect
+jq '[.users[] | {name, email}]' data.json
+```
+
+### Common Patterns
+```bash
+# AWS: Get resource IDs
+aws ec2 describe-instances | jq -r '.Reservations[].Instances[].InstanceId'
+
+# AWS: Filter by tag
+aws ec2 describe-instances | jq -r '.Reservations[].Instances[] | select(.Tags[]? | select(.Key=="Environment" and .Value=="prod"))'
+
+# GitHub: Get repo names
+curl -s https://api.github.com/users/USERNAME/repos | jq -r '.[].name'
+
+# Extract and format as CSV
+jq -r '.users[] | [.name, .email, .age] | @csv' data.json
+
+# Extract and format as TSV
+jq -r '.users[] | [.name, .email, .age] | @tsv' data.json
+```
+
+---
+
+## httpie Quick Reference
+
+### Basic Usage
+```bash
+# Simple GET
+http acme.com
+
+# GET with query params
+http acme.com/users age==25 active==true
+
+# POST JSON (default)
+http POST acme.com/users name=John age:=30
+
+# POST form data
+http --form POST acme.com/upload file@/path/to/file.txt
+
+# PUT
+http PUT acme.com/users/123 name=Jane
+
+# DELETE
+http DELETE acme.com/users/123
+```
+
+### Headers & Authentication
+```bash
+# Custom headers
+http acme.com Authorization:"Bearer TOKEN" Accept:application/json
+
+# Basic auth
+http -a username:password acme.com/data
+
+# Bearer token
+http acme.com Authorization:"Bearer YOUR_TOKEN"
+```
+
+### Advanced Options
+```bash
+# Download file
+http --download acme.com/file.zip
+
+# Follow redirects
+http --follow acme.com
+
+# Timeout
+http --timeout 30 acme.com
+
+# Verbose output
+http -v acme.com
+
+# Print only body
+http -b acme.com
+
+# Print only headers
+http -h acme.com
+```
+
+---
+
+## Text Search: ripgrep (rg) over grep
+
+### Default: Use ripgrep (rg) on macOS ⭐
+
+**Why ripgrep is Better:**
+- ✅ **Faster**: 5-10x faster than grep for large codebases
+- ✅ **Smart defaults**: Respects .gitignore, skips hidden files/binaries
+- ✅ **Better output**: Colored, formatted, line numbers by default
+- ✅ **Modern syntax**: Simpler flags, Perl-compatible regex (PCRE2)
+- ✅ **Pre-installed**: Available via Homebrew on macOS
+
+### Installation
+```bash
+# macOS (via Homebrew)
+brew install ripgrep
+
+# Verify
+rg --version
+```
+
+### Basic Usage
+```bash
+# Simple search (respects .gitignore automatically)
+rg "TODO"
+
+# Search in specific file types
+rg "function" --type py
+rg "class" --type js
+
+# Case-insensitive search
+rg -i "error"
+
+# Show context (3 lines before/after)
+rg -C 3 "config"
+
+# Search only in filenames
+rg --files | rg "test"
+
+# Count matches
+rg -c "import"
+```
+
+### Advanced Features
+```bash
+# Search in specific directory
+rg "pattern" /path/to/dir
+
+# Exclude certain paths
+rg "TODO" --glob '!node_modules' --glob '!*.min.js'
+
+# Include hidden files
+rg "secret" --hidden
+
+# Search binary files
+rg "pattern" --text
+
+# Show files without matches
+rg --files-without-match "test"
+
+# Replace in preview (safe)
+rg "old_name" --replace "new_name"
+
+# Multi-line search
+rg -U "start.*end" # . matches newline with -U
+
+# Show only matching part
+rg -o "email: \S+"
+```
+
+### Comparison: rg vs grep
+```bash
+# ❌ OLD (grep)
+grep -r "pattern" .
+grep -r "pattern" . --include="*.py"
+grep -rn "pattern" . | grep -v node_modules
+
+# ✅ NEW (ripgrep)
+rg "pattern"
+rg "pattern" --type py
+rg "pattern" # Already excludes node_modules via .gitignore
+```
+
+### When to Use grep Instead
+```bash
+# Standard input processing (pipes)
+cat file.txt | grep "pattern"  # ✅ Use grep
+rg "pattern" file.txt          # ✅ Use rg for files
+
+# POSIX compliance required (scripts for CI/CD on minimal containers)
+grep -E "pattern" file.txt     # ✅ grep is more portable
+
+# Embedded systems / minimal environments
+# grep is more likely to be pre-installed
+```
+
+### File Type Shortcuts
+```bash
+rg "pattern" --type py       # Python
+rg "pattern" --type js       # JavaScript
+rg "pattern" --type ts       # TypeScript
+rg "pattern" --type go       # Go
+rg "pattern" --type rust     # Rust
+rg "pattern" --type yaml     # YAML
+rg "pattern" --type json     # JSON
+rg "pattern" --type md       # Markdown
+rg "pattern" --type sh       # Shell scripts
+
+# List all available types
+rg --type-list
+```
+
+### Common Patterns
+```bash
+# Find TODO comments in Python
+rg "TODO|FIXME" --type py
+
+# Find function definitions in Go
+rg "^func \w+" --type go
+
+# Find AWS resource IDs
+rg "arn:aws:[a-z-]+:[a-z0-9-]*:\d+:[a-zA-Z0-9/_-]+"
+
+# Find email addresses
+rg "\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
+
+# Find IP addresses
+rg "\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b"
+
+# Find potential secrets (high entropy strings)
+rg "[A-Za-z0-9]{32,}" --type py
+```
+
+### Performance Comparison
+```bash
+# Benchmark on large codebase
+time grep -r "import" .           # ~5-10 seconds
+time rg "import"                   # ~0.5-1 second
+
+# On 100MB codebase:
+# grep: 8.2s
+# rg:   0.9s (9x faster)
+```
+
+### Integration with Other Tools
+```bash
+# Count lines of code (exclude node_modules, .git)
+rg --files | xargs wc -l
+
+# Find and replace across files (safe preview)
+rg "old_pattern" --files-with-matches | xargs sed -i '' 's/old/new/g'
+
+# Better: Use sd (search & displace) with rg
+rg "old_pattern" --files-with-matches | xargs sd 'old_pattern' 'new_pattern'
+```
+
+### Configuration
+```bash
+# Add to ~/.ripgreprc (if needed)
+# Default flags for all searches
+--smart-case
+--hidden
+--glob=!.git/
+--glob=!node_modules/
+--glob=!*.min.js
+
+# Use config
+export RIPGREP_CONFIG_PATH="$HOME/.ripgreprc"
+```
+
+### Key Takeaway
+
+**Default to `rg` for all text search tasks on macOS.**  
+Only use `grep` when:
+- Processing stdin/pipes
+- POSIX compliance required
+- Minimal/embedded environments
+
+---
+
+## Summary: Tool Selection Cheat Sheet
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Documentation Reading Tool Selection                        │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│ DEFAULT: Use Lynx                                          │
+│   • Fast, lightweight, readable                            │
+│   • Works for 95% of documentation sites                   │
+│   • Best for: AWS, K8s, GitHub, Terraform, Python, Go     │
+│                                                             │
+│ FALLBACK 1: Use curl                                       │
+│   • Raw HTML/JSON needed                                   │
+│   • API documentation                                       │
+│   • Maximum speed required                                 │
+│                                                             │
+│ FALLBACK 2: Use LightPanda                                 │
+│   • JavaScript required to render                          │
+│   • Interactive content                                     │
+│   • Lynx fails to return content                           │
+│                                                             │
+│ PROMPT PATTERN:                                             │
+│   "Use lynx to read [URL] and [task].                      │
+│    If lynx fails, fall back to LightPanda."                │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Related Files
+
+This rule provides comprehensive guidance on command-line utilities for documentation reading and data processing. For additional reference materials, see the official documentation:
+
+- **Lynx**: https://lynx.invisible-island.net/
+- **curl**: https://curl.se/docs/
+- **jq**: https://jqlang.github.io/jq/
+- **httpie**: https://httpie.io/docs
+- **ripgrep**: https://github.com/BurntSushi/ripgrep
+
+---
+
+**Last Updated**: December 2025  
+**Purpose**: Guide on command-line utilities and tool selection for documentation research

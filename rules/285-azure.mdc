@@ -1,0 +1,882 @@
+---
+title: Microsoft Azure Best Practices
+description: Azure platform engineering patterns, ARM/Bicep templates, Azure DevOps, and cloud architecture best practices
+priority: 285
+alwaysApply: false
+files:
+  include:
+    - "**/*.bicep"
+    - "**/*.json" # ARM templates
+    - "**/azure-pipelines.yml"
+    - "**/*.tf" # Terraform for Azure
+---
+
+# Microsoft Azure Best Practices
+
+## Guiding Principles
+
+1. **Cloud-Native Design**: Leverage Azure-native services (App Service, Functions, Container Apps)
+2. **Infrastructure as Code**: Use Bicep over ARM templates, Terraform for multi-cloud
+3. **Security by Default**: Azure AD, Key Vault, Private Endpoints, NSGs
+4. **Cost Optimization**: Right-size resources, use reservations, implement auto-scaling
+5. **High Availability**: Availability Zones, geo-redundancy, Traffic Manager
+
+---
+
+## Azure Resource Naming Convention
+
+### Standard Format
+```
+{resource-type}-{workload/app-name}-{environment}-{region}-{instance}
+```
+
+### Examples
+```bash
+# Virtual Machine
+vm-webserver-prod-eastus-001
+
+# Storage Account (no hyphens, lowercase only, max 24 chars)
+stwebprodeastus001
+
+# App Service
+app-webapp-prod-eastus-001
+
+# Key Vault (max 24 chars)
+kv-webapp-prod-eus-001
+
+# Resource Group
+rg-webapp-prod-eastus
+
+# Virtual Network
+vnet-webapp-prod-eastus-001
+
+# Network Security Group
+nsg-webapp-prod-eastus-001
+
+# Azure SQL Database
+sql-webapp-prod-eastus-001
+```
+
+---
+
+## Bicep Best Practices
+
+### Basic Bicep Template
+```bicep
+@description('Environment name (dev, staging, prod)')
+@allowed([
+  'dev'
+  'staging'
+  'prod'
+])
+param environment string
+
+@description('Azure region for resources')
+param location string = resourceGroup().location
+
+@description('Application name')
+param appName string
+
+@description('Tags for all resources')
+param tags object = {
+  Environment: environment
+  ManagedBy: 'Bicep'
+  Application: appName
+}
+
+// Storage Account
+resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
+  name: 'st${appName}${environment}${uniqueString(resourceGroup().id)}'
+  location: location
+  tags: tags
+  sku: {
+    name: 'Standard_LRS'
+  }
+  kind: 'StorageV2'
+  properties: {
+    minimumTlsVersion: 'TLS1_2'
+    supportsHttpsTrafficOnly: true
+    allowBlobPublicAccess: false
+    networkAcls: {
+      defaultAction: 'Deny'
+      bypass: 'AzureServices'
+    }
+    encryption: {
+      services: {
+        blob: {
+          enabled: true
+        }
+        file: {
+          enabled: true
+        }
+      }
+      keySource: 'Microsoft.Storage'
+    }
+  }
+}
+
+// App Service Plan
+resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
+  name: 'asp-${appName}-${environment}-${location}'
+  location: location
+  tags: tags
+  sku: {
+    name: environment == 'prod' ? 'P1v3' : 'B1'
+    tier: environment == 'prod' ? 'PremiumV3' : 'Basic'
+  }
+  properties: {
+    reserved: true // Linux
+  }
+}
+
+// Web App
+resource webApp 'Microsoft.Web/sites@2023-01-01' = {
+  name: 'app-${appName}-${environment}-${location}'
+  location: location
+  tags: tags
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    serverFarmId: appServicePlan.id
+    httpsOnly: true
+    siteConfig: {
+      linuxFxVersion: 'NODE|20-lts'
+      minTlsVersion: '1.2'
+      ftpsState: 'Disabled'
+      alwaysOn: environment == 'prod'
+      healthCheckPath: '/health'
+      appSettings: [
+        {
+          name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'
+          value: 'false'
+        }
+        {
+          name: 'ENVIRONMENT'
+          value: environment
+        }
+      ]
+    }
+  }
+}
+
+// Outputs
+output webAppName string = webApp.name
+output webAppHostname string = webApp.properties.defaultHostName
+output storageAccountName string = storageAccount.name
+```
+
+### Bicep Modules Pattern
+```bicep
+// modules/app-service.bicep
+@description('App Service Plan parameters')
+param planName string
+param location string
+param sku object
+
+resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
+  name: planName
+  location: location
+  sku: sku
+  properties: {
+    reserved: true
+  }
+}
+
+output planId string = appServicePlan.id
+
+// main.bicep
+module appServicePlanModule './modules/app-service.bicep' = {
+  name: 'appServicePlanDeployment'
+  params: {
+    planName: 'asp-webapp-prod'
+    location: location
+    sku: {
+      name: 'P1v3'
+      tier: 'PremiumV3'
+    }
+  }
+}
+```
+
+---
+
+## Azure CLI Common Operations
+
+### Resource Groups
+```bash
+# Create resource group
+az group create \
+  --name rg-webapp-prod-eastus \
+  --location eastus \
+  --tags Environment=prod Application=webapp
+
+# List resource groups
+az group list --output table
+
+# Delete resource group
+az group delete --name rg-webapp-prod-eastus --yes --no-wait
+```
+
+### Deploy Bicep Templates
+```bash
+# Validate template
+az deployment group validate \
+  --resource-group rg-webapp-prod \
+  --template-file main.bicep \
+  --parameters @parameters.json
+
+# What-if deployment
+az deployment group what-if \
+  --resource-group rg-webapp-prod \
+  --template-file main.bicep \
+  --parameters @parameters.json
+
+# Deploy
+az deployment group create \
+  --name webapp-deployment \
+  --resource-group rg-webapp-prod \
+  --template-file main.bicep \
+  --parameters @parameters.json
+```
+
+### App Service
+```bash
+# Create App Service
+az webapp create \
+  --name app-webapp-prod \
+  --resource-group rg-webapp-prod \
+  --plan asp-webapp-prod \
+  --runtime "NODE:20-lts"
+
+# Configure settings
+az webapp config appsettings set \
+  --name app-webapp-prod \
+  --resource-group rg-webapp-prod \
+  --settings ENVIRONMENT=prod LOG_LEVEL=info
+
+# Enable system-assigned managed identity
+az webapp identity assign \
+  --name app-webapp-prod \
+  --resource-group rg-webapp-prod
+
+# View logs
+az webapp log tail \
+  --name app-webapp-prod \
+  --resource-group rg-webapp-prod
+```
+
+### Azure Container Registry (ACR)
+```bash
+# Create ACR
+az acr create \
+  --name acrwebappprod \
+  --resource-group rg-webapp-prod \
+  --sku Premium \
+  --admin-enabled false
+
+# Build and push image
+az acr build \
+  --registry acrwebappprod \
+  --image webapp:v1.0.0 \
+  --file Dockerfile .
+
+# List images
+az acr repository list --name acrwebappprod --output table
+```
+
+---
+
+## Azure Key Vault Integration
+
+### Bicep - Key Vault with Secrets
+```bicep
+resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
+  name: 'kv-${appName}-${environment}'
+  location: location
+  properties: {
+    sku: {
+      family: 'A'
+      name: 'standard'
+    }
+    tenantId: subscription().tenantId
+    enableRbacAuthorization: true
+    enableSoftDelete: true
+    softDeleteRetentionInDays: 90
+    enablePurgeProtection: true
+    networkAcls: {
+      defaultAction: 'Deny'
+      bypass: 'AzureServices'
+    }
+  }
+}
+
+// Grant App Service access to Key Vault
+resource keyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(keyVault.id, webApp.id, 'Key Vault Secrets User')
+  scope: keyVault
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6') // Key Vault Secrets User
+    principalId: webApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Store secret
+resource secret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: keyVault
+  name: 'DatabaseConnectionString'
+  properties: {
+    value: 'Server=tcp:sql-webapp.database.windows.net,1433;...'
+  }
+}
+```
+
+### Access Secrets in App Service
+```javascript
+// Node.js example
+const { DefaultAzureCredential } = require('@azure/identity');
+const { SecretClient } = require('@azure/keyvault-secrets');
+
+const credential = new DefaultAzureCredential();
+const vaultName = process.env.AZURE_KEYVAULT_NAME;
+const client = new SecretClient(`https://${vaultName}.vault.azure.net`, credential);
+
+async function getSecret(secretName) {
+  const secret = await client.getSecret(secretName);
+  return secret.value;
+}
+
+// Usage
+const dbConnectionString = await getSecret('DatabaseConnectionString');
+```
+
+---
+
+## Azure Functions Best Practices
+
+### Function App with Bicep
+```bicep
+resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
+  name: 'func-${appName}-${environment}'
+  location: location
+  kind: 'functionapp,linux'
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    serverFarmId: appServicePlan.id
+    siteConfig: {
+      linuxFxVersion: 'NODE|20'
+      appSettings: [
+        {
+          name: 'AzureWebJobsStorage'
+          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storageAccount.listKeys().keys[0].value}'
+        }
+        {
+          name: 'FUNCTIONS_EXTENSION_VERSION'
+          value: '~4'
+        }
+        {
+          name: 'FUNCTIONS_WORKER_RUNTIME'
+          value: 'node'
+        }
+      ]
+    }
+  }
+}
+```
+
+### TypeScript Function Example
+```typescript
+// src/functions/httpTrigger.ts
+import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
+
+export async function httpTrigger(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+  context.log('HTTP trigger function processed a request.');
+  
+  const name = request.query.get('name') || await request.text() || 'World';
+  
+  return {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      message: `Hello, ${name}!`,
+      timestamp: new Date().toISOString()
+    })
+  };
+}
+
+app.http('httpTrigger', {
+  methods: ['GET', 'POST'],
+  authLevel: 'function',
+  handler: httpTrigger
+});
+```
+
+---
+
+## Azure DevOps Pipelines
+
+### CI/CD Pipeline for App Service
+```yaml
+# azure-pipelines.yml
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - group: webapp-prod-variables
+  - name: azureServiceConnection
+    value: 'azure-prod-connection'
+  - name: resourceGroupName
+    value: 'rg-webapp-prod'
+  - name: webAppName
+    value: 'app-webapp-prod'
+
+stages:
+  - stage: Build
+    jobs:
+      - job: Build
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '20.x'
+            displayName: 'Install Node.js'
+
+          - script: |
+              npm ci
+              npm run build
+              npm run test
+            displayName: 'Install, build, and test'
+
+          - task: ArchiveFiles@2
+            inputs:
+              rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+              includeRootFolder: false
+              archiveType: 'zip'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+            displayName: 'Archive files'
+
+          - publish: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+            artifact: drop
+            displayName: 'Publish artifact'
+
+  - stage: Deploy
+    dependsOn: Build
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: DeployWebApp
+        environment: 'production'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureWebApp@1
+                  inputs:
+                    azureSubscription: '$(azureServiceConnection)'
+                    appType: 'webAppLinux'
+                    appName: '$(webAppName)'
+                    package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
+                    runtimeStack: 'NODE|20-lts'
+                  displayName: 'Deploy to Azure Web App'
+
+                - task: AzureCLI@2
+                  inputs:
+                    azureSubscription: '$(azureServiceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      az webapp restart \
+                        --name $(webAppName) \
+                        --resource-group $(resourceGroupName)
+                  displayName: 'Restart Web App'
+```
+
+### Bicep Infrastructure Pipeline
+```yaml
+# azure-pipelines-infra.yml
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - infra/**
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - name: azureServiceConnection
+    value: 'azure-prod-connection'
+  - name: resourceGroupName
+    value: 'rg-webapp-prod'
+  - name: location
+    value: 'eastus'
+
+stages:
+  - stage: Validate
+    jobs:
+      - job: ValidateBicep
+        steps:
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                az deployment group validate \
+                  --resource-group $(resourceGroupName) \
+                  --template-file infra/main.bicep \
+                  --parameters @infra/parameters.prod.json
+            displayName: 'Validate Bicep template'
+
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                az deployment group what-if \
+                  --resource-group $(resourceGroupName) \
+                  --template-file infra/main.bicep \
+                  --parameters @infra/parameters.prod.json
+            displayName: 'What-if deployment'
+
+  - stage: Deploy
+    dependsOn: Validate
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: DeployInfrastructure
+        environment: 'production-infra'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - task: AzureCLI@2
+                  inputs:
+                    azureSubscription: '$(azureServiceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      az deployment group create \
+                        --name "infra-$(Build.BuildId)" \
+                        --resource-group $(resourceGroupName) \
+                        --template-file infra/main.bicep \
+                        --parameters @infra/parameters.prod.json
+                  displayName: 'Deploy infrastructure'
+```
+
+---
+
+## Azure Networking
+
+### Virtual Network with Subnets
+```bicep
+resource virtualNetwork 'Microsoft.Network/virtualNetworks@2023-05-01' = {
+  name: 'vnet-${appName}-${environment}'
+  location: location
+  properties: {
+    addressSpace: {
+      addressPrefixes: [
+        '10.0.0.0/16'
+      ]
+    }
+    subnets: [
+      {
+        name: 'snet-web'
+        properties: {
+          addressPrefix: '10.0.1.0/24'
+          privateEndpointNetworkPolicies: 'Disabled'
+          privateLinkServiceNetworkPolicies: 'Enabled'
+        }
+      }
+      {
+        name: 'snet-data'
+        properties: {
+          addressPrefix: '10.0.2.0/24'
+          serviceEndpoints: [
+            {
+              service: 'Microsoft.Sql'
+            }
+            {
+              service: 'Microsoft.Storage'
+            }
+          ]
+        }
+      }
+      {
+        name: 'snet-app'
+        properties: {
+          addressPrefix: '10.0.3.0/24'
+          delegations: [
+            {
+              name: 'delegation'
+              properties: {
+                serviceName: 'Microsoft.Web/serverFarms'
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+
+// Network Security Group
+resource nsg 'Microsoft.Network/networkSecurityGroups@2023-05-01' = {
+  name: 'nsg-${appName}-${environment}'
+  location: location
+  properties: {
+    securityRules: [
+      {
+        name: 'AllowHTTPS'
+        properties: {
+          priority: 100
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          destinationPortRange: '443'
+          sourceAddressPrefix: '*'
+          destinationAddressPrefix: '*'
+        }
+      }
+      {
+        name: 'DenyAll'
+        properties: {
+          priority: 4096
+          direction: 'Inbound'
+          access: 'Deny'
+          protocol: '*'
+          sourcePortRange: '*'
+          destinationPortRange: '*'
+          sourceAddressPrefix: '*'
+          destinationAddressPrefix: '*'
+        }
+      }
+    ]
+  }
+}
+```
+
+### Private Endpoint for Storage
+```bicep
+resource privateEndpoint 'Microsoft.Network/privateEndpoints@2023-05-01' = {
+  name: 'pe-${storageAccount.name}'
+  location: location
+  properties: {
+    subnet: {
+      id: virtualNetwork.properties.subnets[0].id
+    }
+    privateLinkServiceConnections: [
+      {
+        name: 'storage-connection'
+        properties: {
+          privateLinkServiceId: storageAccount.id
+          groupIds: [
+            'blob'
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Azure Monitoring & Alerts
+
+### Application Insights
+```bicep
+resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
+  name: 'appi-${appName}-${environment}'
+  location: location
+  kind: 'web'
+  properties: {
+    Application_Type: 'web'
+    RetentionInDays: 90
+    publicNetworkAccessForIngestion: 'Enabled'
+    publicNetworkAccessForQuery: 'Enabled'
+  }
+}
+
+// Link to Web App
+resource webAppAppSettings 'Microsoft.Web/sites/config@2023-01-01' = {
+  parent: webApp
+  name: 'appsettings'
+  properties: {
+    APPINSIGHTS_INSTRUMENTATIONKEY: appInsights.properties.InstrumentationKey
+    APPLICATIONINSIGHTS_CONNECTION_STRING: appInsights.properties.ConnectionString
+  }
+}
+```
+
+### Metric Alert
+```bicep
+resource metricAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
+  name: 'alert-${appName}-high-cpu'
+  location: 'global'
+  properties: {
+    description: 'Alert when CPU exceeds 80%'
+    severity: 2
+    enabled: true
+    scopes: [
+      appServicePlan.id
+    ]
+    evaluationFrequency: 'PT5M'
+    windowSize: 'PT15M'
+    criteria: {
+      'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria'
+      allOf: [
+        {
+          name: 'HighCPU'
+          metricName: 'CpuPercentage'
+          operator: 'GreaterThan'
+          threshold: 80
+          timeAggregation: 'Average'
+        }
+      ]
+    }
+    actions: [
+      {
+        actionGroupId: actionGroup.id
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Cost Optimization
+
+### Auto-Scaling Configuration
+```bicep
+resource autoScaleSettings 'Microsoft.Insights/autoscalesettings@2022-10-01' = {
+  name: 'autoscale-${appServicePlan.name}'
+  location: location
+  properties: {
+    enabled: true
+    targetResourceUri: appServicePlan.id
+    profiles: [
+      {
+        name: 'Default'
+        capacity: {
+          minimum: '1'
+          maximum: '10'
+          default: '2'
+        }
+        rules: [
+          {
+            metricTrigger: {
+              metricName: 'CpuPercentage'
+              metricResourceUri: appServicePlan.id
+              timeGrain: 'PT1M'
+              statistic: 'Average'
+              timeWindow: 'PT10M'
+              timeAggregation: 'Average'
+              operator: 'GreaterThan'
+              threshold: 70
+            }
+            scaleAction: {
+              direction: 'Increase'
+              type: 'ChangeCount'
+              value: '1'
+              cooldown: 'PT5M'
+            }
+          }
+          {
+            metricTrigger: {
+              metricName: 'CpuPercentage'
+              metricResourceUri: appServicePlan.id
+              timeGrain: 'PT1M'
+              statistic: 'Average'
+              timeWindow: 'PT10M'
+              timeAggregation: 'Average'
+              operator: 'LessThan'
+              threshold: 30
+            }
+            scaleAction: {
+              direction: 'Decrease'
+              type: 'ChangeCount'
+              value: '1'
+              cooldown: 'PT10M'
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Best Practices Checklist
+
+### Security
+- [ ] Use Managed Identities (no connection strings/keys in code)
+- [ ] Store secrets in Key Vault
+- [ ] Enable Azure AD authentication
+- [ ] Use Private Endpoints for PaaS services
+- [ ] Configure Network Security Groups
+- [ ] Enable encryption at rest and in transit
+- [ ] Implement least privilege RBAC
+- [ ] Enable Azure Defender for Cloud
+- [ ] Regular security assessments
+
+### Reliability
+- [ ] Deploy across Availability Zones
+- [ ] Implement health checks
+- [ ] Configure auto-scaling
+- [ ] Use geo-redundant storage
+- [ ] Implement retry policies
+- [ ] Monitor with Application Insights
+- [ ] Set up alerts for critical metrics
+- [ ] Document disaster recovery plan
+
+### Cost
+- [ ] Right-size resources (don't over-provision)
+- [ ] Use Azure Reservations for predictable workloads
+- [ ] Implement auto-scaling
+- [ ] Clean up unused resources
+- [ ] Use Azure Cost Management
+- [ ] Tag all resources for cost allocation
+- [ ] Review cost recommendations monthly
+
+### Operations
+- [ ] Use Infrastructure as Code (Bicep/Terraform)
+- [ ] Implement CI/CD pipelines
+- [ ] Use consistent naming conventions
+- [ ] Tag all resources appropriately
+- [ ] Document architecture and runbooks
+- [ ] Implement centralized logging
+- [ ] Regular backup testing
+- [ ] Automate routine tasks
+
+---
+
+## Related Files
+
+- `280-aws.mdc` - AWS patterns for comparison
+- `140-terraform.mdc` - Multi-cloud Terraform patterns
+- `120-gha.mdc` - GitHub Actions (alternative to Azure DevOps)
+- `310-security.mdc` - Security best practices
+- `260-kubernetes.mdc` - AKS (Azure Kubernetes Service) patterns
+
+---
+
+**Last Updated**: December 2025  
+**Purpose**: Microsoft Azure platform engineering and best practices

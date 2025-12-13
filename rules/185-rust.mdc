@@ -1,0 +1,768 @@
+---
+title: Rust Programming Best Practices
+description: Modern Rust patterns, ownership, error handling, async/await, and production-ready development practices
+priority: 185
+alwaysApply: false
+files:
+  include:
+    - "**/*.rs"
+    - "**/Cargo.toml"
+    - "**/Cargo.lock"
+---
+
+# Rust Programming Best Practices
+
+## Guiding Principles
+
+1. **Ownership & Borrowing**: Master Rust's ownership system for memory safety
+2. **Zero-Cost Abstractions**: Write high-level code without runtime overhead
+3. **Error Handling**: Use `Result` and `Option` explicitly, avoid panics
+4. **Fearless Concurrency**: Leverage Rust's type system for safe concurrency
+5. **Idiomatic Rust**: Follow community conventions (rustfmt, clippy)
+
+---
+
+## Project Structure
+
+### Standard Layout
+```
+my-project/
+├── Cargo.toml              # Project manifest
+├── Cargo.lock              # Dependency lock file
+├── src/
+│   ├── main.rs            # Binary entry point
+│   ├── lib.rs             # Library root
+│   ├── bin/               # Additional binaries
+│   │   └── another.rs
+│   └── modules/
+│       ├── mod.rs
+│       ├── user.rs
+│       └── auth.rs
+├── tests/                 # Integration tests
+│   └── integration_test.rs
+├── benches/               # Benchmarks
+│   └── benchmark.rs
+├── examples/              # Example code
+│   └── basic_usage.rs
+└── README.md
+```
+
+### Cargo.toml
+```toml
+[package]
+name = "webapp"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+authors = ["Team <team@acme.com>"]
+license = "MIT OR Apache-2.0"
+description = "Web application backend"
+repository = "https://github.com/acme/webapp"
+
+[dependencies]
+tokio = { version = "1.35", features = ["full"] }
+axum = "0.7"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sqlx = { version = "0.7", features = ["runtime-tokio", "postgres", "uuid", "chrono"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+anyhow = "1.0"
+thiserror = "1.0"
+uuid = { version = "1.6", features = ["serde", "v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+tokio-test = "0.4"
+mockall = "0.12"
+criterion = "0.5"
+
+[[bench]]
+name = "my_benchmark"
+harness = false
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+```
+
+---
+
+## Ownership & Borrowing
+
+### Ownership Rules
+```rust
+// Rule 1: Each value has an owner
+let s = String::from("hello");
+
+// Rule 2: Only one owner at a time
+let s1 = s;  // s moved to s1, s is no longer valid
+// println!("{}", s);  // ❌ Error: value borrowed after move
+
+// Rule 3: Value is dropped when owner goes out of scope
+{
+    let temp = String::from("temporary");
+} // temp dropped here
+```
+
+### Borrowing (References)
+```rust
+// ✅ GOOD - Immutable borrows
+fn calculate_length(s: &String) -> usize {
+    s.len()
+}
+
+let s1 = String::from("hello");
+let len = calculate_length(&s1);
+println!("{} has length {}", s1, len); // ✅ s1 still valid
+
+// ✅ GOOD - Mutable borrow
+fn append_world(s: &mut String) {
+    s.push_str(", world!");
+}
+
+let mut s = String::from("hello");
+append_world(&mut s);
+println!("{}", s); // "hello, world!"
+
+// ❌ BAD - Multiple mutable borrows
+let mut s = String::from("hello");
+let r1 = &mut s;
+let r2 = &mut s; // ❌ Error: cannot borrow as mutable more than once
+```
+
+### Lifetimes
+```rust
+// ✅ GOOD - Explicit lifetimes
+fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
+    if x.len() > y.len() {
+        x
+    } else {
+        y
+    }
+}
+
+// ✅ GOOD - Struct with lifetime
+struct User<'a> {
+    name: &'a str,
+    email: &'a str,
+}
+
+impl<'a> User<'a> {
+    fn new(name: &'a str, email: &'a str) -> Self {
+        Self { name, email }
+    }
+}
+
+// ✅ EXCELLENT - Use owned types when possible
+struct UserOwned {
+    name: String,
+    email: String,
+}
+```
+
+---
+
+## Error Handling
+
+### Use Result for Recoverable Errors
+```rust
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum AppError {
+    #[error("Database error: {0}")]
+    Database(#[from] sqlx::Error),
+    
+    #[error("User not found: {0}")]
+    UserNotFound(uuid::Uuid),
+    
+    #[error("Invalid input: {0}")]
+    InvalidInput(String),
+    
+    #[error("Authentication failed")]
+    AuthenticationFailed,
+}
+
+type Result<T> = std::result::Result<T, AppError>;
+
+// ✅ GOOD - Return Result
+async fn get_user(id: uuid::Uuid) -> Result<User> {
+    let user = sqlx::query_as!(
+        User,
+        "SELECT * FROM users WHERE id = $1",
+        id
+    )
+    .fetch_optional(&pool)
+    .await?
+    .ok_or(AppError::UserNotFound(id))?;
+    
+    Ok(user)
+}
+
+// ✅ GOOD - Use ? operator for error propagation
+async fn process_user(id: uuid::Uuid) -> Result<()> {
+    let user = get_user(id).await?;
+    validate_user(&user)?;
+    update_user(&user).await?;
+    Ok(())
+}
+```
+
+### Option for Nullable Values
+```rust
+// ✅ GOOD - Use Option
+fn find_user_by_email(email: &str) -> Option<User> {
+    // Return Some(user) or None
+}
+
+// ✅ GOOD - Pattern matching
+match find_user_by_email("user@acme.com") {
+    Some(user) => println!("Found: {}", user.name),
+    None => println!("Not found"),
+}
+
+// ✅ GOOD - Combinators
+let user_name = find_user_by_email("user@acme.com")
+    .map(|u| u.name)
+    .unwrap_or_else(|| String::from("Guest"));
+```
+
+### Avoid Panics in Production
+```rust
+// ❌ BAD - Panic in production code
+fn divide(a: i32, b: i32) -> i32 {
+    a / b  // Panics if b == 0
+}
+
+// ✅ GOOD - Return Result
+fn divide(a: i32, b: i32) -> Result<i32, String> {
+    if b == 0 {
+        Err("Division by zero".to_string())
+    } else {
+        Ok(a / b)
+    }
+}
+
+// ✅ EXCELLENT - Custom error type
+fn divide(a: i32, b: i32) -> Result<i32, DivisionError> {
+    if b == 0 {
+        Err(DivisionError::DivideByZero)
+    } else {
+        Ok(a / b)
+    }
+}
+```
+
+---
+
+## Async/Await with Tokio
+
+### Basic Async Function
+```rust
+use tokio;
+
+#[tokio::main]
+async fn main() {
+    let result = fetch_data().await;
+    println!("Result: {:?}", result);
+}
+
+async fn fetch_data() -> Result<String, Box<dyn std::error::Error>> {
+    let response = reqwest::get("https://api.acme.com/data").await?;
+    let body = response.text().await?;
+    Ok(body)
+}
+```
+
+### Concurrent Tasks
+```rust
+use tokio::task;
+
+// ✅ GOOD - Join multiple tasks
+async fn fetch_all_data() -> Result<(User, Posts, Comments)> {
+    let (user, posts, comments) = tokio::try_join!(
+        fetch_user(),
+        fetch_posts(),
+        fetch_comments(),
+    )?;
+    
+    Ok((user, posts, comments))
+}
+
+// ✅ GOOD - Spawn background tasks
+async fn process_in_background() {
+    let handle = task::spawn(async {
+        // Long-running task
+        heavy_computation().await
+    });
+    
+    // Do other work...
+    
+    // Wait for background task
+    let result = handle.await.unwrap();
+}
+```
+
+### Tokio Runtime Configuration
+```rust
+#[tokio::main(flavor = "multi_thread", worker_threads = 4)]
+async fn main() {
+    // Your async code
+}
+
+// Or explicit runtime
+fn main() {
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(4)
+        .thread_name("my-worker")
+        .thread_stack_size(3 * 1024 * 1024)
+        .enable_all()
+        .build()
+        .unwrap();
+    
+    runtime.block_on(async {
+        // Your async code
+    });
+}
+```
+
+---
+
+## Web API with Axum
+
+### Basic HTTP Server
+```rust
+use axum::{
+    extract::{Path, Query, State},
+    http::StatusCode,
+    response::{IntoResponse, Json},
+    routing::{get, post},
+    Router,
+};
+use serde::{Deserialize, Serialize};
+use std::sync::Arc;
+
+#[derive(Clone)]
+struct AppState {
+    db: sqlx::PgPool,
+}
+
+#[tokio::main]
+async fn main() {
+    let db = sqlx::postgres::PgPool::connect(&std::env::var("DATABASE_URL").unwrap())
+        .await
+        .unwrap();
+    
+    let state = Arc::new(AppState { db });
+    
+    let app = Router::new()
+        .route("/health", get(health_check))
+        .route("/users", get(list_users).post(create_user))
+        .route("/users/:id", get(get_user).delete(delete_user))
+        .with_state(state);
+    
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080")
+        .await
+        .unwrap();
+    
+    axum::serve(listener, app).await.unwrap();
+}
+
+// Health check
+async fn health_check() -> impl IntoResponse {
+    (StatusCode::OK, Json(serde_json::json!({
+        "status": "healthy",
+        "timestamp": chrono::Utc::now()
+    })))
+}
+
+// List users
+#[derive(Deserialize)]
+struct ListUsersQuery {
+    limit: Option<i64>,
+    offset: Option<i64>,
+}
+
+async fn list_users(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<ListUsersQuery>,
+) -> Result<Json<Vec<User>>, AppError> {
+    let limit = query.limit.unwrap_or(10);
+    let offset = query.offset.unwrap_or(0);
+    
+    let users = sqlx::query_as!(
+        User,
+        "SELECT * FROM users LIMIT $1 OFFSET $2",
+        limit,
+        offset
+    )
+    .fetch_all(&state.db)
+    .await?;
+    
+    Ok(Json(users))
+}
+
+// Create user
+#[derive(Deserialize)]
+struct CreateUserRequest {
+    name: String,
+    email: String,
+}
+
+async fn create_user(
+    State(state): State<Arc<AppState>>,
+    Json(payload): Json<CreateUserRequest>,
+) -> Result<(StatusCode, Json<User>), AppError> {
+    let user = sqlx::query_as!(
+        User,
+        "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING *",
+        payload.name,
+        payload.email
+    )
+    .fetch_one(&state.db)
+    .await?;
+    
+    Ok((StatusCode::CREATED, Json(user)))
+}
+
+// Error handling
+impl IntoResponse for AppError {
+    fn into_response(self) -> axum::response::Response {
+        let (status, message) = match self {
+            AppError::UserNotFound(_) => (StatusCode::NOT_FOUND, self.to_string()),
+            AppError::InvalidInput(_) => (StatusCode::BAD_REQUEST, self.to_string()),
+            AppError::Database(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Database error".to_string()),
+            _ => (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error".to_string()),
+        };
+        
+        (status, Json(serde_json::json!({
+            "error": message
+        }))).into_response()
+    }
+}
+```
+
+---
+
+## Testing
+
+### Unit Tests
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_user_creation() {
+        let user = User::new("John", "john@acme.com");
+        assert_eq!(user.name, "John");
+        assert_eq!(user.email, "john@acme.com");
+    }
+
+    #[test]
+    #[should_panic(expected = "Invalid email")]
+    fn test_invalid_email() {
+        User::new("John", "invalid");
+    }
+}
+```
+
+### Async Tests
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_fetch_user() {
+        let user = fetch_user(uuid::Uuid::new_v4()).await;
+        assert!(user.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_user_not_found() {
+        let result = fetch_user(uuid::Uuid::new_v4()).await;
+        assert!(matches!(result, Err(AppError::UserNotFound(_))));
+    }
+}
+```
+
+### Integration Tests
+```rust
+// tests/integration_test.rs
+use webapp::*;
+
+#[tokio::test]
+async fn test_api_health_check() {
+    let app = create_test_app().await;
+    
+    let response = app
+        .oneshot(Request::builder().uri("/health").body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+    
+    assert_eq!(response.status(), StatusCode::OK);
+}
+```
+
+---
+
+## Common Patterns
+
+### Builder Pattern
+```rust
+#[derive(Debug, Clone)]
+pub struct UserBuilder {
+    name: Option<String>,
+    email: Option<String>,
+    age: Option<u32>,
+}
+
+impl UserBuilder {
+    pub fn new() -> Self {
+        Self {
+            name: None,
+            email: None,
+            age: None,
+        }
+    }
+
+    pub fn name(mut self, name: impl Into<String>) -> Self {
+        self.name = Some(name.into());
+        self
+    }
+
+    pub fn email(mut self, email: impl Into<String>) -> Self {
+        self.email = Some(email.into());
+        self
+    }
+
+    pub fn age(mut self, age: u32) -> Self {
+        self.age = Some(age);
+        self
+    }
+
+    pub fn build(self) -> Result<User, String> {
+        Ok(User {
+            id: uuid::Uuid::new_v4(),
+            name: self.name.ok_or("Name is required")?,
+            email: self.email.ok_or("Email is required")?,
+            age: self.age,
+            created_at: chrono::Utc::now(),
+        })
+    }
+}
+
+// Usage
+let user = UserBuilder::new()
+    .name("John")
+    .email("john@acme.com")
+    .age(30)
+    .build()?;
+```
+
+### newtype Pattern
+```rust
+// ✅ GOOD - Type safety with newtype
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct UserId(uuid::Uuid);
+
+impl UserId {
+    pub fn new() -> Self {
+        Self(uuid::Uuid::new_v4())
+    }
+
+    pub fn from_uuid(id: uuid::Uuid) -> Self {
+        Self(id)
+    }
+
+    pub fn as_uuid(&self) -> &uuid::Uuid {
+        &self.0
+    }
+}
+
+// Can't accidentally mix up UserId with other UUIDs
+fn get_user(id: UserId) -> Result<User> {
+    // ...
+}
+```
+
+### Trait Implementation
+```rust
+// ✅ GOOD - Implement common traits
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct User {
+    pub id: UserId,
+    pub name: String,
+    pub email: String,
+}
+
+impl Default for User {
+    fn default() -> Self {
+        Self {
+            id: UserId::new(),
+            name: String::new(),
+            email: String::new(),
+        }
+    }
+}
+
+impl std::fmt::Display for User {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} <{}>", self.name, self.email)
+    }
+}
+```
+
+---
+
+## Best Practices
+
+### Use Clippy
+```bash
+# Run clippy
+cargo clippy
+
+# Treat warnings as errors
+cargo clippy -- -D warnings
+
+# Auto-fix suggestions
+cargo clippy --fix
+```
+
+### Format Code
+```bash
+# Format code
+cargo fmt
+
+# Check formatting
+cargo fmt -- --check
+```
+
+### Dependency Management
+```bash
+# Check for outdated dependencies
+cargo outdated
+
+# Update dependencies
+cargo update
+
+# Audit for security vulnerabilities
+cargo audit
+```
+
+### Documentation
+```rust
+/// Fetches a user by ID from the database.
+///
+/// # Arguments
+///
+/// * `id` - The unique identifier of the user
+///
+/// # Returns
+///
+/// * `Ok(User)` - The user if found
+/// * `Err(AppError::UserNotFound)` - If the user doesn't exist
+///
+/// # Examples
+///
+/// ```
+/// use webapp::*;
+///
+/// #[tokio::main]
+/// async fn main() {
+///     let user = get_user(UserId::new()).await?;
+///     println!("User: {}", user.name);
+/// }
+/// ```
+pub async fn get_user(id: UserId) -> Result<User> {
+    // Implementation
+}
+
+// Generate documentation
+// cargo doc --open
+```
+
+---
+
+## Performance Optimization
+
+### Use &str Over String When Possible
+```rust
+// ✅ GOOD - Borrow when you don't need ownership
+fn process_name(name: &str) {
+    println!("Processing: {}", name);
+}
+
+// ❌ BAD - Unnecessary allocation
+fn process_name(name: String) {
+    println!("Processing: {}", name);
+}
+```
+
+### Use Iterators
+```rust
+// ✅ GOOD - Iterator chains (lazy evaluation)
+let sum: i32 = (1..=100)
+    .filter(|x| x % 2 == 0)
+    .map(|x| x * 2)
+    .sum();
+
+// ❌ BAD - Multiple allocations
+let mut vec = Vec::new();
+for i in 1..=100 {
+    if i % 2 == 0 {
+        vec.push(i);
+    }
+}
+let mut vec2 = Vec::new();
+for i in vec {
+    vec2.push(i * 2);
+}
+let sum: i32 = vec2.iter().sum();
+```
+
+### Avoid Unnecessary Clones
+```rust
+// ❌ BAD - Unnecessary clone
+fn process_users(users: Vec<User>) {
+    for user in users.clone() {
+        println!("{}", user.name);
+    }
+}
+
+// ✅ GOOD - Borrow
+fn process_users(users: &[User]) {
+    for user in users {
+        println!("{}", user.name);
+    }
+}
+```
+
+---
+
+## Naming Conventions
+
+- **Types**: PascalCase (`User`, `AppError`)
+- **Functions/Variables**: snake_case (`get_user`, `user_name`)
+- **Constants**: SCREAMING_SNAKE_CASE (`MAX_RETRIES`, `API_URL`)
+- **Lifetimes**: Short lowercase (`'a`, `'b`)
+- **Type Parameters**: Single uppercase (`T`, `E`) or PascalCase (`TError`)
+- **Modules**: snake_case (`user_service`, `auth`)
+
+---
+
+## Related Files
+
+- `160-python.mdc` - Python patterns (similar async/await)
+- `180-go.mdc` - Go patterns (comparison)
+- `300-testing.mdc` - Testing strategies
+- `310-security.mdc` - Security best practices
+
+---
+
+**Last Updated**: December 2025  
+**Purpose**: Rust programming language best practices and patterns

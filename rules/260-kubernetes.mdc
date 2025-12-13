@@ -1,0 +1,513 @@
+---
+title: Kubernetes & EKS Engineering Ruleset
+description: Best practices for Kubernetes development, EKS operations, CRD development, and concurrency patterns.
+priority: 260
+alwaysApply: false
+files:
+  include:
+    - "**/*.go"
+    - "**/k8s/**/*.yaml"
+    - "**/kubernetes/**/*.yaml"
+    - "**/manifests/**/*.yaml"
+    - "**/deployments/**/*.yaml"
+---
+
+# Kubernetes & EKS Engineering Ruleset
+
+**Goal:** Build reliable, maintainable Kubernetes applications and operators with proper CRD documentation, concurrency handling, and EKS best practices.
+
+## Custom Resource Definitions (CRDs)
+
+### Documentation Requirements
+
+CRDs must be **well documented** with rich comments that become field descriptions in the generated OpenAPI schema and CRD YAML.
+
+**Use kubebuilder validation tags** and **comments above each field** to ensure a `description` field is set:
+
+```go
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// ExecutionEngine represents a compute execution engine in the cluster.
+// It manages the lifecycle of execution workloads and provides isolation
+// between different execution contexts.
+type ExecutionEngine struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   ExecutionEngineSpec   `json:"spec,omitempty"`
+	Status ExecutionEngineStatus `json:"status,omitempty"`
+}
+
+type ExecutionEngineSpec struct {
+	// +kubebuilder:validation:Required
+	// Address configuration for the execution service endpoint.
+	// This must be a valid network address reachable from the cluster.
+	Address AddressSpec `json:"address"`
+	
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=30
+	// Timeout in seconds for data workload execution.
+	// Workloads exceeding this timeout will be terminated.
+	TimeoutSeconds int32 `json:"timeoutSeconds,omitempty"`
+	
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=1
+	// Number of replicas for the execution engine.
+	// Scale this based on expected workload volume.
+	Replicas *int32 `json:"replicas,omitempty"`
+	
+	// +kubebuilder:validation:Optional
+	// Resource limits for execution engine pods.
+	// If not specified, default limits will be applied.
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+}
+```
+
+### Printer Columns
+
+Additional printer columns show essential data in `kubectl get` output:
+
+```go
+// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase"
+// +kubebuilder:printcolumn:name="Replicas",type="integer",JSONPath=".spec.replicas"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+```
+
+**Output:**
+```bash
+$ kubectl get executionengines
+NAME              STATUS   REPLICAS   AGE
+spark-engine      Ready    3          5m
+flink-engine      Pending  1          2m
+```
+
+## Concurrency and Status Updates
+
+### Avoid Retry Logic for Conflicts
+
+**CRITICAL:** When encountering optimistic concurrency conflicts ("object has been modified" errors), **avoid retry logic** as it masks genuine concurrency issues.
+
+**Instead:**
+1. Identify why multiple controllers are updating the same resource
+2. Fix the root cause
+3. Ensure single ownership patterns
+
+```go
+// ❌ BAD: Retrying on conflict masks the real problem
+func (r *Reconciler) updateStatus(ctx context.Context, obj *MyResource) error {
+	for i := 0; i < 5; i++ {
+		err := r.Client.Status().Update(ctx, obj)
+		if err == nil {
+			return nil
+		}
+		if !apierrors.IsConflict(err) {
+			return err
+		}
+		// Retry on conflict - THIS IS WRONG
+		time.Sleep(time.Second)
+		if err := r.Client.Get(ctx, client.ObjectKeyFromObject(obj), obj); err != nil {
+			return err
+		}
+	}
+	return fmt.Errorf("failed after retries")
+}
+
+// ✅ GOOD: Single ownership, no retries
+func (r *Reconciler) updateStatus(ctx context.Context, obj *MyResource) error {
+	// Only this controller updates status - no conflicts expected
+	if err := r.Client.Status().Update(ctx, obj); err != nil {
+		if apierrors.IsConflict(err) {
+			// Conflict indicates architectural problem - log and investigate
+			r.Log.Error(err, "Unexpected conflict updating status - check for multiple controllers")
+			return fmt.Errorf("status update conflict: %w", err)
+		}
+		return err
+	}
+	return nil
+}
+```
+
+### Single Ownership Patterns
+
+**Ensure only one controller updates a resource's status:**
+
+```go
+// ✅ GOOD: Clear ownership
+// This controller owns status.phase
+func (r *PhaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	obj := &MyResource{}
+	if err := r.Get(ctx, req.NamespacedName, obj); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+	
+	// Calculate new phase
+	newPhase := r.calculatePhase(obj)
+	
+	// Update only if changed
+	if obj.Status.Phase != newPhase {
+		obj.Status.Phase = newPhase
+		if err := r.Status().Update(ctx, obj); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+	
+	return ctrl.Result{}, nil
+}
+```
+
+### Audit Reconciliation Logic
+
+Check for race conditions:
+
+```go
+// ✅ GOOD: Check current state before updating
+func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	obj := &MyResource{}
+	if err := r.Get(ctx, req.NamespacedName, obj); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+	
+	// Check if already in desired state
+	if obj.Status.Phase == "Ready" && obj.Spec.DesiredReplicas == *obj.Status.Replicas {
+		return ctrl.Result{}, nil  // No work needed
+	}
+	
+	// Perform reconciliation
+	// ...
+}
+```
+
+## EKS-Specific Patterns
+
+### IAM Roles for Service Accounts (IRSA)
+
+```yaml
+# ServiceAccount with IRSA
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: my-app
+  namespace: default
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/my-app-role
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+spec:
+  template:
+    spec:
+      serviceAccountName: my-app
+      containers:
+      - name: app
+        image: my-app:latest
+```
+
+### EKS Node Groups
+
+```yaml
+# Terraform example
+resource "aws_eks_node_group" "main" {
+  cluster_name    = aws_eks_cluster.main.name
+  node_group_name = "main"
+  node_role_arn   = aws_iam_role.node.arn
+  subnet_ids      = aws_subnet.private[*].id
+  
+  scaling_config {
+    desired_size = 3
+    max_size     = 10
+    min_size     = 1
+  }
+  
+  instance_types = ["t3.medium"]
+  
+  labels = {
+    Environment = "production"
+    Workload    = "general"
+  }
+  
+  taints {
+    key    = "dedicated"
+    value  = "true"
+    effect = "NO_SCHEDULE"
+  }
+}
+```
+
+### EKS Add-ons
+
+```yaml
+# VPC CNI
+resource "aws_eks_addon" "vpc_cni" {
+  cluster_name = aws_eks_cluster.main.name
+  addon_name   = "vpc-cni"
+  addon_version = "v1.16.0-eksbuild.1"
+}
+
+# CoreDNS
+resource "aws_eks_addon" "coredns" {
+  cluster_name = aws_eks_cluster.main.name
+  addon_name   = "coredns"
+}
+
+# kube-proxy
+resource "aws_eks_addon" "kube_proxy" {
+  cluster_name = aws_eks_cluster.main.name
+  addon_name   = "kube-proxy"
+}
+```
+
+## Resource Management
+
+### Resource Requests and Limits
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+spec:
+  template:
+    spec:
+      containers:
+      - name: app
+        image: my-app:latest
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+```
+
+### Pod Disruption Budgets
+
+```yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: my-app-pdb
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: my-app
+```
+
+### Horizontal Pod Autoscaler
+
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: my-app-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: my-app
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+```
+
+## Security Best Practices
+
+### Network Policies
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: my-app-netpol
+spec:
+  podSelector:
+    matchLabels:
+      app: my-app
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: frontend
+    ports:
+    - protocol: TCP
+      port: 8080
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: database
+    ports:
+    - protocol: TCP
+      port: 5432
+```
+
+### Pod Security Standards
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: my-app
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+```
+
+### RBAC
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: my-app-role
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list", "watch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: my-app-rolebinding
+subjects:
+- kind: ServiceAccount
+  name: my-app
+  namespace: default
+roleRef:
+  kind: Role
+  name: my-app-role
+  apiGroup: rbac.authorization.k8s.io
+```
+
+## Observability
+
+### ServiceMonitor (Prometheus)
+
+```yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: my-app
+spec:
+  selector:
+    matchLabels:
+      app: my-app
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics
+```
+
+### Pod Disruption Monitoring
+
+```go
+// Monitor for frequent conflicts
+func (r *Reconciler) recordConflict(ctx context.Context, obj client.Object) {
+	r.Recorder.Eventf(
+		obj,
+		corev1.EventTypeWarning,
+		"UpdateConflict",
+		"Conflict updating resource - investigate multiple controllers",
+	)
+	// Also log metrics
+	conflictCounter.Inc()
+}
+```
+
+## EKS Cluster Configuration
+
+### Cluster Endpoint Access
+
+```hcl
+resource "aws_eks_cluster" "main" {
+  name     = "my-cluster"
+  role_arn = aws_iam_role.cluster.arn
+  
+  vpc_config {
+    subnet_ids              = aws_subnet.private[*].id
+    endpoint_private_access = true
+    endpoint_public_access  = true
+    public_access_cidrs     = ["0.0.0.0/0"]  # Restrict in production
+  }
+  
+  enabled_cluster_log_types = [
+    "api",
+    "audit",
+    "authenticator",
+    "controllerManager",
+    "scheduler"
+  ]
+}
+```
+
+### OIDC Provider
+
+```hcl
+data "tls_certificate" "eks" {
+  url = aws_eks_cluster.main.identity[0].oidc[0].issuer
+}
+
+resource "aws_iam_openid_connect_provider" "eks" {
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.eks.certificates[0].sha1_fingerprint]
+  url             = aws_eks_cluster.main.identity[0].oidc[0].issuer
+}
+```
+
+## Best Practices
+
+### Do's
+
+- ✅ Document CRDs with kubebuilder tags and comments
+- ✅ Use printer columns for `kubectl get` output
+- ✅ Ensure single ownership for status updates
+- ✅ Use IRSA for AWS service access
+- ✅ Set resource requests and limits
+- ✅ Use Network Policies for security
+- ✅ Monitor for concurrency conflicts
+- ✅ Use Pod Disruption Budgets
+
+### Don'ts
+
+- ❌ Retry on concurrency conflicts
+- ❌ Allow multiple controllers to update same resource
+- ❌ Skip CRD documentation
+- ❌ Hardcode AWS credentials
+- ❌ Skip resource limits
+- ❌ Ignore conflict errors
+
+## Review Checklist
+
+When reviewing Kubernetes code, check:
+
+- [ ] CRDs have comprehensive kubebuilder documentation
+- [ ] Printer columns are defined for `kubectl get`
+- [ ] No retry logic on concurrency conflicts
+- [ ] Single ownership for status updates
+- [ ] IRSA used for AWS access (EKS)
+- [ ] Resource requests and limits set
+- [ ] Network Policies configured
+- [ ] Pod Security Standards applied
+- [ ] RBAC is least privilege
+- [ ] Observability configured (metrics, logs)
+---
+
+**Last Updated**: December 2025

@@ -1,0 +1,684 @@
+---
+title: Markdown & Diagramming Style Guide
+description: Standardized rules for generating Markdown files using GitHub-flavored alerts and Mermaid diagrams for visual documentation.
+priority: 800
+alwaysApply: true
+files:
+  include:
+    - "**/*.md"
+    - "**/*.mdx"
+    - "README.md"
+    - "CONTRIBUTING.md"
+    - "CHANGELOG.md"
+    - "docs/**/*.md"
+    - ".github/**/*.md"
+---
+
+## GitHub Alert Callouts
+
+Use the following five alert types for their specified purposes:
+
+- `> [!NOTE]` - For supplementary information, explanations, or context that enhances understanding.
+- `> [!TIP]` - For helpful suggestions, best practices, or shortcuts that improve efficiency.
+- `> [!IMPORTANT]` - For critical information that directly impacts the success or completion of tasks.
+- `> [!WARNING]` - For urgent information about potential issues, errors, or immediate concerns.
+- `> [!CAUTION]` - For information about risks, potential negative consequences, or things to avoid.
+
+**Example:**
+```markdown
+> [!NOTE]
+> This feature requires Node.js version 18 or higher.
+
+> [!TIP]
+> Use the `--dry-run` flag to preview changes before applying.
+
+> [!IMPORTANT]
+> Always backup your data before running migrations.
+
+> [!WARNING]
+> This endpoint is deprecated and will be removed in v3.0.
+
+> [!CAUTION]
+> Running this command will permanently delete all data.
+```
+
+---
+
+## Mermaid Diagrams
+
+Use Mermaid to create visual representations of processes, systems, and data flows.
+
+**Generate diagrams using Mermaid syntax - use features like `flowchart`, `graph`, `sequenceDiagram`, `gantt`, `pie`, `autonumber`, `nodenumbering` to create visual representations of processes, systems, or data flows.**
+
+> [!TIP]
+> Mermaid diagrams render automatically in GitHub README files, documentation, and pull requests without requiring external tools.
+
+### Diagram Types Reference
+
+| Type | Declaration | Use Case |
+|------|-------------|----------|
+| **Flowchart** | `flowchart TD` | Process flows, decision trees, algorithms |
+| **Sequence** | `sequenceDiagram` | API interactions, authentication flows |
+| **Gantt** | `gantt` | Project timelines, release schedules |
+| **Class** | `classDiagram` | Object models, system architecture |
+| **State** | `stateDiagram-v2` | Lifecycle, workflow automation |
+| **ER Diagram** | `erDiagram` | Database schemas, relationships |
+| **Pie Chart** | `pie title "..."` | Statistics, proportions |
+| **Git Graph** | `gitGraph` | Branching strategies, release workflows |
+
+---
+
+### 1. Flowcharts
+
+Use for decision flows, processes, and algorithmic logic.
+
+```mermaid
+flowchart TD
+    Start([Start]) --> Decision{Valid?}
+    Decision -->|Yes| Process[Process Data]
+    Decision -->|No| Error[Show Error]
+    Process --> End([End])
+    Error --> End
+```
+
+**Key Features:**
+- Directions: `TD` (Top-Down), `LR` (Left-Right), `BT`, `RL`
+- Node shapes: `[]` rectangle, `()` rounded, `{}` diamond, `[()]` stadium, `[[]]` subroutine, `[/Input/]` parallelogram
+- Arrows: `-->` solid, `-.->` dotted, `==>` thick
+
+**Real-World Example (API Gateway):**
+```mermaid
+flowchart LR
+    A[Client Request] --> B{Auth Valid?}
+    B -->|Yes| C[Rate Limit Check]
+    B -->|No| D[401 Unauthorized]
+    C -->|Under Limit| E[Process Request]
+    C -->|Over Limit| F[429 Too Many Requests]
+    E --> G[Return Response]
+    D --> H([End])
+    F --> H
+    G --> H
+```
+
+> [!NOTE]
+> Use descriptive node IDs (e.g., `AuthCheck` instead of `A`) for complex diagrams to improve maintainability.
+
+---
+
+### 2. Sequence Diagrams
+
+Use for interactions between actors, systems, or components over time.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant User
+    participant API
+    participant Database
+    
+    User->>API: POST /login
+    activate API
+    API->>Database: Validate credentials
+    Database-->>API: User data
+    API-->>User: JWT token
+    deactivate API
+```
+
+**Key Features:**
+- `autonumber` - Auto-number steps
+- `activate`/`deactivate` - Activation boxes
+- Arrows: `->` solid, `-->` dotted, `->>` solid arrow, `-->>` dotted arrow
+- `Note over User,API: Text` - Add notes
+- `loop ... end` - Loops
+- `alt ... else ... end` - Alternatives
+
+**Real-World Example (OAuth Flow):**
+```mermaid
+sequenceDiagram
+    autonumber
+    participant User
+    participant Client
+    participant AuthServer
+    participant ResourceServer
+    
+    User->>Client: Request protected resource
+    Client->>AuthServer: Authorization request
+    AuthServer-->>User: Login prompt
+    User->>AuthServer: Submit credentials
+    AuthServer-->>Client: Authorization code
+    Client->>AuthServer: Exchange code for token
+    AuthServer-->>Client: Access token
+    Client->>ResourceServer: Request with token
+    ResourceServer-->>Client: Protected resource
+    Client-->>User: Display resource
+```
+
+> [!TIP]
+> Use `participant` declarations at the top to control the order of actors in your diagram.
+
+---
+
+### 3. Gantt Charts
+
+Use for project timelines, schedules, and task dependencies.
+
+```mermaid
+gantt
+    title Project Timeline
+    dateFormat YYYY-MM-DD
+    section Planning
+        Requirements      :a1, 2024-01-01, 10d
+        Design           :a2, after a1, 15d
+    section Development
+        Backend API      :b1, after a2, 20d
+        Frontend         :b2, after a2, 25d
+        Testing          :b3, after b1, 10d
+    section Deployment
+        Staging Deploy   :c1, after b3, 3d
+        Production       :milestone, c2, after c1, 1d
+```
+
+**Key Features:**
+- Date formats: `YYYY-MM-DD`, `DD-MM-YYYY`
+- Task definition: `Task name :id, start, duration`
+- Dependencies: `after taskId`
+- Milestones: `:milestone, id, date, 0d`
+- Sections for grouping
+
+**Real-World Example (Software Release):**
+```mermaid
+gantt
+    title Q1 2024 Release Cycle
+    dateFormat YYYY-MM-DD
+    section Phase 1
+        Planning & Design    :p1, 2024-01-01, 14d
+        Security Review      :p2, after p1, 5d
+    section Phase 2
+        Feature Development  :d1, after p2, 30d
+        Unit Testing         :d2, after d1, 10d
+        Integration Tests    :d3, after d2, 7d
+    section Phase 3
+        Beta Release         :milestone, b1, after d3, 0d
+        User Feedback        :b2, after b1, 14d
+        Bug Fixes            :b3, after b2, 10d
+    section Phase 4
+        Production Deploy    :milestone, prod, after b3, 0d
+```
+
+---
+
+### 4. Class Diagrams
+
+Use for object-oriented systems, database schemas, or API structures.
+
+```mermaid
+classDiagram
+    class User {
+        +String id
+        +String email
+        +String passwordHash
+        +DateTime createdAt
+        +login(email, password) Boolean
+        +resetPassword() void
+    }
+    
+    class Role {
+        +String name
+        +String[] permissions
+    }
+    
+    class Session {
+        +String token
+        +DateTime expiresAt
+        +validate() Boolean
+    }
+    
+    User "1" --> "0..*" Session : has
+    User "1" --> "1..*" Role : assigned
+```
+
+**Key Features:**
+- Visibility: `+` public, `-` private, `#` protected, `~` package
+- Relationships: `-->` association, `--*` composition, `--o` aggregation, `--|>` inheritance
+- Multiplicity: `"1"`, `"0..*"`, `"1..*"`
+
+**Real-World Example (E-commerce):**
+```mermaid
+classDiagram
+    class Customer {
+        +UUID id
+        +String email
+        +String name
+        +placeOrder(cart) Order
+    }
+    
+    class Order {
+        +UUID id
+        +DateTime createdAt
+        +OrderStatus status
+        +Decimal total
+        +calculateTotal() Decimal
+    }
+    
+    class OrderItem {
+        +UUID productId
+        +Integer quantity
+        +Decimal price
+    }
+    
+    class Product {
+        +UUID id
+        +String name
+        +Decimal price
+        +Integer stock
+    }
+    
+    Customer "1" --> "0..*" Order : places
+    Order "1" *-- "1..*" OrderItem : contains
+    OrderItem "1" --> "1" Product : references
+```
+
+---
+
+### 5. State Diagrams
+
+Use for state transitions, workflows, or lifecycle processes.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Draft
+    Draft --> Review : submit
+    Review --> Approved : approve
+    Review --> Rejected : reject
+    Rejected --> Draft : revise
+    Approved --> Published : publish
+    Published --> [*]
+```
+
+**Key Features:**
+- `[*]` - Start/end state
+- `State1 --> State2 : trigger` - Transitions
+- Composite states (nested)
+- Concurrent states (parallel)
+
+**Real-World Example (Order Processing):**
+```mermaid
+stateDiagram-v2
+    [*] --> Pending
+    Pending --> Processing : payment_confirmed
+    Pending --> Cancelled : customer_cancelled
+    
+    Processing --> Shipped : items_packed
+    Processing --> Failed : payment_failed
+    
+    Shipped --> Delivered : received_by_customer
+    Shipped --> Returned : return_requested
+    
+    Failed --> Pending : retry_payment
+    Returned --> Refunded : refund_processed
+    
+    Delivered --> [*]
+    Cancelled --> [*]
+    Refunded --> [*]
+```
+
+> [!NOTE]
+> State diagrams are excellent for documenting API resource lifecycles and workflow automation.
+
+---
+
+### 6. Entity-Relationship Diagrams
+
+Use for database schemas and relationships.
+
+```mermaid
+erDiagram
+    CUSTOMER ||--o{ ORDER : places
+    CUSTOMER {
+        string id PK
+        string email
+        string name
+    }
+    ORDER {
+        string id PK
+        string customer_id FK
+        decimal total
+    }
+```
+
+**Key Features:**
+- Relationships: `||--||` one-to-one, `||--o{` one-to-many, `}o--o{` many-to-many
+- Keys: `PK` primary key, `FK` foreign key, `UK` unique key
+
+**Real-World Example (Blog System):**
+```mermaid
+erDiagram
+    USER ||--o{ POST : writes
+    USER ||--o{ COMMENT : writes
+    POST ||--o{ COMMENT : has
+    POST }o--o{ TAG : tagged_with
+    
+    USER {
+        uuid id PK
+        string email UK
+        string username
+        string password_hash
+    }
+    
+    POST {
+        uuid id PK
+        uuid author_id FK
+        string title
+        text content
+        string slug UK
+    }
+    
+    COMMENT {
+        uuid id PK
+        uuid post_id FK
+        uuid author_id FK
+        text content
+    }
+    
+    TAG {
+        uuid id PK
+        string name UK
+    }
+```
+
+---
+
+### 7. Pie Charts
+
+Use for proportional data and percentage breakdowns.
+
+```mermaid
+pie title Traffic Sources
+    "Organic Search" : 45
+    "Direct" : 25
+    "Social Media" : 15
+    "Email" : 10
+    "Referral" : 5
+```
+
+**Real-World Example (Error Distribution):**
+```mermaid
+pie title Production Errors by Type (Last 30 Days)
+    "Database Timeout" : 35
+    "Network Error" : 25
+    "Validation Error" : 20
+    "Authentication Failure" : 15
+    "Other" : 5
+```
+
+> [!TIP]
+> Pie charts work best with 5-7 categories. Use "Other" for smaller categories to maintain readability.
+
+---
+
+### 8. Git Graphs
+
+Use for branching strategies and release workflows.
+
+```mermaid
+gitGraph
+    commit id: "Initial commit"
+    branch develop
+    checkout develop
+    commit id: "Add feature A"
+    commit id: "Add feature B"
+    checkout main
+    merge develop tag: "v1.0"
+```
+
+**Real-World Example (GitFlow):**
+```mermaid
+gitGraph
+    commit id: "Project init"
+    branch develop
+    checkout develop
+    commit id: "Setup CI/CD"
+    
+    branch feature/user-auth
+    checkout feature/user-auth
+    commit id: "Add login"
+    commit id: "Add signup"
+    checkout develop
+    merge feature/user-auth
+    
+    branch release/1.0
+    checkout release/1.0
+    commit id: "Version bump"
+    checkout main
+    merge release/1.0 tag: "v1.0.0"
+    checkout develop
+    merge release/1.0
+```
+
+---
+
+## Structure Requirements
+
+All documents should follow this structure:
+
+1. Start with a clear, descriptive title (H1)
+2. Include a brief introduction
+3. Add **Table of Contents** for multi-section documents
+4. Use logical heading hierarchy (H2, H3, etc.)
+5. Incorporate **GitHub alerts** where they add value
+6. Use **Mermaid diagrams** to visualize complex concepts
+7. Use proper markdown formatting (lists, code blocks, links, emphasis)
+8. End with conclusion or next steps if applicable
+
+---
+
+## Best Practices
+
+### GitHub Alerts
+- **Place strategically** near related content
+- **Keep concise** but informative
+- **Use judiciously** - Too many alerts create noise
+- **Maintain consistency** across documents
+
+### Mermaid Diagrams
+- **Choose the right type:**
+  - **Flowcharts**: Decision trees, algorithms, workflows
+  - **Sequence**: API interactions, authentication flows
+  - **Gantt**: Timelines, release schedules
+  - **Class**: System architecture, data models
+  - **State**: Lifecycle, workflow automation
+  - **ER**: Database schemas
+  - **Pie**: Statistics, proportions
+  - **Git**: Branching strategies
+- **Keep simple** - Split complex diagrams into focused views
+- **Use descriptive labels** - Avoid abbreviations
+- **Add titles** using `title` directive
+- **Use `autonumber`** in sequence diagrams
+- **Test rendering** in GitHub preview
+
+### General Markdown
+- Use code blocks with syntax highlighting
+- Include links to external resources
+- Use tables for structured data
+- Add horizontal rules (`---`) to separate sections
+- Maintain consistent formatting
+- Ensure mobile-friendly layouts
+
+---
+
+## Example Callout Placement
+
+- Use `[!NOTE]` after introducing a concept to provide additional context
+- Use `[!TIP]` when explaining procedures to offer optimization suggestions
+- Use `[!IMPORTANT]` before critical steps in a set of instructions
+- Use `[!WARNING]` when users might encounter common errors or bugs
+- Use `[!CAUTION]` when discussing potentially destructive or irreversible actions
+
+---
+
+## Complete Documentation Template
+
+```markdown
+# User Authentication System
+
+This document describes the authentication flow for our API, including login, token refresh, and session management.
+
+> [!IMPORTANT]
+> All endpoints require HTTPS in production environments.
+
+## Table of Contents
+
+1. [Authentication Flow](#authentication-flow)
+2. [API Endpoints](#api-endpoints)
+3. [Error Handling](#error-handling)
+4. [Security Considerations](#security-considerations)
+
+---
+
+## Authentication Flow
+
+The following sequence diagram illustrates the complete authentication process:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant User
+    participant Client
+    participant API
+    participant Database
+    
+    User->>Client: Enter credentials
+    Client->>API: POST /auth/login
+    activate API
+    API->>Database: Validate credentials
+    Database-->>API: User data
+    API-->>Client: JWT token + refresh token
+    deactivate API
+    Client->>Client: Store tokens
+    
+    Note over Client,API: Access protected resources
+    
+    Client->>API: GET /api/profile (with JWT)
+    API-->>Client: User profile
+```
+
+> [!NOTE]
+> JWT tokens expire after 15 minutes. Use the refresh token to obtain new access tokens.
+
+---
+
+## API Endpoints
+
+### POST /auth/login
+
+Authenticates a user and returns access tokens.
+
+**Request:**
+```json
+{
+  "email": "user@acme.com",
+  "password": "secure_password"
+}
+```
+
+**Response:**
+```json
+{
+  "access_token": "eyJhbGc...",
+  "refresh_token": "eyJhbGc...",
+  "expires_in": 900
+}
+```
+
+> [!WARNING]
+> Never log or store access tokens in client-side code.
+
+---
+
+## Error Handling
+
+The authentication system uses the following state machine:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Unauthenticated
+    Unauthenticated --> Authenticated : valid_credentials
+    Unauthenticated --> Failed : invalid_credentials
+    
+    Authenticated --> TokenExpired : timeout
+    Authenticated --> Unauthenticated : logout
+    
+    TokenExpired --> Authenticated : refresh_token_valid
+    TokenExpired --> Unauthenticated : refresh_token_invalid
+    
+    Failed --> Unauthenticated : retry
+    Failed --> Locked : max_attempts_exceeded
+    
+    Locked --> Unauthenticated : unlock_timeout
+```
+
+> [!CAUTION]
+> Accounts are locked after 5 failed login attempts for 15 minutes.
+
+---
+
+## Security Considerations
+
+> [!TIP]
+> Implement rate limiting on all authentication endpoints to prevent brute force attacks.
+
+**Best Practices:**
+- ✅ Use HTTPS for all API communication
+- ✅ Implement CSRF protection
+- ✅ Store passwords using bcrypt with salt rounds ≥ 12
+- ✅ Implement rate limiting (5 requests/minute per IP)
+- ✅ Use secure, httpOnly cookies for refresh tokens
+- ❌ Never store passwords in plain text
+- ❌ Never expose internal error details to clients
+```
+
+---
+
+## Mermaid Syntax Quick Reference
+
+**Flowchart:**
+- Directions: `TD`, `LR`, `BT`, `RL`
+- Node shapes: `[]`, `()`, `{}`, `[()]`, `[[]]`, `[/Input/]`
+- Arrows: `-->`, `-.->`, `==>`
+
+**Sequence Diagram:**
+- `participant Name` - Define participants
+- `autonumber` - Auto-number steps
+- `Note over A,B: Text` - Add notes
+- `loop ... end` - Loops
+- `alt ... else ... end` - Alternatives
+
+**Gantt:**
+- `dateFormat YYYY-MM-DD`
+- `Task name :id, start, duration`
+- `after taskId` - Dependencies
+- `:milestone` - Milestone tasks
+
+**Class Diagram:**
+- Visibility: `+` public, `-` private, `#` protected, `~` package
+- Relationships: `-->`, `--*`, `--o`, `--|>`
+
+**State Diagram:**
+- `[*]` - Start/end state
+- `State1 --> State2 : trigger`
+
+**ER Diagram:**
+- `||--||` one-to-one, `||--o{` one-to-many, `}o--o{` many-to-many
+- `PK` primary key, `FK` foreign key, `UK` unique key
+
+---
+
+Generate markdown content that is informative, well-organized, visual, and makes effective use of GitHub alerts and Mermaid diagrams to enhance readability and user experience.
+
+> [!TIP]
+> Use GitHub's preview feature to verify diagrams and alerts render correctly before committing.
+
+---
+
+**Last Updated**: December 2025  
+**Mermaid Version**: 10.6+

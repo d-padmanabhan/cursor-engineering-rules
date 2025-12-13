@@ -1,0 +1,494 @@
+---
+title: Documentation Engineering Ruleset
+description: Patterns for creating effective documentation including documentation websites and markdown best practices.
+priority: 220
+alwaysApply: false
+files:
+  include:
+    - "**/docs/**/*.md"
+    - "**/*.md"
+    - "mkdocs.yml"
+    - "docusaurus.config.js"
+    - "vitepress.config.js"
+---
+
+# Documentation Engineering Ruleset
+
+**Goal:** Create clear, maintainable documentation that helps users understand and use your project effectively.
+
+## Documentation Strategy
+
+### When to Use Documentation Websites
+
+**Use documentation websites** when:
+- Project has complex, multi-page documentation
+- Documentation needs search functionality
+- Documentation needs versioning
+- Documentation needs interactive examples
+- Project is a library/framework with API docs
+
+**Use simple markdown** when:
+- Documentation is simple (README + a few guides)
+- Single-page documentation is sufficient
+- No need for search or versioning
+
+## Documentation Website Tools
+
+### Recommended Tools
+
+#### Docusaurus (React-based)
+
+**Best for:** React/JavaScript projects, technical documentation
+
+```bash
+npx create-docusaurus@latest my-docs classic
+```
+
+**Features:**
+- React-based
+- Great for technical docs
+- Versioning support
+- Search integration
+- Blog support
+
+**Examples:**
+- [Langfuse Docs](https://langfuse.com/docs)
+- [TensorZero Docs](https://www.tensorzero.com/docs/)
+
+#### MkDocs (Python-based)
+
+**Best for:** Python projects, simple documentation
+
+```bash
+pip install mkdocs
+mkdocs new my-docs
+mkdocs serve
+```
+
+**Features:**
+- Python-based
+- Simple YAML configuration
+- Great for Python projects
+- Material theme available
+- Easy to deploy
+
+**Configuration (`mkdocs.yml`):**
+
+```yaml
+site_name: My Project Docs
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - API Reference: api.md
+theme:
+  name: material
+```
+
+#### VitePress (Vue-based)
+
+**Best for:** Vue projects, fast documentation sites
+
+```bash
+npm install -D vitepress
+```
+
+**Features:**
+- Vue-based
+- Very fast
+- Great for Vue projects
+- Simple configuration
+
+#### Nextra (Next.js-based)
+
+**Best for:** Next.js projects, modern documentation
+
+```bash
+npx create-next-app@latest --example with-nextra
+```
+
+**Features:**
+- Next.js-based
+- Great for Next.js projects
+- Modern design
+- Easy to customize
+
+## Documentation Structure
+
+### Standard Structure
+
+```
+docs/
+├── getting-started/
+│   ├── installation.md
+│   ├── quick-start.md
+│   └── configuration.md
+├── guides/
+│   ├── authentication.md
+│   ├── api-usage.md
+│   └── deployment.md
+├── api-reference/
+│   ├── overview.md
+│   ├── endpoints.md
+│   └── schemas.md
+├── examples/
+│   ├── basic-usage.md
+│   └── advanced-patterns.md
+└── contributing/
+    ├── setup.md
+    └── guidelines.md
+```
+
+## Writing Guidelines
+
+### Clarity First
+
+- Use simple, clear language
+- Avoid jargon when possible
+- Define technical terms
+- Use examples liberally
+
+### Structure
+
+- Start with overview/context
+- Progress from simple to complex
+- Use headings to organize
+- Include table of contents for long docs
+
+### Examples
+
+Always include working examples:
+
+```markdown
+## Example
+
+Here's a complete example:
+
+\`\`\`python
+from mylib import MyClass
+
+# Create instance
+obj = MyClass(api_key="your-key")
+
+# Use it
+result = obj.do_something()
+print(result)
+\`\`\`
+
+**Output:**
+\`\`\`
+Success!
+\`\`\`
+```
+
+### Code Blocks
+
+- Always specify language
+- Include expected output when helpful
+- Keep examples runnable
+- Update examples when APIs change
+
+### Links
+
+- Use descriptive link text
+- Link to related documentation
+- Keep links up to date
+- Use relative links within docs
+
+## API Documentation
+
+### Function/Method Documentation
+
+```python
+def process_data(data: dict, validate: bool = True) -> dict:
+    """Process input data and return processed result.
+    
+    Args:
+        data: Input data dictionary with required fields:
+            - `id`: Unique identifier (str)
+            - `value`: Data value (int)
+        validate: Whether to validate input data (default: True)
+    
+    Returns:
+        Processed data dictionary with fields:
+            - `id`: Original identifier
+            - `processed_value`: Computed value
+            - `timestamp`: Processing timestamp
+    
+    Raises:
+        ValueError: If data validation fails
+        TypeError: If data types are incorrect
+    
+    Example:
+        >>> data = {"id": "123", "value": 42}
+        >>> result = process_data(data)
+        >>> print(result["processed_value"])
+        84
+    """
+```
+
+### Endpoint Documentation
+
+```markdown
+## POST /api/v1/users
+
+Create a new user.
+
+**Request Body:**
+\`\`\`json
+{
+  "email": "user@acme.com",
+  "name": "John Doe",
+  "role": "admin"
+}
+\`\`\`
+
+**Response (201 Created):**
+\`\`\`json
+{
+  "id": "123",
+  "email": "user@acme.com",
+  "name": "John Doe",
+  "role": "admin",
+  "created_at": "2025-01-15T10:00:00Z"
+}
+\`\`\`
+
+**Errors:**
+- `400 Bad Request` - Invalid input data
+- `409 Conflict` - Email already exists
+```
+
+## Versioning Documentation
+
+### Version Strategy
+
+- Maintain docs for current and previous major versions
+- Clearly mark version in docs
+- Provide migration guides between versions
+- Archive old versions
+
+### Versioning in Docusaurus
+
+```javascript
+// docusaurus.config.js
+module.exports = {
+  presets: [
+    [
+      '@docusaurus/preset-classic',
+      {
+        docs: {
+          versions: {
+            current: {
+              label: '2.0',
+              path: '2.0',
+            },
+            '1.0': {
+              label: '1.0',
+              path: '1.0',
+            },
+          },
+        },
+      },
+    ],
+  ],
+};
+```
+
+## Search Functionality
+
+### Algolia DocSearch
+
+For open source projects, apply for [Algolia DocSearch](https://docsearch.algolia.com/):
+
+```javascript
+// docusaurus.config.js
+module.exports = {
+  themeConfig: {
+    algolia: {
+      appId: 'YOUR_APP_ID',
+      apiKey: 'YOUR_SEARCH_API_KEY',
+      indexName: 'YOUR_INDEX_NAME',
+    },
+  },
+};
+```
+
+### Local Search
+
+For private docs, use local search plugins:
+
+- MkDocs: `mkdocs-material` includes search
+- Docusaurus: Built-in search
+- VitePress: Built-in search
+
+## Reading & Researching Documentation
+
+### Tool Selection for Reading Docs
+
+When researching or reading external documentation (AWS, Cloudflare, Kubernetes, GitHub, etc.), use the appropriate tool:
+
+#### Default: Use Lynx 🏆
+
+**Best for 95% of documentation sites:**
+
+```bash
+lynx -dump https://docs.aws.amazon.com/lambda/latest/dg/welcome.html
+```
+
+**Why Lynx:**
+- Renders readable text (not raw HTML)
+- Fast & lightweight
+- Works for AWS, Kubernetes, GitHub, Terraform docs
+- Clean text output with numbered links
+- Screen reader simulation
+
+#### Fallback: Use curl
+
+**Use when you need:**
+- Raw HTML to parse specific elements
+- API documentation (JSON responses)
+- Quick existence checks
+- Maximum speed
+
+```bash
+curl -s https://api.github.com/repos/owner/repo/readme | jq -r '.content' | base64 -d
+```
+
+#### Last Resort: Use LightPanda/Puppeteer
+
+**Only when:**
+- Lynx fails (heavy SPA, JavaScript-required content)
+- Need to interact with page (click, fill forms)
+- Screenshots needed
+- Complex dynamic content
+
+```javascript
+const page = await browser.newPage();
+await page.goto('https://interactive-docs.acme.com');
+const content = await page.content();
+```
+
+### Quick Decision Matrix
+
+| Documentation Site | Tool | Why |
+|-------------------|------|-----|
+| AWS Docs | Lynx | Static, well-structured |
+| Cloudflare Docs | Lynx | Mostly static |
+| Kubernetes Docs | Lynx | Static Hugo site |
+| GitHub Docs | Lynx | Static, accessible |
+| Terraform Docs | Lynx | Static site |
+| API References | curl | Raw endpoints, JSON |
+| Interactive Tutorials | LightPanda | JavaScript required |
+
+### Recommended Prompt Pattern
+
+When requesting documentation research:
+
+```
+Use lynx to read [URL] and [task]. 
+If lynx fails or returns incomplete content, fall back to LightPanda.
+```
+
+**Example:**
+```
+Use lynx to read the AWS Lambda Python documentation 
+and summarize best practices for error handling.
+```
+
+---
+
+## Deployment
+
+### GitHub Pages
+
+```yaml
+# .github/workflows/docs.yml
+name: Deploy Docs
+
+on:
+  push:
+    branches: [main]
+    paths: ['docs/**']
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: pip install mkdocs mkdocs-material
+      - name: Deploy
+        run: mkdocs gh-deploy --force
+```
+
+### Netlify / Vercel
+
+Deploy documentation websites like any static site:
+
+```bash
+# Netlify
+netlify deploy --prod
+
+# Vercel
+vercel --prod
+```
+
+## Maintenance
+
+### Keep Docs Updated
+
+- Update docs when code changes
+- Review docs in PR reviews
+- Set reminders for doc reviews
+- Automate doc checks in CI
+
+### Documentation Reviews
+
+Include in PR checklist:
+- [ ] Documentation updated for new features
+- [ ] Examples updated if APIs changed
+- [ ] Breaking changes documented
+- [ ] Migration guide added if needed
+
+## Best Practices
+
+### Do's
+
+- ✅ Start with "why" before "how"
+- ✅ Use consistent terminology
+- ✅ Include real-world examples
+- ✅ Keep docs close to code
+- ✅ Review docs regularly
+- ✅ Make docs searchable
+- ✅ Provide multiple entry points
+
+### Don'ts
+
+- ❌ Assume prior knowledge
+- ❌ Use outdated examples
+- ❌ Create orphaned pages
+- ❌ Duplicate information
+- ❌ Skip the basics
+- ❌ Use unclear language
+
+## Review Checklist
+
+When reviewing documentation, check:
+
+- [ ] Clear and easy to understand
+- [ ] Examples are present and working
+- [ ] Structure is logical
+- [ ] Links are valid
+- [ ] Code examples are runnable
+- [ ] API docs are complete
+- [ ] Versioning is handled
+- [ ] Search works (if applicable)
+- [ ] Mobile-friendly
+- [ ] Up to date with code
+---
+
+**Last Updated**: December 2025

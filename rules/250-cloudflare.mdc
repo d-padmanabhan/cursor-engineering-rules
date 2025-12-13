@@ -1,0 +1,673 @@
+---
+title: Cloudflare Ruleset Engineering Guide
+description: End-to-end prompts and patterns for designing, testing, and deploying Cloudflare rulesets (WAF, Rate Limiting, Transform, Workers integration).
+priority: 250
+alwaysApply: false
+files:
+  include:
+    - "**/*.tf"
+    - "wrangler.toml"
+    - "**/*.workers.js"
+    - "**/*.workers.ts"
+    - "**/*.cf.mdc"
+---
+
+# 🛡️ Cloudflare Ruleset Engine Engineering Guide v2.1 - (December 2025)
+
+*The Complete Prompt Library for Building, Optimizing, and Deploying Production-Grade Rulesets*
+
+---
+
+## 🚀 Quick Reference
+
+### Essential Commands
+```bash
+# Terraform
+terraform plan                                    # Preview
+terraform apply                                   # Deploy
+terraform state list                              # List resources
+
+# Cloudflare API
+export CF_API_TOKEN="your_token"
+curl -X GET "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/rulesets" \
+  -H "Authorization: Bearer $CF_API_TOKEN"
+
+# Workers
+wrangler dev                                      # Test locally
+wrangler publish                                  # Deploy
+```
+
+### Critical Patterns
+```javascript
+// ✅ GOOD: Fast to slow evaluation order
+(
+  http.request.method eq "POST" and              // Fast: method
+  http.host eq "api.acme.com" and            // Fast: host
+  starts_with(http.request.uri.path, "/admin") and  // Medium: path
+  not ip.src in {1.1.1.0/24}                    // Fast: IP
+)
+
+// ✅ GOOD: Use 'in' for multiple values
+http.host in {"api.acme.com" "admin.acme.com"}
+// ❌ BAD: Multiple OR
+http.host eq "api.acme.com" or http.host eq "admin.acme.com"
+
+// ✅ GOOD: Case-insensitive with encoding checks
+(
+  lower(http.request.uri.path) contains "/admin" or
+  lower(urldecode(http.request.uri.path)) contains "/admin"
+)
+```
+
+### Field Performance Tiers
+```
+Fast: ip.src, http.host, http.request.method
+Medium: http.request.uri.path, headers, cf.threat_score
+Expensive: http.request.body, matches (regex)
+```
+
+---
+
+## 📋 Meta-Prompt (How to Use This Guide)
+
+```
+You are an expert Cloudflare engineer. Use this guide to help me create, optimize, test, and deploy Cloudflare rules for my requirement: **[Insert requirement]**
+
+Follow these phases:
+1. Discovery & Planning
+2. Rule Generation
+3. Optimization
+4. Security Hardening
+5. Testing & Validation
+6. Deployment
+7. Workers Integration
+8. Multi-Environment Management
+9. CI/CD Integration
+10. Incident Response
+
+For each phase, show your work and provide a final production-ready rule with deployment recommendations.
+```
+
+---
+
+## 🎯 Phase 1: Discovery & Planning
+
+### 1) Requirements Analysis (Prompt)
+> Analyze the requirement and identify:
+> 1. Primary security/business objective
+> 2. Edge cases / exceptions
+> 3. Traffic volume / performance constraints
+> 4. Interaction with existing rules (phase/order)
+> 5. Compliance/audit needs
+
+### 2) Rule Type Selection (Prompt)
+> Recommend the optimal product/rule type (with trade-offs):
+> - **WAF Custom Rules** (`http_request_firewall_custom`)
+> - **Rate Limiting Rules** (`http_ratelimit`)
+> - **Transform Rules** (URI/path/header edits, redirects)
+> - **Bot Management** signals (allowlist verified bots, score gates)
+> - **Workers** (complex, stateful or body-inspection logic)
+
+---
+
+## ✍️ Phase 2: Rule Generation
+
+### 3) Generate from Policy (Prompt + Pattern)
+> Create a Cloudflare expression for: **[Policy]**  
+> Use `in` sets, clear grouping, and comments.
+
+```javascript
+# Admin panel protection
+(
+  http.host in {"admin.acme.com" "manage.acme.com"} and
+  starts_with(http.request.uri.path, "/admin/") and
+  not (ip.src in {10.0.0.0/8 192.168.0.0/16} or cf.tls_client_auth.cert_verified)
+)
+```
+
+### 4) Smart Regex (Prompt)
+> Generate an optimized regex for **[field]**; prefer non-regex when possible. Include test cases.
+
+### 5) Geo + AS Nuance (Prompt)
+> Build a geo/ASN rule that blocks high-risk regions and known hostile ASNs, with bypasses for verified bots/VPN scenarios.
+
+### 6) API Protection (Prompt + Pattern)
+```javascript
+# API hardening for /api/v2/*
+(
+  starts_with(http.request.uri.path, "/api/v2/") and
+  (
+    (http.request.method in {"POST" "PUT"} and
+     not lower(http.request.headers["content-type"][0]) contains "application/json") or
+    (http.request.body.size > 10485760) or  # 10MB limit
+    (http.request.headers["x-api-key"][0] eq "" or
+     not http.request.headers["x-api-key"][0] matches "^[A-Za-z0-9]{32}$")
+  )
+)
+```
+
+---
+
+## ⚙️ Phase 3: Optimization
+
+### 7) Performance Ordering (Prompt)
+> Reorder cheap checks first (IP, host, method), then path/header, and use regex last. Short-circuit for early exits.
+
+**Example:**
+```javascript
+// ❌ BAD: Expensive first
+(http.request.body.raw contains "x" and http.host eq "acme.com")
+
+// ✅ GOOD: Fast first
+(http.host eq "acme.com" and contains(http.request.body.raw, "x"))
+```
+
+### 8) Readability Pass (Prompt)
+> Add comments, group parenthesis, and standard indentation.
+
+### 9) Consolidate Redundancy (Prompt)
+> Merge rules with common predicates; keep separate if operational clarity/ownership needs require it.
+
+---
+
+## 🔒 Phase 4: Security Hardening
+
+### 10) Bypass Analysis (Prompt + Hardened Pattern)
+```javascript
+// ❌ VULNERABLE: Case sensitive, single encoding
+http.request.uri.path contains "/admin"
+
+// ✅ HARDENED: Case insensitive, multiple encoding
+(
+  lower(http.request.uri.path) contains "/admin" or
+  lower(urldecode(http.request.uri.path)) contains "/admin" or
+  lower(urldecode(urldecode(http.request.uri.path))) contains "/admin"
+)
+```
+
+### 11) Rate Limiting Strategy (Prompt)
+> Define per-IP, per-key/JWT, and endpoint-tier limits; specify increment conditions and bypasses.
+
+**Tiered Rate Limiting:**
+```javascript
+# Tier 1: Per-IP (basic protection)
+(http.request.uri.path contains "/api/" and rate(ip.src, 1m) > 100)
+
+# Tier 2: Per API key (distributed attack protection)
+(http.request.uri.path contains "/api/" and
+ rate(http.request.headers["x-api-key"][0], 10m) > 5000)
+
+# Tier 3: Global endpoint (expensive operations)
+(http.request.uri.path eq "/api/v2/search" and rate(http.host, 1m) > 10000)
+```
+
+### 12) Bot Management (Prompt)
+> Gate by `cf.bot_management.score`, allow verified bots, challenge suspicious automation.
+
+### 13) DLP Helpers (Prompt)
+> Request-side rules to prevent leaking tokens/PANs in query/paths; note response scanning needs DLP features or Workers.
+
+---
+
+## 🧪 Phase 5: Testing & Validation
+
+### 14) Test Case Generator (Prompt)
+> Produce **positive/negative/edge/security/perf** cases (curl or API format) for the rule.
+
+**Example Tests:**
+```bash
+# Should block
+curl -H "Host: admin.acme.com" https://edge.acme.com/dashboard
+# Expected: 403
+
+# Should allow
+curl -H "X-Forwarded-For: 1.1.1.1" https://admin.acme.com/dashboard
+# Expected: 200
+
+# Security test (encoding bypass)
+curl https://edge.acme.com/%2561dmin
+# Expected: 403
+```
+
+### 15) Logic Validator (Prompt)
+> Double-check operator precedence (**AND** before **OR**), null header handling, and field existence.
+
+**Common Logic Errors:**
+```javascript
+// ❌ BAD: Precedence issue
+A or B and C  // Interpreted as: A or (B and C)
+
+// ✅ GOOD: Explicit parentheses
+(A or B) and C
+
+// ❌ BAD: Null header not handled
+http.request.headers["x-api-key"][0] eq "secret"
+
+// ✅ GOOD: Check existence
+(http.request.headers["x-api-key"][0] ne "" and
+ http.request.headers["x-api-key"][0] eq "secret")
+```
+
+### 16) Monitoring Queries (Prompt + Pattern)
+```graphql
+# Monitor rule effectiveness
+{
+  viewer {
+    zones(filter: {zoneTag: "xxx"}) {
+      firewallEventsAdaptive(
+        filter: { ruleId: "rule_123", datetime_geq: "2024-01-01T00:00:00Z" }
+        limit: 100
+      ) {
+        action
+        clientIP
+        userAgent
+        clientCountryName
+      }
+    }
+  }
+}
+```
+
+---
+
+## 🚀 Phase 6: Deployment & Ops
+
+### 17) IaC / API Conversion (Prompt + Terraform & API)
+
+**Terraform:**
+```hcl
+resource "cloudflare_ruleset" "waf_custom" {
+  zone_id = var.zone_id
+  name    = "WAF Custom Rules"
+  kind    = "zone"
+  phase   = "http_request_firewall_custom"
+
+  rules {
+    description = "Admin protection: VPN or mTLS"
+    enabled     = true
+    action      = "block"
+    expression  = <<-EOT
+      (
+        http.host in {"admin.acme.com"} and
+        not ip.src in {1.1.1.0/24}
+      )
+    EOT
+
+    action_parameters {
+      response {
+        status_code  = 403
+        content      = "Access Denied"
+        content_type = "text/plain"
+      }
+    }
+  }
+}
+```
+
+**API:**
+```bash
+curl -X POST \
+  "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/rulesets" \
+  -H "Authorization: Bearer $CF_API_TOKEN" \
+  -d '{"action":"block","expression":"...","description":"Admin block"}'
+```
+
+### 18) Staged Rollout (Prompt)
+> Log-only → Managed Challenge → Block; narrow by path/geo; define rollback triggers & SLOs.
+
+**Rollout Phases:**
+```
+Phase 1: Log (Week 1) - Identify FPs
+Phase 2: Challenge (Week 2) - Validate solve rate
+Phase 3: Regional Block (Week 3) - 50% traffic
+Phase 4: Full Block (Week 4) - 100% traffic
+```
+
+### 19) Runbook (Prompt)
+> Purpose, dependencies, normal/abnormal metrics, common FPs, emergency disable, escalation contacts, related rules.
+
+### 20) Cost Analysis (Prompt)
+> Estimate evaluation cost; reduce regex/body checks; consider Workers for heavy logic; evaluate plan-tier trade-offs.
+
+---
+
+## 🔧 Phase 7: Workers Integration
+
+### 21) When to Use Workers vs Rules
+**Use Workers if:**
+- Need response body inspection
+- External API calls required
+- Stateful logic (KV/Durable Objects)
+- Complex JSON manipulation
+- Custom authentication flows
+
+**Use Rules if:**
+- Simple request filtering
+- Rate limiting
+- Header/path manipulation
+- Bot score gating
+- IP/geo blocking
+
+### 22) Workers Pattern
+```javascript
+// Complex authentication with Workers
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    
+    if (url.pathname.startsWith('/admin')) {
+      const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+      if (!token) return new Response('Unauthorized', { status: 401 });
+      
+      const isValid = await verifyJWT(token, env.JWT_SECRET);
+      if (!isValid) return new Response('Invalid token', { status: 403 });
+      
+      const user = await env.USERS_KV.get(token, { type: 'json' });
+      if (!user?.isAdmin) return new Response('Not an admin', { status: 403 });
+    }
+    
+    return fetch(request);
+  }
+};
+```
+
+---
+
+## 🌍 Phase 8: Multi-Environment Management
+
+### 23) Environment Strategy
+```hcl
+# Environment-specific behavior
+locals {
+  rule_action = {
+    dev        = "log"              # Dev: Log only
+    staging    = "managed_challenge" # Staging: Challenge
+    production = "block"             # Prod: Block
+  }
+}
+
+resource "cloudflare_ruleset" "admin" {
+  zone_id = var.zone_ids[var.environment]
+  
+  rules {
+    action      = local.rule_action[var.environment]
+    expression  = file("rules/admin_protection.txt")
+    description = "Admin VPN enforcement [${var.environment}]"
+  }
+}
+```
+
+### 24) Feature Flags
+```hcl
+variable "feature_flags" {
+  type = map(bool)
+  default = {
+    admin_vpn_enforcement = true
+    api_rate_limiting     = true
+    geo_blocking_apac     = false  # Waiting approval
+  }
+}
+
+dynamic "rules" {
+  for_each = var.feature_flags.admin_vpn_enforcement ? [1] : []
+  content {
+    action = "block"
+    expression = "(http.host eq \"admin.acme.com\" and not ip.src in {1.1.1.0/24})"
+  }
+}
+```
+
+---
+
+## 🔄 Phase 9: CI/CD Integration
+
+### 25) GitHub Actions Workflow
+```yaml
+name: Cloudflare Rules CI
+
+on: [push, pull_request]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check
+      - run: terraform validate
+      - run: python scripts/validate_rules.py rules/**/*.txt
+      
+  plan:
+    needs: validate
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform plan -no-color
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+      
+  deploy:
+    needs: plan
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform apply -auto-approve
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN_PROD }}
+```
+
+---
+
+## 🔒 Security Hardening
+
+### Bypass Protection Patterns
+```javascript
+// ✅ HARDENED: Multiple encoding + case insensitive
+(
+  lower(http.request.uri.path) contains "/admin" or
+  lower(urldecode(http.request.uri.path)) contains "/admin" or
+  lower(urldecode(urldecode(http.request.uri.path))) contains "/admin"
+)
+
+// ✅ HARDENED: Prevent header injection
+(
+  http.request.headers["x-custom"][0] ne "" and
+  not http.request.headers["x-custom"][0] matches "[\\r\\n]"  // Block CRLF
+)
+```
+
+---
+
+## 📊 Monitoring & Analytics
+
+### GraphQL Queries
+```graphql
+# Rule effectiveness
+{
+  viewer {
+    zones(filter: {zoneTag: "xxx"}) {
+      firewallEventsAdaptive(
+        filter: { ruleId: "rule_123" }
+        limit: 100
+      ) {
+        action
+        clientIP
+        clientCountryName
+      }
+    }
+  }
+}
+```
+
+### Alerts
+```yaml
+# Prometheus alerting
+- alert: HighRuleBlockRate
+  expr: rate(cloudflare_firewall_events_total{action="block"}[5m]) > 100
+  for: 5m
+  annotations:
+    summary: "High block rate on rule {{ $labels.rule_id }}"
+```
+
+---
+
+## 🚨 Incident Response
+
+### Emergency Deployment
+```bash
+# EMERGENCY: Deploy rule in < 2 minutes
+EXPRESSION='(http.request.uri.path eq "/api/login" and cf.threat_score gt 30)'
+
+curl -X POST \
+  "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/rulesets/phases/http_request_firewall_custom/entrypoint" \
+  -H "Authorization: Bearer $CF_API_TOKEN" \
+  -d "{\"rules\":[{\"expression\":\"$EXPRESSION\",\"action\":\"managed_challenge\"}]}"
+
+# Monitor effectiveness
+# Next: Refine based on FP rate
+```
+
+### Rollback Procedure
+```bash
+# Disable rule immediately
+curl -X PATCH \
+  "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/rulesets/$RULESET_ID/rules/$RULE_ID" \
+  -H "Authorization: Bearer $CF_API_TOKEN" \
+  -d '{"enabled": false}'
+
+# Or change to log mode
+curl -X PATCH \
+  "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/rulesets/$RULESET_ID/rules/$RULE_ID" \
+  -H "Authorization: Bearer $CF_API_TOKEN" \
+  -d '{"action": "log"}'
+```
+
+---
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**Rule Not Triggering:**
+1. Check if rule is enabled
+2. Verify rule order (earlier rules catch first)
+3. Test with simpler expression
+4. Check field names (case-sensitive)
+
+**Blocking Legitimate Traffic:**
+1. Add bypass for verified bots
+2. Change Block → Managed Challenge
+3. Add allowlist for known IPs
+4. Use case-insensitive matching
+
+**Performance Issues:**
+1. Reorder conditions (fast → slow)
+2. Replace regex with simpler operators
+3. Remove body inspection (use Workers)
+4. Split complex rule into multiple
+
+**Terraform Failures:**
+1. Unlock state: `terraform force-unlock <ID>`
+2. Import existing: `terraform import cloudflare_ruleset.x <id>`
+3. Refresh state: `terraform apply -refresh-only`
+
+---
+
+## 📚 Example Library
+
+### E-commerce Checkout
+```javascript
+(
+  http.host eq "shop.acme.com" and
+  http.request.uri.path in {"/checkout" "/payment"} and
+  (
+    (cf.bot_management.score lt 30 and not cf.bot_management.verified_bot) or
+    (not ip.geoip.country in {"US" "CA" "GB"}) or
+    (rate(ip.src, 10m) > 20)
+  )
+)
+# Action: Managed Challenge
+```
+
+### API Gateway Auth
+```javascript
+(
+  starts_with(http.request.uri.path, "/api/") and
+  not (
+    http.request.headers["authorization"][0] matches
+      "^Bearer [A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+$" or
+    http.request.headers["x-api-key"][0] in {"key_abc123" "key_def456"} or
+    (ip.src in {10.0.0.0/8} and http.request.headers["x-service-name"][0] ne "")
+  )
+)
+# Action: Block
+```
+
+### WordPress Hardening
+```javascript
+(
+  (contains(lower(http.request.uri.path), "wp-admin") and not ip.src in {1.1.1.0/24}) or
+  (http.request.uri.path contains "wp-content/uploads" and
+   http.request.uri.path matches "\\.(php|phtml|php5)$") or
+  (http.request.uri.path eq "/xmlrpc.php" and http.request.method eq "POST") or
+  (http.request.uri.query contains "author=")
+)
+```
+
+### GraphQL Protection
+```javascript
+(
+  http.request.uri.path eq "/graphql" and
+  (
+    http.request.body.size > 5000 or
+    http.request.body.raw matches "\\{[^}]*\\{[^}]*\\{[^}]*\\{" or  # 4+ nesting
+    (http.request.body.raw contains "__schema" and not ip.src in {10.0.0.0/8})
+  )
+)
+```
+
+---
+
+## ✅ Final Checklist (Pre-Prod)
+
+- [ ] Stakeholder/requirement sign-off
+- [ ] Bypass analysis complete
+- [ ] Perf order verified (cheap → expensive)
+- [ ] UX risk assessed + mitigations
+- [ ] Tests (pos/neg/edge/security) pass
+- [ ] Monitoring queries + dashboard ready
+- [ ] Rollout plan + rollback ready
+- [ ] Runbook updated
+- [ ] Cost impact understood
+- [ ] Multi-environment tested (dev → staging → prod)
+- [ ] CI/CD pipeline validated
+- [ ] Terraform state configured
+- [ ] Security scanning passed
+- [ ] Deployed in business hours with on-call
+
+---
+
+## Targeted Improvements
+
+- **Front-matter** with `priority: 250` and focused `files`
+- **Phase names** mapped to Cloudflare Ruleset phases
+- **Perf guidance** (cheap→expensive) and **AND-before-OR** reminder
+- **IaC examples** using `cloudflare_ruleset` with heredocs
+- **Emergency → permanent** workflow
+- **Workers integration** for complex logic
+- **Multi-environment** management with feature flags
+- **CI/CD** automation with GitHub Actions
+- **Monitoring** with GraphQL and alerting
+- **Security scanning** tools integrated
+- **Troubleshooting** guide with common issues
+
+---
+
+**Last Updated**: December 2025  
+**Cloudflare API Version**: v4  
+**Terraform Provider Version**: >= 4.20

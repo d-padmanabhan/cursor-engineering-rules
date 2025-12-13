@@ -1,0 +1,821 @@
+---
+title: Terraform Engineering Ruleset
+description: Secure, efficient, modular Terraform with strong validation, docs, and CI hygiene.
+priority: 140
+alwaysApply: false
+files:
+  include:
+    - "**/*.tf"
+    - "**/*.tfvars"
+    - "**/*.tftpl"
+  exclude:
+    - ".terraform/**"
+    - "**/.terraform/**"
+    - "**/.terragrunt-cache/**"
+---
+
+# Terraform Engineering Ruleset - (December 2025)
+
+**Audience**: engineers writing and reviewing Terraform infrastructure as code  
+**Goal**: secure-by-default, efficient, modular, and highly maintainable Terraform - without over-engineering
+
+---
+
+## Quick Reference
+
+### Essential Commands
+```bash
+# Initialization & Planning
+terraform init                          # Initialize working directory
+terraform init -upgrade                 # Upgrade providers to latest allowed version
+terraform plan                          # Preview changes
+terraform plan -out=tfplan              # Save plan for apply
+terraform plan -target=module.vpc       # Plan specific resource/module
+
+# Apply & Destroy
+terraform apply tfplan                  # Apply saved plan
+terraform apply -auto-approve           # Apply without confirmation (CI only!)
+terraform destroy -target=resource.name # Destroy specific resource
+
+# State Management
+terraform state list                    # List resources in state
+terraform state show aws_vpc.this       # Show specific resource details
+terraform state mv src dest             # Rename/move resource in state
+terraform state rm resource.name        # Remove from state (doesn't destroy)
+terraform state pull > backup.tfstate   # Backup state locally
+
+# Import & Validation
+terraform import aws_vpc.this vpc-12345 # Import existing resource
+terraform validate                      # Validate configuration
+terraform fmt -check -recursive         # Check formatting
+terraform fmt -recursive                # Format all files
+
+# Troubleshooting
+terraform refresh                       # Sync state with real infrastructure
+terraform apply -refresh-only           # Safer alternative to refresh
+terraform force-unlock LOCK_ID          # Unlock stuck state
+TF_LOG=DEBUG terraform apply            # Enable debug logging
+```
+
+### Critical Patterns
+```hcl
+# 1. Prefer for_each for stability
+resource "aws_subnet" "private" {
+  for_each = var.private_subnets  # Use map/set keys for stable addressing
+  # NOT: count = length(var.private_subnets)
+}
+
+# 2. Pin provider versions
+terraform {
+  required_version = ">= 1.6.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.60"
+    }
+  }
+}
+
+# 3. Validate inputs aggressively
+variable "environment" {
+  type = string
+  validation {
+    condition     = can(regex("^(dev|staging|prod)$", var.environment))
+    error_message = "environment must be one of: dev, staging, prod."
+  }
+}
+
+# 4. Mark sensitive data
+variable "db_password" {
+  type      = string
+  sensitive = true
+}
+
+# 5. Use lifecycle for critical resources
+resource "aws_s3_bucket" "state" {
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+```
+
+---
+
+## 1) Core Objectives
+
+You are an expert Principal Cloud Engineer specializing in Terraform. Generate, review, and refactor Terraform to be:
+
+- **Security first**: least-privilege IAM; no secrets in VCS; sensitive vars/outputs; encrypted remote state
+- **Performance & cost**: right service choices, minimal churn (stable addressing), avoid unnecessary data sources, plan/apply efficiency
+- **Maintainability**: clear module boundaries, input validation, docs, consistent tagging
+- **Robustness**: validations, pre/post-conditions, safe lifecycles, explicit provider/platform constraints
+
+---
+
+## 2) Naming & Formatting
+
+### Naming Conventions
+- **HCL labels**: `snake_case` for resource/module/variable/output names
+- **Cloud names/tags**: use `kebab-case` (e.g., `Name = "app-core-vpc"`)
+- **Files**: conventional layout (`versions.tf`, `providers.tf`, `main.tf`, `variables.tf`, `outputs.tf`, `locals.tf`, `README.md`, `examples/`)
+
+### Tagging (AWS example)
+```hcl
+locals {
+  base_tags = {
+    app         = var.app
+    environment = var.environment
+    owner       = var.owner
+    managed_by  = "terraform"
+  }
+}
+
+resource "aws_vpc" "this" {
+  cidr_block           = var.vpc_cidr
+  enable_dns_support   = true
+  enable_dns_hostnames = true
+  tags                 = merge(local.base_tags, { Name = "${var.app}-${var.environment}-vpc" })
+}
+```
+
+### Formatting
+- All generated code must be formatted as if `terraform fmt` has been run on it
+- Use consistent indentation (2 spaces standard)
+- Group related attributes logically (e.g., all `enable_*` flags together)
+
+---
+
+## 3) Modern & Idiomatic Terraform
+
+### Prefer `for_each` Over `count`
+Use `for_each` for address stability with maps/sets. Use `count` only for homogenous, truly identical resources where identity doesn't matter.
+
+```hcl
+# ✅ GOOD: Stable addressing with for_each
+resource "aws_subnet" "private" {
+  for_each          = var.private_subnets  # map(string) with keys like "az-a", "az-b"
+  vpc_id            = aws_vpc.this.id
+  cidr_block        = each.value
+  availability_zone = "${var.region}${each.key}"
+  tags              = { Name = "${var.app}-${each.key}-private" }
+}
+
+# ❌ BAD: count makes addressing fragile
+resource "aws_subnet" "private" {
+  count             = length(var.private_subnets)  # Reordering list breaks state
+  vpc_id            = aws_vpc.this.id
+  cidr_block        = var.private_subnets[count.index]
+}
+```
+
+### Advanced Concepts
+- Use **for-expressions**, **dynamic** blocks, and functions judiciously (clarity first)
+- Use **`try()`** and **`coalesce()`** for safe defaults; avoid over-nesting
+- **Provider pinning** in `required_providers` (not inline in provider blocks)
+
+```hcl
+terraform {
+  required_version = ">= 1.6.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.60"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
+  }
+}
+```
+
+---
+
+## 4) Modules, Inputs, Outputs
+
+### Module Structure
+- Prefer **small, composable modules**. Put reusable patterns in `modules/<name>`
+- **Explicit inputs** (avoid magical defaults). Document every input with type + description
+- Use **`nullable = false`** where appropriate; prefer `optional(...)` object attrs only when it improves clarity
+- **Outputs**: minimal surface; mark sensitive where applicable; never leak secrets
+
+### Variable Best Practices
+```hcl
+variable "environment" {
+  description = "Deployment environment (e.g., dev, staging, prod)."
+  type        = string
+  validation {
+    condition     = can(regex("^(dev|staging|prod)$", var.environment))
+    error_message = "environment must be one of: dev, staging, prod."
+  }
+}
+
+output "vpc_id" {
+  description = "The VPC ID."
+  value       = aws_vpc.this.id
+}
+```
+
+---
+
+## 5) Validation, Preconditions & Postconditions
+
+Validate inputs aggressively; provide **clear** error messages. Use **pre/post-conditions** (Terraform ≥1.2) for critical invariants.
+
+```hcl
+resource "aws_subnet" "private" {
+  for_each                = var.private_subnets
+  vpc_id                  = aws_vpc.this.id
+  cidr_block              = each.value
+  map_public_ip_on_launch = false
+
+  lifecycle {
+    precondition {
+      condition     = tonumber(split("/", each.value)[1]) <= 24
+      error_message = "Private subnet CIDR must be /24 or smaller (got ${each.value})."
+    }
+    postcondition {
+      condition     = self.state == "available"
+      error_message = "Subnet ${self.id} did not reach 'available' state after creation."
+    }
+  }
+}
+```
+
+---
+
+## 6) State, Backends, Locking
+
+### Remote State Configuration
+Use **remote state** (e.g., S3 + DynamoDB lock). Enforce:
+- Bucket **encryption**, **versioning**, **public access block**, narrow **bucket policy**
+- **KMS** CMK for SSE if required
+- Commit `.terraform.lock.hcl`; do **not** commit `terraform.tfstate`
+- Backend config via partials/CLI args; avoid plaintext credentials in code
+
+```hcl
+terraform {
+  backend "s3" {
+    bucket         = "my-terraform-state"
+    key            = "vpc/terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+    dynamodb_table = "terraform-locks"
+    kms_key_id     = "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
+  }
+}
+```
+
+---
+
+## 7) Lifecycle & Dependencies
+
+- Prefer natural graph over `depends_on`. Use `depends_on` **only** when Terraform graph can't infer
+- Avoid `create_before_destroy` globally; apply surgically to zero-downtime resources
+- Use `prevent_destroy = true` for high-value resources (VPCs, DBs) with break-glass procedure
+
+```hcl
+resource "aws_s3_bucket" "critical" {
+  bucket = "${var.app}-${var.environment}-state"
+  
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "aws_launch_template" "app" {
+  name_prefix   = "${var.app}-${var.environment}"
+  image_id      = data.aws_ami.ubuntu.id
+  instance_type = var.instance_type
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+```
+
+---
+
+## 8) Security & Secrets
+
+### Secret Management
+- **No secrets in code** or VCS. Use SSM/Secrets Manager or CI-injected TF_VARs
+- Mark sensitive material
+
+```hcl
+variable "db_password" {
+  type        = string
+  sensitive   = true
+  description = "Database password from Secrets Manager."
+}
+
+output "admin_password" {
+  value     = var.db_password
+  sensitive = true
+}
+```
+
+### IAM Best Practices
+- IAM policies: least privilege; prefer **data-driven** policy docs with `jsonencode()` and small composable statements
+- Use `aws_iam_policy_document` data source for complex policies
+
+```hcl
+data "aws_iam_policy_document" "lambda_policy" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+    ]
+    resources = ["arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.function_name}:*"]
+  }
+}
+```
+
+---
+
+## 9) Utility Providers (Use Judiciously)
+
+- `random`: ids/suffixes → OK
+- `time`: delays/rotation → OK
+- `tls`: ephemeral keys → ensure state handling; avoid embedding long-lived private keys in state
+- **Avoid `null_resource`** unless truly necessary (it's an anti-pattern and often indicates missing abstraction)
+- Data sources: `http`, `external`, `terraform_remote_state` → ensure reliability, caching, and failure modes
+
+---
+
+## 10) AWS Provider Hygiene (if using AWS)
+
+- Single **root** provider per workspace + **aliased** providers for cross-region/account
+- Use **default tags** for global consistency; override when needed
+
+```hcl
+provider "aws" {
+  region = var.region
+
+  default_tags {
+    tags = {
+      app         = var.app
+      environment = var.environment
+      owner       = var.owner
+      managed_by  = "terraform"
+    }
+  }
+}
+
+provider "aws" {
+  alias  = "eu"
+  region = "eu-central-1"
+}
+```
+
+---
+
+## Common Mistakes & Anti-Patterns
+
+### 1. Using `count` with Maps
+```hcl
+# ❌ BAD: count with maps/lists (fragile addressing)
+variable "subnets" {
+  default = ["10.0.1.0/24", "10.0.2.0/24"]
+}
+
+resource "aws_subnet" "this" {
+  count      = length(var.subnets)
+  cidr_block = var.subnets[count.index]
+  # Reordering var.subnets will destroy/recreate in wrong order!
+}
+
+# ✅ GOOD: for_each with map (stable addressing)
+variable "subnets" {
+  default = {
+    "az-a" = "10.0.1.0/24"
+    "az-b" = "10.0.2.0/24"
+  }
+}
+
+resource "aws_subnet" "this" {
+  for_each   = var.subnets
+  cidr_block = each.value
+}
+```
+
+### 2. Hardcoded Credentials
+```hcl
+# ❌ BAD: Hardcoded secrets
+resource "aws_db_instance" "this" {
+  password = "MyPassword123!"  # NEVER DO THIS!
+}
+
+# ✅ GOOD: Use variable marked sensitive
+variable "db_password" {
+  type      = string
+  sensitive = true
+}
+
+resource "aws_db_instance" "this" {
+  password = var.db_password
+}
+```
+
+### 3. Missing Provider Versions
+```hcl
+# ❌ BAD: No version constraints
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+    }
+  }
+}
+
+# ✅ GOOD: Pin to major version
+terraform {
+  required_version = ">= 1.6.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.60"  # Allow 5.60.x, but not 6.x
+    }
+  }
+}
+```
+
+### 4. Overusing `depends_on`
+```hcl
+# ❌ BAD: Unnecessary explicit dependency
+resource "aws_subnet" "this" {
+  vpc_id     = aws_vpc.this.id
+  depends_on = [aws_vpc.this]  # Redundant!
+}
+
+# ✅ GOOD: Let Terraform infer from references
+resource "aws_subnet" "this" {
+  vpc_id = aws_vpc.this.id  # Dependency automatically inferred
+}
+```
+
+### 5. Ignoring State Locking
+```hcl
+# ❌ BAD: No locking (concurrent applies will corrupt state!)
+terraform {
+  backend "s3" {
+    bucket = "my-state"
+    key    = "terraform.tfstate"
+  }
+}
+
+# ✅ GOOD: Enable DynamoDB locking
+terraform {
+  backend "s3" {
+    bucket         = "my-state"
+    key            = "terraform.tfstate"
+    dynamodb_table = "terraform-locks"
+  }
+}
+```
+
+### 6. Monolithic State Files
+```hcl
+# ❌ BAD: One giant state for entire infrastructure
+# terraform/
+#   main.tf  (contains VPC, EKS, RDS, Lambda, etc.)
+
+# ✅ GOOD: Separate states by blast radius
+# terraform/
+#   networking/     (VPC, subnets - changes rarely)
+#   eks/           (EKS cluster - moderate changes)
+#   applications/  (Lambda, services - frequent changes)
+```
+
+### 7. Not Using Modules
+```hcl
+# ❌ BAD: Copy-paste code for each environment
+# dev/main.tf
+resource "aws_vpc" "this" { ... }
+resource "aws_subnet" "private" { ... }
+# staging/main.tf
+resource "aws_vpc" "this" { ... }  # Duplicated!
+
+# ✅ GOOD: Reusable module
+# modules/vpc/main.tf
+resource "aws_vpc" "this" { ... }
+
+# environments/dev/main.tf
+module "vpc" {
+  source      = "../../modules/vpc"
+  environment = "dev"
+}
+```
+
+### 8. Missing Input Validation
+```hcl
+# ❌ BAD: No validation (garbage in, garbage out)
+variable "environment" {
+  type = string
+}
+
+# ✅ GOOD: Validate inputs
+variable "environment" {
+  type = string
+  validation {
+    condition     = can(regex("^(dev|staging|prod)$", var.environment))
+    error_message = "environment must be dev, staging, or prod."
+  }
+}
+```
+
+---
+
+## Troubleshooting Guide
+
+### Debug Logging
+```bash
+# Enable debug logging
+export TF_LOG=DEBUG
+export TF_LOG_PATH=terraform-debug.log
+terraform apply
+
+# Log levels: TRACE, DEBUG, INFO, WARN, ERROR
+export TF_LOG=TRACE  # Most verbose
+```
+
+### State Issues
+
+#### Locked State
+```bash
+# View lock info
+terraform force-unlock <LOCK_ID>
+
+# If DynamoDB locking, check DynamoDB table for lock record
+aws dynamodb scan --table-name terraform-locks
+```
+
+#### Corrupted State
+```bash
+# Pull state locally
+terraform state pull > backup.tfstate
+
+# Restore from backup
+terraform state push backup.tfstate
+
+# Remove corrupted resource from state
+terraform state rm aws_instance.broken
+
+# Re-import resource
+terraform import aws_instance.broken i-0abc1234def56789
+```
+
+#### Drift Detection
+```bash
+# Refresh state from real infrastructure
+terraform apply -refresh-only
+
+# Show what changed
+terraform plan -refresh-only
+```
+
+### Plan/Apply Failures
+
+#### Dependency Cycle
+```
+Error: Cycle: aws_security_group.web, aws_security_group.app
+```
+
+**Solution**: Break circular reference with separate resources or `depends_on`
+
+```hcl
+# Use separate security group rules instead of inline rules
+resource "aws_security_group_rule" "web_to_app" {
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.web.id
+  security_group_id        = aws_security_group.app.id
+}
+```
+
+#### Resource Already Exists
+```
+Error: resource already exists
+```
+
+**Solution**: Import existing resource or rename in state
+
+```bash
+# Import existing resource
+terraform import aws_vpc.this vpc-0abc1234
+
+# Or rename Terraform resource
+terraform state mv aws_vpc.old aws_vpc.new
+```
+
+---
+
+## Import Strategies
+
+### Terraform 1.5+ Import Blocks (Preferred)
+```hcl
+# Import existing VPC into Terraform management
+import {
+  to = aws_vpc.this
+  id = "vpc-0abc1234def56789"
+}
+
+resource "aws_vpc" "this" {
+  cidr_block = "10.0.0.0/16"
+  # ... rest of configuration
+}
+```
+
+### Legacy Import Command
+```bash
+# Pre-1.5 method (still works)
+terraform import aws_vpc.this vpc-0abc1234def56789
+
+# Import into module
+terraform import module.vpc.aws_vpc.this vpc-0abc1234def56789
+
+# Import with for_each
+terraform import 'aws_subnet.private["az-a"]' subnet-0abc1234
+terraform import 'aws_subnet.private["az-b"]' subnet-5678def9
+```
+
+---
+
+## Workspaces
+
+### When to Use Workspaces
+- **✅ GOOD**: Multiple environments (dev/staging/prod) with identical infrastructure topology
+- **❌ BAD**: Completely different architectures per environment (use separate state files instead)
+
+### Workspace Commands
+```bash
+terraform workspace list           # List workspaces
+terraform workspace new dev        # Create workspace
+terraform workspace select dev     # Switch workspace
+terraform workspace show           # Show current workspace
+terraform workspace delete staging # Delete workspace
+```
+
+### Workspace-Aware Configuration
+```hcl
+locals {
+  environment = terraform.workspace
+
+  # Workspace-specific sizing
+  instance_counts = {
+    dev     = 1
+    staging = 2
+    prod    = 5
+  }
+
+  instance_count = local.instance_counts[local.environment]
+}
+```
+
+---
+
+## CI/CD Integration
+
+### GitHub Actions Example
+```yaml
+name: Terraform
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'terraform/**'
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write  # For OIDC
+
+jobs:
+  terraform:
+    name: Terraform Plan/Apply
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./terraform
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::123456789012:role/GitHubActionsRole
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init
+        run: terraform init -backend-config=backend/dev.hcl
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+
+      - name: Run TFLint
+        run: tflint --recursive
+
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: terraform/
+          framework: terraform
+          soft_fail: false
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan -out=tfplan -no-color
+          terraform show -no-color tfplan > plan.txt
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve tfplan
+```
+
+### Best Practices for CI/CD
+- **Use OIDC** instead of long-lived credentials
+- **Save plan files** (`-out=tfplan`) and apply them for consistency
+- **Comment plans** on pull requests for review
+- **Run security scans** (Checkov, tfsec) before apply
+- **Use workspaces** or separate backend configs per environment
+- **Lock Terraform version** in CI to match local development
+
+---
+
+## Move/Rename Strategies
+
+### Renaming Resources
+```bash
+# Rename resource in state without destroying
+terraform state mv aws_instance.old_name aws_instance.new_name
+
+# Move resource into module
+terraform state mv aws_vpc.this module.networking.aws_vpc.this
+
+# Rename for_each key
+terraform state mv 'aws_subnet.private["old-key"]' 'aws_subnet.private["new-key"]'
+```
+
+### Refactoring with `moved` Block (Terraform ≥1.1)
+```hcl
+# Old configuration
+resource "aws_instance" "web" {
+  # ...
+}
+
+# New configuration with moved block
+moved {
+  from = aws_instance.web
+  to   = aws_instance.app
+}
+
+resource "aws_instance" "app" {
+  # Same config, new name
+}
+```
+
+---
+
+## Reviews & Refactors
+
+- Provide fully runnable code (not snippets)
+- For each significant change, explain **what** and **why** (security, stability, cost, perf)
+- Avoid churn in resource addresses; prefer `for_each` keyed by stable identifiers
+- Mark **breaking changes** and migration notes (e.g., state mv commands)
+
+---
+
+## Task Prompts (Shortcuts)
+
+- **Generate:** "Create a VPC+subnets module with validations and outputs; include examples for dev/prod."
+- **Convert:** "Port this CloudFormation template to idiomatic Terraform with modules and validations."
+- **Review:** "Audit this module for security and address stability; suggest `for_each`, lifecycles, and validations."
+- **Explain:** "Explain how this `for_each` works and how keys affect resource addressing."
+
+---
+
+**Last Updated**: December 2025  
+**Terraform Version**: 1.6.x  
+**AWS Provider Version**: 5.x

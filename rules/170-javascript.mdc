@@ -1,0 +1,759 @@
+---
+title: JavaScript Engineering Ruleset
+description: Secure-by-default, type-checked (JSDoc + @ts-check), performant, and testable JavaScript guidelines for generation and review.
+priority: 170
+alwaysApply: false
+files:
+  include:
+    - "**/*.js"
+    - "**/*.mjs"
+    - "**/*.cjs"
+    - "package.json"
+    - "tsconfig.json"            # for JSDoc type-checking in JS
+    - ".eslintrc.*"
+    - ".prettierrc*"
+    - "jest.config.*"
+    - "vitest.config.*"
+    - "jsdoc.json"
+---
+
+# JavaScript Engineering Ruleset - (December 2025)
+
+**Audience**: engineers writing and reviewing JavaScript/Node.js code  
+**Goal**: secure-by-default, bug-resistant, performant, readable, well-documented, and testable JavaScript - without over-engineering
+
+---
+
+## Quick Reference
+
+### Essential Commands
+```bash
+npm ci                        # Clean install (CI)
+npm audit                     # Check vulnerabilities
+npm test -- --coverage        # Run tests with coverage
+node --inspect app.js         # Start debugger
+node --prof app.js            # Generate profiling data
+```
+
+### Critical Patterns
+```js
+// 1. Use strict equality
+if (value === 0) { }        // ✅ GOOD
+if (value == 0) { }         // ❌ BAD
+
+// 2. Handle Promise rejections
+fetchData().catch(err => console.error(err));  // ✅ GOOD
+
+// 3. Optional chaining and nullish coalescing
+const name = user?.profile?.name ?? 'Guest';  // ✅ GOOD
+
+// 4. Use Set/Map for lookups
+const seen = new Set();     // ✅ GOOD (O(1))
+const seen = [];            // ❌ BAD (O(n))
+
+// 5. Never use eval or new Function
+eval(userInput);            // ❌ NEVER DO THIS
+
+// 6. Sanitize HTML
+element.textContent = userInput;            // ✅ GOOD
+element.innerHTML = DOMPurify.sanitize(html);  // ✅ GOOD
+element.innerHTML = userInput;              // ❌ BAD (XSS)
+```
+
+---
+
+## 0) Agent Operating Mode
+
+**For new code (hard requirements unless environment forbids):**
+
+* **Package Manager:** Prefer `pnpm` (fast, efficient)
+* **Module System:** Prefer **ES Modules**; add `// @ts-check`
+* **Linting:** Must pass **ESLint** with **0 errors/warnings**
+* **Formatting:** Must pass **Prettier**
+* **Documentation:** Use **JSDoc** types for all exported APIs
+* **Error Handling:** Add error handling around I/O (FS, network, JSON parse)
+* **Testing:** Include tests for non-trivial logic
+
+**For reviews:**
+
+* Follow the **Impact-first flow** below
+* Show **Before / After / Why** for each material change
+
+---
+
+## 1) Capture/Assume Context (before writing/reviewing)
+
+* **Purpose** (what problem this solves)
+* **Environment** (Browser, Node version, Worker/Lambda, bundler)
+* **Constraints** (latency, memory, PII/PCI/HIPAA, SLOs)
+* **Interfaces** (inputs/outputs, schemas, events)
+* **Scale** (data size, QPS, concurrency)
+
+*If something materially affects design and isn't provided, state assumptions clearly and proceed.*
+
+---
+
+## 2) Prioritized Review Flow (Impact-First)
+
+1. **Security** 🛡️
+2. **Correctness** 🐛
+3. **Performance** ⚡
+4. **Readability/Maintainability** 🧹
+5. **Modern JS best practices** ✅
+6. **Docs & Tests** 📚🧪
+7. **Tooling/CI** 🔧
+
+---
+
+## 3) Core Principles
+
+* **Naming:** `camelCase` (func/vars), `PascalCase` (classes), `UPPER_SNAKE_CASE` (constants)
+* **DRY / KISS / YAGNI:** small, focused functions; early returns; avoid speculative abstractions
+* **Composition over inheritance** unless a clear hierarchy exists
+
+---
+
+## 4) Modern Defaults
+
+* **ESM** `import`/`export` (no CommonJS unless required)
+* **const/let** (no `var`), **template literals**, **destructuring**, **spread/rest**
+* **Optional chaining `?.`** and **nullish coalescing `??`**
+* **Strict equality** `===`, `!==`
+* Prefer **immutable patterns** where reasonable; avoid accidental mutation
+
+---
+
+## 5) Security Rules (Mandatory)
+
+* Never use `eval`, `new Function`, or unsanitized `innerHTML`
+* Use `textContent` for DOM insertion; if HTML is required, **sanitize** (e.g., DOMPurify)
+* Validate and sanitize all external inputs (query/body/headers/params)
+* Do not log secrets/tokens/PII
+* Prefer **parameterized queries** / safe builders; no string-built queries
+* Enforce HTTPS; secure cookies (HttpOnly, SameSite) and CSRF where applicable
+* Pin third-party lib versions where risk matters
+
+---
+
+## 6) Correctness & Bug Avoidance
+
+* Guard **null/undefined** and **array bounds**
+* Ensure async flows `await` or return Promises correctly
+* Use **exhaustive conditionals** (add `default`)
+* Handle edge cases (empty arrays, zero, large inputs, timeouts)
+* Be explicit about **time zones/locale** for dates/numbers (Prefer UTC ISO 8601)
+
+---
+
+## 7) Performance
+
+* Use **Set/Map** for frequent lookups; avoid `O(n²)` scans
+* Batch independent async calls with **`Promise.all`**; for partial failure, **`allSettled` + retry**
+* Debounce/throttle noisy UI events
+* Prefer streaming/iterators for large data
+* Avoid needless allocations in hot paths
+
+**Example (unique):**
+
+```js
+// ❌ BAD: O(n²)
+const uniq = [];
+for (const x of arr) if (!uniq.includes(x)) uniq.push(x);
+
+// ✅ GOOD: O(n)
+const uniq = [...new Set(arr)];
+```
+
+---
+
+## 8) Error Handling & Logging
+
+* **Standard Pattern:** Use a structured logging approach for services
+* **Timestamps:** Use UTC ISO string `new Date().toISOString()`
+* **Exceptions:**
+    * Wrap risky I/O (FS/network/JSON) in `try/catch`
+    * Catch **specific** errors (`TypeError`, `RangeError`) where helpful
+    * Don't swallow errors; rethrow with context or log securely
+
+**Logging Example:**
+
+```js
+const logger = {
+  info: (msg, meta = {}) => console.log(JSON.stringify({ level: 'info', ts: new Date().toISOString(), msg, ...meta })),
+  error: (msg, err) => console.error(JSON.stringify({ level: 'error', ts: new Date().toISOString(), msg, error: err?.message, stack: err?.stack }))
+};
+```
+
+---
+
+## 9) Imports & Organization
+
+* Group imports: **std/core → third-party → local** (blank lines between)
+* Keep modules cohesive; avoid "god" modules
+* Export small, testable units
+* Avoid circular deps; factor shared utilities lower
+
+---
+
+## 10) Advanced Features (use only if clearly helpful)
+
+* **Array methods**: `map/filter/reduce` where they increase clarity
+* **Async/await** over raw promises; use **timeouts** where relevant
+* **Higher-order functions** for cross-cutting concerns (timing, retries, caching)
+* **Generators/iterators** for lazy/streaming pipelines—document yield/close semantics
+* **Decorators** only if the toolchain supports them; otherwise HOFs
+
+*Plain-JS "decorator" alternative:*
+
+```js
+const timeIt = (fn) => async (...args) => {
+  const t0 = performance.now();
+  try { return await fn(...args); }
+  finally { console.log(`${fn.name} took ${performance.now() - t0} ms`); }
+};
+```
+
+---
+
+## 11) Documentation (JSDoc + `// @ts-check`)
+
+* Every exported function/class/module has JSDoc with `@param`, `@returns`, `@throws`, and an example
+* Use typedefs/generics where shapes matter
+
+```js
+// @ts-check
+/**
+ * @module priceService
+ * Utilities for computing prices and taxes.
+ */
+
+/** @typedef {{ id: string, price: number }} Item */
+
+/**
+ * Compute total including tax.
+ * @param {Item[]} items
+ * @param {number} taxRate
+ * @returns {number}
+ * @throws {TypeError} On invalid inputs.
+ * @example
+ * total([{id:'A', price:10}], 0.1) // 11
+ */
+export function total(items, taxRate) { /* ... */ }
+```
+
+---
+
+## 12) Testing
+
+* Use Jest (or Mocha/Vitest)
+* Cover: happy path, edge cases, and error conditions
+* For async: `async/await` or `resolves/rejects`
+
+```js
+import { total } from './priceService.js';
+
+test('adds tax', () => {
+  expect(total([{ id: 'A', price: 10 }], 0.1)).toBe(11);
+});
+
+test('throws on invalid items', () => {
+  expect(() => total('nope', 0.1)).toThrow(TypeError);
+});
+```
+
+---
+
+## 13) Tooling (copy-paste ready)
+
+**ESLint** (JSDoc types; no TS build):
+
+```json
+{
+  "env": { "es2022": true, "node": true, "browser": true, "jest": true },
+  "extends": ["eslint:recommended"],
+  "plugins": ["jsdoc"],
+  "rules": {
+    "no-var": "error",
+    "prefer-const": "error",
+    "eqeqeq": "error",
+    "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    "jsdoc/check-alignment": "warn",
+    "jsdoc/check-param-names": "warn",
+    "jsdoc/check-tag-names": "warn",
+    "jsdoc/check-types": "warn"
+  }
+}
+```
+
+**Prettier** (optional):
+
+```json
+{ "semi": true, "singleQuote": true, "printWidth": 100, "trailingComma": "es5" }
+```
+
+**Type-checking in plain JS (`// @ts-check`)**:
+
+```json
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": true,
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "Bundler"
+  },
+  "include": ["src/**/*.js", "tests/**/*.js"]
+}
+```
+
+---
+
+## 14) Browser-Specific Patterns
+
+### DOM Manipulation
+```js
+// ✅ GOOD: Batch DOM updates
+const fragment = document.createDocumentFragment();
+items.forEach(item => {
+  const li = document.createElement('li');
+  li.textContent = item.name;
+  fragment.appendChild(li);
+});
+list.appendChild(fragment);
+```
+
+### Event Listeners
+```js
+// ✅ GOOD: Event delegation + cleanup
+const controller = new AbortController();
+element.addEventListener('click', handler, { signal: controller.signal });
+// Later: controller.abort();
+```
+
+### Fetch with Timeout
+```js
+const controller = new AbortController();
+const timeout = setTimeout(() => controller.abort(), 5000);
+try {
+  const response = await fetch(url, { signal: controller.signal });
+  clearTimeout(timeout);
+} catch (err) {
+  if (err.name === 'AbortError') console.error('Request timed out');
+}
+```
+
+---
+
+## 15) Node.js-Specific Patterns
+
+### Filesystem
+```js
+import fs from 'node:fs/promises';
+
+try {
+  const data = await fs.readFile('config.json', 'utf8');
+} catch (err) {
+  console.error('Failed to read config:', err);
+}
+```
+
+### Streams
+```js
+import { pipeline } from 'node:stream/promises';
+import { createReadStream, createWriteStream } from 'node:fs';
+import { createGzip } from 'node:zlib';
+
+await pipeline(
+  createReadStream('input.txt'),
+  createGzip(),
+  createWriteStream('input.txt.gz')
+);
+```
+
+### Child Processes (Safe)
+```js
+import { spawn } from 'node:child_process';
+
+// ✅ GOOD: Pass arguments separately (no shell injection)
+spawn('cat', [userInput]);
+
+// ❌ BAD: Shell injection risk
+exec(`cat ${userInput}`);
+```
+
+---
+
+## 16) Serverless (AWS Lambda) Patterns
+
+### Handler Structure
+```js
+// ✅ GOOD: Initialize outside handler (reused across invocations)
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+
+const dynamoClient = new DynamoDBClient({ region: 'us-east-1' });
+
+export const handler = async (event, context) => {
+  try {
+    // Business logic using pre-initialized client
+    const result = await dynamoClient.send(command);
+    return {
+      statusCode: 200,
+      body: JSON.stringify(result)
+    };
+  } catch (err) {
+    console.error('Lambda failed:', err);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Internal server error' })
+    };
+  }
+};
+```
+
+---
+
+## 17) Common Mistakes & Anti-Patterns
+
+### 1. Using `==` Instead of `===`
+```js
+// ❌ BAD
+if (value == 0) { }       // true for: 0, '0', false, '', []
+
+// ✅ GOOD
+if (value === 0) { }      // true only for: 0
+```
+
+### 2. Mutating Arrays/Objects
+```js
+// ❌ BAD: Mutates original
+function addItem(arr, item) {
+  arr.push(item);
+  return arr;
+}
+
+// ✅ GOOD: Returns new array
+function addItem(arr, item) {
+  return [...arr, item];
+}
+```
+
+### 3. Not Handling Promise Rejections
+```js
+// ❌ BAD: Unhandled rejection
+fetchData();
+
+// ✅ GOOD: Handle errors
+fetchData().catch(err => console.error(err));
+```
+
+### 4. Blocking the Event Loop
+```js
+// ❌ BAD: Synchronous heavy computation blocks everything
+function processLargeArray(arr) {
+  arr.forEach(item => expensiveCalculation(item));
+}
+
+// ✅ GOOD: Break into chunks
+async function processLargeArray(arr, chunkSize = 1000) {
+  for (let i = 0; i < arr.length; i += chunkSize) {
+    const chunk = arr.slice(i, i + chunkSize);
+    chunk.forEach(item => expensiveCalculation(item));
+    await new Promise(resolve => setImmediate(resolve));  // Yield to event loop
+  }
+}
+```
+
+### 5. Memory Leaks (Event Listeners)
+```js
+// ❌ BAD: Not cleaning up
+button.addEventListener('click', handleClick);
+// Component removed, but listener still exists!
+
+// ✅ GOOD: Cleanup
+const controller = new AbortController();
+button.addEventListener('click', handleClick, { signal: controller.signal });
+// Later: controller.abort();
+```
+
+### 6. Incorrect `this` Binding
+```js
+// ❌ BAD: Lost context
+class Counter {
+  count = 0;
+  increment() { this.count++; }
+}
+const counter = new Counter();
+btn.addEventListener('click', counter.increment);  // `this` is undefined!
+
+// ✅ GOOD: Use arrow function method
+class Counter {
+  count = 0;
+  increment = () => { this.count++; }
+}
+```
+
+### 7. Not Validating External Inputs
+```js
+// ❌ BAD: No validation
+app.post('/api/users', (req, res) => {
+  db.insert('users', req.body);  // Injection risk!
+});
+
+// ✅ GOOD: Validate with schema
+import Joi from 'joi';
+
+const userSchema = Joi.object({
+  name: Joi.string().min(1).max(100).required(),
+  email: Joi.string().email().required()
+});
+
+app.post('/api/users', (req, res) => {
+  const { error, value } = userSchema.validate(req.body);
+  if (error) return res.status(400).json({ error: error.details });
+  db.insert('users', value);
+});
+```
+
+### 8. Hardcoded Secrets
+```js
+// ❌ BAD
+const API_KEY = 'sk_live_1234567890abcdef';
+
+// ✅ GOOD
+const API_KEY = process.env.API_KEY;
+if (!API_KEY) throw new Error('API_KEY required');
+```
+
+---
+
+## 18) Troubleshooting Guide
+
+### Debug Logging
+```bash
+# Node.js debugging
+node --inspect app.js
+node --inspect-brk app.js     # Break on first line
+NODE_ENV=production node app
+
+# Performance profiling
+node --prof app.js
+node --prof-process isolate-*.log
+```
+
+### Common Errors
+
+**UnhandledPromiseRejectionWarning:**
+```js
+// ❌ Cause: Missing .catch()
+fetchData();
+
+// ✅ Fix
+fetchData().catch(err => console.error(err));
+```
+
+**Maximum call stack size exceeded:**
+```js
+// ❌ Cause: Infinite recursion
+function factorial(n) {
+  return n * factorial(n - 1);  // No base case!
+}
+
+// ✅ Fix: Add base case
+function factorial(n) {
+  if (n <= 1) return 1;
+  return n * factorial(n - 1);
+}
+```
+
+---
+
+## 19) CI/CD Integration
+
+### GitHub Actions Example
+```yaml
+name: Node.js CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20, 21]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit  # Type check
+      - run: npm test -- --coverage
+      - run: npm audit --audit-level=high
+```
+
+---
+
+## 20) Security Deep Dive
+
+### Prototype Pollution
+```js
+// ❌ BAD: Vulnerable
+function merge(target, source) {
+  for (const key in source) target[key] = source[key];
+  return target;
+}
+
+// ✅ GOOD: Prevent prototype pollution
+function safeMerge(target, source) {
+  for (const key in source) {
+    if (Object.hasOwnProperty.call(source, key) && 
+        key !== '__proto__' && key !== 'constructor') {
+      target[key] = source[key];
+    }
+  }
+  return target;
+}
+```
+
+### ReDoS (Regular Expression Denial of Service)
+```js
+// ❌ BAD: Vulnerable to ReDoS
+const regex = /^([a-zA-Z0-9]+)+@[a-zA-Z0-9]+\.[a-zA-Z]{2,}$/;
+
+// ✅ GOOD: Simpler regex or use validator library
+const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Or: import validator from 'validator'; validator.isEmail(input);
+```
+
+---
+
+## 21) Import Ordering Example
+
+```js
+// Node core / Web built-ins
+import fs from 'node:fs';
+import path from 'node:path';
+
+// Third-party
+import express from 'express';
+import DOMPurify from 'dompurify';
+
+// Local
+import { total } from './priceService.js';
+```
+
+---
+
+## 22) Review Output Template (Agent or Human)
+
+**High-level:** purpose, environment, key flows.
+
+**Findings (ordered by priority):**
+
+1. **[Security] Title**
+   **Before:** …
+   **After:** …
+   **Why:** impact/trade-offs.
+
+2. **[Bug] Title** — Before / After / Why
+
+3. **[Performance] Title** — Before / After / Why
+
+4. **[Readability] Title** — Before / After / Why
+
+5. **[Best Practice] Title** — Before / After / Why
+
+**Tests to add/update:** bullets with small Jest snippets.
+**Docs to add:** which exports need JSDoc/examples.
+**Tooling:** lint/type-check/test config changes (if any).
+
+---
+
+## 23) Generation Output Template (Agent)
+
+**Assumptions & Context:** purpose, env, inputs/outputs, constraints.
+**API (JSDoc):** public surface documented.
+**Implementation:** ESM, `// @ts-check`, JSDoc types, error handling.
+**Tests:** happy path + edge + errors.
+**Notes:** trade-offs/TODOs.
+
+**Skeleton:**
+
+```js
+// @ts-check
+/**
+ * @module myFeature
+ * Brief description and usage example.
+ */
+
+/** @typedef {{ id: string, value: number }} Item */
+
+/**
+ * Do an important thing.
+ * @param {Item[]} items
+ * @returns {number}
+ * @throws {TypeError}
+ * @example
+ * doThing([{id:'x', value:1}]); // 1
+ */
+export function doThing(items) {
+  if (!Array.isArray(items)) throw new TypeError('items must be an array');
+  return items.reduce((s, it) => s + it.value, 0);
+}
+```
+
+---
+
+## 24) Appendix — JSDoc Cheatsheet
+
+* **Union/optional/nullable**
+
+```js
+/** @param {string | number} id */
+/** @param {string=} alias */   // optional
+/** @param {?string} note */    // nullable
+```
+
+* **Record/Map**
+
+```js
+/** @type {Record<string, number>} */
+const counts = {};
+```
+
+* **Generics**
+
+```js
+/** @template T @param {T[]} xs @returns {T} */
+function first(xs) { return xs[0]; }
+```
+
+* **Async**
+
+```js
+/** @returns {Promise<Response>} */
+async function ping(url) { return fetch(url); }
+```
+
+---
+
+## 25) FAQ — "Type annotations can only be used in TS files"
+
+Stay in `.js` with **JSDoc + `// @ts-check`** and a `tsconfig.json` that enables `"allowJs": true, "checkJs": true, "noEmit": true`. If you need inline TS syntax, rename to `.ts` and adopt a TS toolchain.
+
+---
+
+**Last Updated**: December 2025  
+**Node.js Version**: 18+ (LTS)  
+**ES Version**: ES2022

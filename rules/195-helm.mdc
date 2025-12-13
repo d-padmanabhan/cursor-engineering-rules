@@ -1,0 +1,264 @@
+---
+title: Helm & Kubernetes Package Management
+description: Helm charts, best practices, templating, values management, and GitOps deployment patterns
+priority: 195
+alwaysApply: false
+files:
+  include:
+    - "**/Chart.yaml"
+    - "**/values.yaml"
+    - "**/values-*.yaml"
+    - "**/templates/**/*.yaml"
+    - "**/helmfile.yaml"
+---
+
+# Helm & Kubernetes Package Management
+
+## Guiding Principles
+
+1. **Reusability**: Create modular, reusable charts
+2. **Configurability**: Use values.yaml for environment-specific configuration
+3. **Best Practices**: Follow Helm and Kubernetes conventions
+4. **Testing**: Validate charts before deployment
+5. **Version Control**: Track charts and values in Git
+
+---
+
+## Helm Chart Structure
+
+```
+mychart/
+├── Chart.yaml              # Chart metadata
+├── values.yaml             # Default values
+├── values-prod.yaml        # Production values
+├── values-staging.yaml     # Staging values
+├── charts/                 # Chart dependencies
+├── templates/              # Kubernetes manifests
+│   ├── deployment.yaml
+│   ├── service.yaml
+│   ├── ingress.yaml
+│   ├── configmap.yaml
+│   ├── secret.yaml
+│   ├── hpa.yaml
+│   ├── _helpers.tpl       # Template helpers
+│   └── NOTES.txt          # Post-install notes
+└── README.md
+```
+
+---
+
+## Chart.yaml
+
+```yaml
+apiVersion: v2
+name: webapp
+description: Web application Helm chart
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - webapp
+  - nodejs
+home: https://github.com/acme/webapp
+sources:
+  - https://github.com/acme/webapp
+maintainers:
+  - name: DevOps Team
+    email: devops@acme.com
+dependencies:
+  - name: postgresql
+    version: "12.x"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: postgresql.enabled
+```
+
+---
+
+## values.yaml
+
+```yaml
+# Default values
+replicaCount: 2
+
+image:
+  repository: acme/webapp
+  pullPolicy: IfNotPresent
+  tag: ""  # Defaults to Chart appVersion
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: webapp.acme.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: webapp-tls
+      hosts:
+        - webapp.acme.com
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+env:
+  - name: NODE_ENV
+    value: production
+  - name: LOG_LEVEL
+    value: info
+
+envFrom:
+  - secretRef:
+      name: webapp-secrets
+
+postgresql:
+  enabled: true
+  auth:
+    database: webapp
+    username: webapp
+```
+
+---
+
+## Common Helm Commands
+
+```bash
+# Create new chart
+helm create mychart
+
+# Lint chart
+helm lint mychart/
+
+# Template (dry-run)
+helm template mychart/ --values mychart/values-prod.yaml
+
+# Install
+helm install webapp mychart/ \
+  --namespace production \
+  --create-namespace \
+  --values mychart/values-prod.yaml
+
+# Upgrade
+helm upgrade webapp mychart/ \
+  --namespace production \
+  --values mychart/values-prod.yaml \
+  --wait
+
+# Rollback
+helm rollback webapp 1 --namespace production
+
+# List releases
+helm list --namespace production
+
+# Get values
+helm get values webapp --namespace production
+
+# Uninstall
+helm uninstall webapp --namespace production
+```
+
+---
+
+## Best Practices
+
+### Use _helpers.tpl
+
+```yaml
+{{/*
+Expand the name of the chart.
+*/}}
+{{- define "webapp.name" -}}
+{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Create a default fully qualified app name.
+*/}}
+{{- define "webapp.fullname" -}}
+{{- if .Values.fullnameOverride }}
+{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- $name := default .Chart.Name .Values.nameOverride }}
+{{- if contains $name .Release.Name }}
+{{- .Release.Name | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
+Common labels
+*/}}
+{{- define "webapp.labels" -}}
+helm.sh/chart: {{ include "webapp.chart" . }}
+{{ include "webapp.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "webapp.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "webapp.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+```
+
+---
+
+## Related Files
+
+- `260-kubernetes.mdc` - Kubernetes patterns
+- `140-terraform.mdc` - Infrastructure as Code
+- `120-gha.mdc` - CI/CD for Helm deployments
+
+---
+
+**Last Updated**: December 2025  
+**Purpose**: Helm and Kubernetes package management best practices

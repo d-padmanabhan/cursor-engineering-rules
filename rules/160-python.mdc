@@ -1,0 +1,681 @@
+---
+title: Python Code Review & Enhancement Guidelines
+description: Opinionated, performance- and security-minded Python rules for generation and review.
+priority: 160
+alwaysApply: false
+files:
+  include:
+    - "**/*.py"
+    - "pyproject.toml"
+    - "uv.lock"
+    - "requirements*.txt"
+    - ".pre-commit-config.yaml"
+---
+
+## Guiding Principle
+Apply features only when they add clarity, correctness, performance, or security. Prefer simple, intentional solutions (DRY, KISS, YAGNI, Fail Fast).
+
+## 1) Standards
+
+- **Shebang:** `#!/usr/bin/env -S uv run` (preferred) or `#!/usr/bin/env python3`.
+- **Python Version:** ≥ 3.12.
+- **Formatting:** 4-space indents; soft wrap at 120 chars (adhere to PEP 8, PEP 257, PEP 484).
+- **Linting:** Run `black`, `ruff`, and `pylint`. Aim for a score of ≥9.0 on `pylint`.
+- **String Formatting:** Use double quotes `"` unless the string contains double quotes (use `'` then). `black` handles this.
+- **Imports:** Grouped: stdlib / third-party / local. Sorted alphabetically within groups. Separate groups with blank lines.
+- **Documentation:** 
+  - Google-style docstrings for all functions, classes, methods.
+  - Module docstring immediately below shebang (leave space between shebang and docstring).
+  - Include workflow with numbered steps if applicable.
+  - Add usage syntax guide with command-line examples (not needed for Lambda).
+  - Inline comments for complex logic.
+- **Type Hints:** Strict typing required. Use Python 3.12 built-in types:
+    - `Dict` → `dict`
+    - `List` → `list`
+    - `Tuple` → `tuple`
+    - `Set` → `set`
+    - `Union[X, Y]` → `X | Y`
+    - `Optional[X]` → `X | None`
+- **Type Checking:** Enable strict mode (`mypy --strict`, `pyright`, or `pyre`) where appropriate. Use `NewType`, `TypedDict`, or `TypeAlias` for specificity.
+- **Dependencies:** Prefer `uv` for package management. Introduce third-party libraries only when needed—stick to stdlib otherwise.
+- **Circular Imports:** Avoid by restructuring (move shared logic to separate module).
+- **Local Libraries:** Use `aws_utils.py`, `cloudflare_utils.py`, `utils.py` for common tasks to avoid duplication.
+
+## 1a) Package Management (uv)
+
+**Prefer `uv` for new projects** - Fast, modern Python package installer and resolver.
+
+**Installation:**
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+**Project Setup:**
+```bash
+uv init my-project
+uv sync
+```
+
+**Benefits:** 10-100x faster, deterministic resolution, drop-in pip replacement.
+
+## 2) Code Structure & Readability
+
+- **Function Order:** Order functions by call hierarchy. Helper functions first, `main()` last.
+- **Entry Point:** Always use `if __name__ == "__main__":` to call the main function.
+- **Small Functions:** Break code into small, reusable functions with meaningful verb-based names.
+- **Defensive Programming:** Validate inputs early (fail-fast). Use specific checks (`if x is None`) over broad `try/except`.
+- **Meaningful Naming:** Use `fetch_user_details` (not `get`) or `order_total` (not `ot`).
+- **No Mutable Defaults:** Avoid `def foo(bar=[])`. Use `def foo(bar: list[str] | None = None): bar = bar or []`.
+
+## 3) Modern Python & Advanced Features
+
+### Core Language Features
+- **f-strings:** Use `f"User: {user_name}"` for formatting. Python 3.12: `f"{text!r}"` for debugging.
+- **Exception Handling:** Use `try-except-else-finally` for complex flows.
+- **Assertions:** Use `assert stock >= 0, "Stock cannot be negative"` for development—not production.
+- **Comprehensions:** Use `[price * 2 for price in prices]` where clear—avoid if it reduces readability.
+- **Walrus Operator (`:=`):** Use `if (count := len(items)) > 5:` for inline assignments—don't force it.
+- **match-case:** Simplify complex conditionals:
+  ```python
+  def handle_response(code: int) -> str:
+      match code:
+          case 200: return "Success"
+          case 400 | 404: return "Client Error"
+          case _: return "Unknown"
+  ```
+- **Literal Types:** Use `status: Literal["active", "inactive"]` for fixed values.
+- **Type Safety:** Use `isinstance` and `issubclass` for safe type checks.
+
+### Functional Programming
+- **`functools.wraps`:** Preserve metadata in decorators.
+- **`functools.cache`:** Use `@functools.cache` for costly, repeated calls.
+- **`functools.partial`:** Pre-specify function arguments: `partial(multiply, 2)`.
+- **`functools.singledispatch`:** Polymorphic functions based on type.
+- **`functools.total_ordering`:** Reduce comparison method boilerplate.
+- **map/filter/reduce:** Use where readable—prefer comprehensions otherwise.
+
+### Data Structures
+- **dataclasses:** Use for data-centric classes:
+  ```python
+  from dataclasses import dataclass, field
+  @dataclass
+  class Product:
+      product_id: int
+      tags: list[str] = field(default_factory=list)
+  ```
+- **`collections`:** Use `Counter`, `deque`, `defaultdict`, `namedtuple` where appropriate.
+- **Tuple Unpacking:** Use `x, y = get_coordinates()` for cleaner code.
+- **`enumerate`:** Use `for idx, value in enumerate(values):` for indexed loops.
+
+### Object-Oriented Features
+- **`@property`:** Use for validation or computed properties:
+  ```python
+  @property
+  def total(self) -> float:
+      return self._total
+  @total.setter
+  def total(self, value: float) -> None:
+      if value < 0: raise ValueError("Total cannot be negative")
+      self._total = value
+  ```
+- **Abstract Base Classes (ABC):** Define interfaces:
+  ```python
+  from abc import ABC, abstractmethod
+  class DataWriter(ABC):
+      @abstractmethod
+      def write(self, data: str) -> None: ...
+  ```
+- **Protocols:** Use for structural typing (duck typing).
+- **MetaClasses:** Use for advanced class customization (e.g., Singleton pattern).
+- **`@classmethod`/`@staticmethod`:** Use for utility/factory methods.
+- **Magic Methods:** Implement `__str__`, `__repr__`, `__eq__`, etc., for Pythonic behavior.
+
+### Context Managers
+- **Built-in:** Use `with` for file handling, network connections.
+- **Custom:** Create with `contextlib`:
+  ```python
+  from contextlib import contextmanager
+  @contextmanager
+  def database_connection(db_name: str):
+      logger.info(f"Connecting to {db_name}")
+      yield
+      logger.info("Disconnected")
+  ```
+
+### Text Processing
+- **`dedent` from textwrap:** Remove leading whitespace for SQL queries, templates:
+  ```python
+  from textwrap import dedent
+  query = dedent("""
+      SELECT * FROM users
+      WHERE age > 18
+  """)
+  ```
+- **`re` module:** Validate inputs to prevent injection attacks.
+
+## 4) Logging & Observability
+
+- **Setup:** Use a custom logger setup function at the start of scripts.
+- **Pattern:**
+  ```python
+  import logging
+  import time
+  
+  def setup_custom_logger(name: str) -> logging.Logger:
+      """Create and configure a logger with UTC timestamps."""
+      logger = logging.getLogger(name)
+      logger.setLevel(logging.DEBUG)
+      
+      class UTCFormatter(logging.Formatter):
+          converter = time.gmtime
+      
+      formatter = UTCFormatter(
+          "%(asctime)s - %(levelname)s - %(message)s", 
+          datefmt="%c %Z"
+      )
+      
+      if not logger.handlers:
+          handler = logging.StreamHandler()
+          handler.setFormatter(formatter)
+          logger.addHandler(handler)
+      return logger
+  
+  logger = setup_custom_logger(__name__)
+  ```
+- **Structured Logging:** Use `loguru` or JSON format for observability pipelines where needed.
+- **Error Logging:** Include `exc_info=True` for tracebacks: `logger.error("Error", exc_info=True)`.
+
+## 5) Security & Validation
+
+- **Input Validation:** Sanitize early with `re.match(r"^\w+$", user_input)`.
+- **SQL Injection:** Use parameterized queries: `cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))`.
+- **Shell Sanitization:** Use `shlex.quote(user_input)` for shell commands.
+- **Pydantic:** Use for structured data validation:
+  ```python
+  from pydantic import BaseModel, field_validator
+  class User(BaseModel):
+      name: str
+      age: int
+      @field_validator("age")
+      @classmethod
+      def valid_age(cls, v: int) -> int:
+          if v < 0 or v > 150: raise ValueError("Invalid age")
+          return v
+  ```
+- **Avoid Broad Exceptions:** Catch specific exceptions (`ValueError`, `KeyError`) instead of bare `except Exception`.
+
+## 6) Error Handling & Resilience
+
+- **Exception Groups:** For batch operations:
+  ```python
+  from exceptiongroup import ExceptionGroup
+  errors = []
+  for item in items:
+      try:
+          process(item)
+      except Exception as e:
+          errors.append(e)
+  if errors:
+      raise ExceptionGroup("Batch failed", errors)
+  ```
+- **Retry Libraries:** Use `tenacity`, `backoff`, or `retrying` for transient failures:
+  ```python
+  from tenacity import retry, stop_after_attempt, wait_exponential
+  @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
+  def fetch_data(): ...
+  ```
+- **Custom Exceptions:** Define `class FileProcessingError(Exception): pass` for clarity.
+- **Warnings Module:** Use for non-critical issues: `warnings.warn("Deprecated", DeprecationWarning)`.
+
+## 7) Performance Optimization
+
+- **Profiling:** Use `cProfile`, `line_profiler`, or `memory_profiler` to identify bottlenecks.
+- **Generators:** Use `yield` for large datasets to save memory.
+- **Session Reuse:** Use `requests.Session()` for multiple API calls.
+- **Concurrency:**
+  - **`asyncio`:** For I/O-bound tasks.
+  - **`threading`:** For I/O-bound with blocking libraries.
+  - **`multiprocessing`:** For CPU-bound tasks.
+- **Speed Boosts:** Use `numba` or `cython` for performance-critical loops (if profiling justifies).
+- **Efficient Lookups:** Use `set` for O(1) lookups, `heapq` for priority queues, `bisect` for sorted lists.
+- **Parallel Computing:** Use `ray` or `dask` for distributed workloads if needed.
+- **Complexity Analysis:** Avoid O(n²) loops—refactor with better data structures.
+
+## 8) AWS & Boto3 Best Practices
+
+### Client Configuration
+- **Global Initialization:** In Lambda, create `boto3` clients globally (outside handler) to reuse across invocations:
+  ```python
+  import boto3
+  from botocore.config import Config
+  
+  boto_config = Config(
+      retries={"max_attempts": 5, "mode": "standard"},
+      connect_timeout=5,
+      read_timeout=30
+  )
+  
+  s3_client = boto3.client("s3", config=boto_config, region_name="us-east-1")
+  ```
+- **Region Handling:** Retrieve from `AWS_REGION` env var, default to `us-east-1`, allow override via parameter.
+- **Client Factory:** Create reusable factory function:
+  ```python
+  def create_boto3_client(service_name: str, region_name: str, **kwargs) -> boto3.client:
+      try:
+          config = Config(retries={"max_attempts": 5, "mode": "standard"})
+          client = boto3.client(service_name, region_name=region_name, config=config, **kwargs)
+          logger.info(f"Created boto3 client for {service_name} in {region_name}")
+          return client
+      except (BotoCoreError, ClientError) as e:
+          logger.error(f"Failed to create boto3 client: {e}")
+          raise
+  ```
+
+### Error Handling
+- **Specific Exceptions:** Catch `botocore.exceptions.ClientError`, `ResourceNotFoundError`, etc.
+- **Error Codes:** Check `e.response['Error']['Code']` for specific AWS errors.
+
+### Pagination & Waiters
+- **Paginators:** Use for large result sets:
+  ```python
+  paginator = s3_client.get_paginator("list_objects_v2")
+  for page in paginator.paginate(Bucket="my-bucket"):
+      for obj in page.get("Contents", []):
+          process(obj)
+  ```
+- **NextToken:** Handle manually if paginator unavailable.
+- **Waiters:** Pause until resource is ready:
+  ```python
+  waiter = ec2_client.get_waiter("instance_running")
+  waiter.wait(InstanceIds=["i-123456"])
+  ```
+
+### Lambda Patterns
+- **Handler Placement:** Place `lambda_handler` at end of file.
+- **Clients as Parameters:** Pass clients to functions (don't recreate inside functions).
+- **Correlation ID:** Use `context.aws_request_id` for tracing.
+- **Handler Signature:** Use `def lambda_handler(event: dict[str, Any], _) -> dict[str, Any]:` when context unused.
+- **Observability:** Use `aws_lambda_powertools` for structured logging, tracing, metrics:
+  ```python
+  from aws_lambda_powertools import Logger, Tracer, Metrics
+  logger = Logger()
+  tracer = Tracer()
+  metrics = Metrics()
+  ```
+- **Dry-Run Mode:** Add flag to preview actions: `if event.get("dry_run"): logger.info(f"Would perform: {action}")`.
+
+### Region Validation
+```python
+def validate_region(region: str) -> str:
+    """Validate AWS region against allowed list."""
+    allowed_regions = [
+        "us-east-1", "us-west-2", "us-east-2", "ca-central-1",
+        "eu-west-1", "eu-west-2", "eu-central-1", "eu-north-1",
+        "ap-southeast-1", "ap-southeast-2"
+    ]
+    if region not in allowed_regions:
+        raise ValueError(f"Invalid region: {region}. Allowed: {allowed_regions}")
+    return region
+```
+
+## 9) Testing & Quality
+
+- **pytest:** Write tests for reliability:
+  ```python
+  def test_parse():
+      assert parse_input("123") == 123
+  ```
+- **Mocking:** Use `unittest.mock.patch` or `pytest-mock` for external dependencies.
+- **Parameterized Tests:** Use `@pytest.mark.parametrize` for multiple inputs.
+- **Test-Driven Development (TDD):** Write tests before implementation where appropriate.
+- **Type Checking:** Run `mypy --strict` to catch type errors.
+
+## 10) Data Handling & Integration
+
+- **pandas:** Use for tabular data analysis: `df[df["sales"] > 100]`.
+- **SQLAlchemy:** Use for database ORM if needed.
+- **cerberus:** Alternative to Pydantic for simple validation.
+- **jinja/jinjasql:** Use for templating (HTML, SQL, etc.).
+- **httpx:** Modern async HTTP client (alternative to `requests`).
+- **Message Brokers:** Integrate RabbitMQ/Kafka if event-driven architecture needed.
+
+## 11) Code Structure & Architecture
+
+- **SOLID Principles:**
+  - **Single Responsibility:** One task per class/function.
+  - **Open-Closed:** Extend, don't modify.
+  - **Liskov Substitution:** Subclasses interchangeable.
+  - **Interface Segregation:** Small, focused interfaces.
+  - **Dependency Inversion:** Depend on abstractions, not concretions.
+- **Separation of Concerns:** Use service/repository/handler pattern for layers.
+- **Dependency Injection:** Pass dependencies as parameters for testability.
+- **Plugin Architecture:** Enable extensions via registration:
+  ```python
+  plugins: dict[str, Callable] = {}
+  def register_plugin(name: str, func: Callable) -> None:
+      plugins[name] = func
+  ```
+- **Configuration Management:** Use `configparser`, `os.environ`, or `.env` files.
+- **Feature Flags:** Implement toggles for gradual rollout.
+
+## 12) CLI & User Experience
+
+- **argparse:** Add CLI options:
+  ```python
+  parser = argparse.ArgumentParser()
+  parser.add_argument("--dry-run", action="store_true")
+  parser.add_argument("-v", "--verbose", action="count", default=0)
+  ```
+- **typer:** Modern CLI framework (alternative to argparse).
+- **rich:** Rich text and progress bars:
+  ```python
+  from rich.console import Console
+  console = Console()
+  console.print("[bold green]Success![/bold green]")
+  ```
+- **tqdm:** Progress bars: `for item in tqdm(items): process(item)`.
+- **colorama:** Colored output for diffs or status messages.
+
+## 13) Deployment & Distribution
+
+- **Packaging:** Use `setuptools`, `poetry`, `hatch`, or `flit`.
+- **pyproject.toml:** Define project metadata and dependencies.
+- **Executables:** Use `PyInstaller` or `cx_Freeze` for standalone apps.
+- **Docker:** Use multi-stage builds:
+  ```dockerfile
+  FROM python:3.12 AS builder
+  COPY requirements.txt .
+  RUN pip install -r requirements.txt
+  FROM python:3.12-slim
+  COPY --from=builder /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
+  COPY . .
+  CMD ["python", "main.py"]
+  ```
+- **CI/CD:** Automate with GitHub Actions, GitLab CI, etc.
+
+## 14) Timestamps
+
+Use UTC-aware timestamps:
+```python
+from datetime import datetime, timezone
+timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+```
+
+## 15) Dry-Run Mode
+
+Simulate operations without executing:
+```python
+def update_records(records: dict, dry_run: bool = False) -> None:
+    if dry_run:
+        logger.info(f"Dry run: would update {records}")
+        return
+    # Actual update logic
+```
+
+## 16) Documentation Template
+
+```python
+#!/usr/bin/env -S uv run
+"""
+Module purpose and overview.
+
+This script performs X by doing Y. It interacts with Z.
+
+Workflow:
+1. Load configuration
+2. Validate inputs
+3. Process data
+4. Write results
+
+Usage:
+    python script.py --input data.json --output results.json
+    python script.py --dry-run
+"""
+
+# Standard library
+import logging
+
+# Third-party
+import requests
+
+# Local
+from utils import setup_custom_logger
+
+def function_name(param: str) -> int:
+    """
+    Brief description of what the function does.
+    
+    Args:
+        param (str): Description of parameter.
+    
+    Returns:
+        int: Description of return value.
+    
+    Raises:
+        ValueError: When param is invalid.
+    """
+    pass
+```
+
+## 17) Scaling Guidelines
+
+- **Small Scripts (<50 lines):** Stick to basics—skip advanced features unless critical.
+- **Medium Scripts (50–200 lines):** Add type hints, logging, small functions. Consider `argparse` or `Pydantic`.
+- **Large Projects (>200 lines):** Use OOP, SOLID principles, plugins, deployment tools. Optimize with profiling/concurrency.
+
+## 18) Example Script
+
+```python
+#!/usr/bin/env -S uv run
+"""Process user data with logging, validation, and decorators.
+
+This script demonstrates:
+- Pydantic models with validation
+- Structured logging with UTC timestamps
+- Decorators for timing and retries
+- CLI with --dry-run
+- Error handling and input validation
+
+Usage:
+    python app.py --dry-run
+"""
+
+from __future__ import annotations
+
+import argparse
+import functools
+import logging
+import re
+import sys
+import time
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from typing import Callable, Iterable, Iterator, Any
+
+from pydantic import BaseModel, ValidationError, field_validator
+
+
+# -----------------------------
+# Logging setup
+# -----------------------------
+def setup_custom_logger(name: str) -> logging.Logger:
+    """Create and configure a logger with UTC timestamps."""
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
+    
+    class UTCFormatter(logging.Formatter):
+        converter = time.gmtime
+    
+    formatter = UTCFormatter(
+        "%(asctime)s - %(levelname)s - %(message)s",
+        datefmt="%c %Z"
+    )
+    
+    if not logger.handlers:
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+    return logger
+
+logger = setup_custom_logger(__name__)
+
+
+# -----------------------------
+# Decorators
+# -----------------------------
+def timed(func: Callable) -> Callable:
+    """Measure and log execution time."""
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        try:
+            return func(*args, **kwargs)
+        finally:
+            elapsed_ms = (time.perf_counter() - start) * 1000
+            logger.info(f"Metric: timing_ms func={func.__name__} value={elapsed_ms:.2f}")
+    return wrapper
+
+
+def retry(max_attempts: int = 3, base_delay: float = 0.2, max_delay: float = 2.0) -> Callable:
+    """Exponential backoff retry decorator."""
+    def decorator(func: Callable) -> Callable:
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            attempt = 1
+            delay = base_delay
+            while True:
+                try:
+                    return func(*args, **kwargs)
+                except Exception as exc:
+                    if attempt >= max_attempts:
+                        logger.error(f"Retry exhausted: {exc}", exc_info=True)
+                        raise
+                    logger.warning(f"Retry {attempt}/{max_attempts}: {exc}")
+                    time.sleep(delay)
+                    delay = min(delay * 2, max_delay)
+                    attempt += 1
+        return wrapper
+    return decorator
+
+
+# -----------------------------
+# Data models
+# -----------------------------
+class User(BaseModel):
+    """Validated user data model."""
+    user_name: str
+    user_age: int
+
+    @field_validator("user_name")
+    @classmethod
+    def valid_name(cls, v: str) -> str:
+        if not re.fullmatch(r"[A-Za-z0-9]+", v):
+            raise ValueError("user_name must be alphanumeric")
+        return v
+
+    @field_validator("user_age")
+    @classmethod
+    def valid_age(cls, v: int) -> int:
+        if v < 0 or v > 150:
+            raise ValueError("user_age must be 0-150")
+        return v
+
+
+@dataclass(slots=True)
+class ProcessResult:
+    """Processing result with accepted and rejected users."""
+    accepted: list[User]
+    rejected: list[dict]
+
+
+# -----------------------------
+# Business logic
+# -----------------------------
+def _iter_users(raw: Iterable[dict]) -> Iterator[User]:
+    """Yield validated users, logging validation errors."""
+    for entry in raw:
+        try:
+            yield User(**entry)
+        except ValidationError as e:
+            logger.error(f"Validation error for {entry}: {e.errors()}")
+
+
+@timed
+def process_users(raw: Iterable[dict], *, dry_run: bool = False) -> ProcessResult:
+    """Validate and process users."""
+    accepted: list[User] = []
+    rejected: list[dict] = []
+
+    for user in _iter_users(raw):
+        try:
+            if dry_run:
+                logger.info(f"Would process: {user}")
+            else:
+                logger.info(f"Processed: {user}")
+            accepted.append(user)
+        except Exception as exc:
+            logger.error(f"Process error for {user}: {exc}", exc_info=True)
+            rejected.append({"user": user.model_dump(), "error": str(exc)})
+
+    return ProcessResult(accepted=accepted, rejected=rejected)
+
+
+# -----------------------------
+# CLI
+# -----------------------------
+def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Process user data with validation and logging."
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Log actions without executing them."
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Main entry point."""
+    args = _parse_args(argv)
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    logger.info(f"Starting run at {timestamp}")
+
+    # Example input
+    raw_data: list[dict] = [
+        {"user_name": "Alice123", "user_age": 25},
+        {"user_name": "Bob!", "user_age": 30},  # Invalid name
+        {"user_name": "Chad", "user_age": -5},  # Invalid age
+    ]
+
+    result = process_users(raw_data, dry_run=args.dry_run)
+    logger.info(f"Summary: accepted={len(result.accepted)} rejected={len(result.rejected)}")
+
+    return 0 if not result.rejected else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+```
+
+## 19) Quick Reference Checklist
+
+Before finalizing code, verify:
+- [ ] Shebang line present
+- [ ] Type hints on all functions/variables
+- [ ] Google-style docstrings
+- [ ] Imports grouped and sorted
+- [ ] `if __name__ == "__main__":` guard
+- [ ] Logging configured
+- [ ] Input validation
+- [ ] Error handling (specific exceptions)
+- [ ] Security checks (SQL/shell sanitization)
+- [ ] Tests written (if applicable)
+- [ ] `pylint` score ≥ 9.0
+- [ ] `black` and `ruff` pass
+- [ ] Dry-run mode (if applicable)
+- [ ] No mutable default arguments
+- [ ] No bare `except:` clauses
+---
+
+**Last Updated**: December 2025

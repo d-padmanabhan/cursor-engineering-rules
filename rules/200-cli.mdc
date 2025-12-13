@@ -1,0 +1,383 @@
+---
+title: CLI Application Engineering Ruleset
+description: Patterns and best practices for building command-line interfaces and tools.
+priority: 200
+alwaysApply: false
+files:
+  include:
+    - "**/cmd/**/*.go"
+    - "**/cli/**/*.py"
+    - "**/cli/**/*.js"
+    - "**/bin/**/*"
+    - "**/*cli*.py"
+    - "**/*cli*.js"
+    - "**/main.go"
+---
+
+# CLI Application Engineering Ruleset
+
+**Goal:** Build secure, user-friendly, debuggable command-line interfaces that follow platform conventions.
+
+## Core Principles
+
+- **User Experience First**: Clear error messages, helpful usage, intuitive flags
+- **Debuggability**: Always provide debug mode for troubleshooting
+- **Security**: Never log secrets, validate inputs, fail fast
+- **Platform Conventions**: Follow platform-specific CLI patterns
+
+## Debug Mode Patterns
+
+### Environment Variable Pattern
+
+```bash
+# Enable debug mode
+DEBUG=1 my-cli command
+
+# Or with specific namespaces
+DEBUG=my-cli:* my-cli command
+```
+
+### Command-Line Flag Pattern
+
+```bash
+# Enable debug mode
+my-cli --debug command
+
+# Verbose mode (different from debug)
+my-cli --verbose command
+
+# Quiet mode
+my-cli --quiet command
+```
+
+### Implementation Examples
+
+#### Python
+
+```python
+import os
+import logging
+import sys
+
+# Setup logging
+log_level = logging.INFO
+if os.getenv("DEBUG") == "1" or "--debug" in sys.argv:
+    log_level = logging.DEBUG
+
+logging.basicConfig(
+    level=log_level,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+def main():
+    logger.debug("Debug mode enabled")
+    # ... rest of CLI logic
+```
+
+#### Node.js / JavaScript
+
+Use the [`debug`](https://github.com/debug-js/debug) library:
+
+```javascript
+import debug from 'debug';
+
+// Enable debug via environment variable
+// DEBUG=1 npm start
+// DEBUG=my-cli:* npm start
+// DEBUG=my-cli:auth npm start
+
+const debugLog = debug('my-cli:main');
+const authDebug = debug('my-cli:auth');
+
+function main() {
+  debugLog('Starting CLI application');
+  authDebug('Authenticating user');
+  // ... rest of CLI logic
+}
+
+// Enable debug output
+if (process.env.DEBUG || process.env.AI_DEBUG_ENABLE === "1") {
+  debug.enabled = true;
+}
+```
+
+#### Go
+
+```go
+package main
+
+import (
+    "flag"
+    "log"
+    "os"
+)
+
+var (
+    debugFlag = flag.Bool("debug", false, "Enable debug logging")
+    verboseFlag = flag.Bool("verbose", false, "Enable verbose output")
+)
+
+func main() {
+    flag.Parse()
+    
+    // Check environment variable
+    debugMode := *debugFlag || os.Getenv("DEBUG") == "1"
+    
+    if debugMode {
+        log.SetFlags(log.LstdFlags | log.Lshortfile)
+        log.SetOutput(os.Stderr)
+    }
+    
+    log.Printf("Debug mode: %v", debugMode)
+    // ... rest of CLI logic
+}
+```
+
+## CLI Structure Patterns
+
+### Command Organization
+
+```bash
+# Top-level command with subcommands
+my-cli init
+my-cli deploy --env prod
+my-cli status
+my-cli logs --tail 100
+
+# Or with explicit command structure
+my-cli command subcommand --flags
+```
+
+### Flag Conventions
+
+- Use `--long-flags` for readability
+- Use `-s` for common short flags
+- Group related flags
+- Provide defaults and document them
+
+```bash
+# Good flag design
+my-cli deploy \
+  --environment production \
+  --region us-east-1 \
+  --timeout 300 \
+  --dry-run
+
+# Short flags for common options
+my-cli deploy -e prod -r us-east-1 -t 300 --dry-run
+```
+
+## Error Handling
+
+### Exit Codes
+
+Follow Unix conventions:
+
+- `0` - Success
+- `1` - General error
+- `2` - Misuse of shell command
+- `126` - Command invoked cannot execute
+- `127` - Command not found
+- `128+n` - Fatal error signal "n"
+
+### Error Messages
+
+```python
+# ✅ GOOD: Clear, actionable error message
+if not config_file.exists():
+    print(f"Error: Configuration file not found: {config_file}", file=sys.stderr)
+    print(f"Hint: Run 'my-cli init' to create a default configuration", file=sys.stderr)
+    sys.exit(1)
+
+# ❌ BAD: Vague error message
+if not config_file.exists():
+    print("Error")
+    sys.exit(1)
+```
+
+### Structured Output
+
+Support both human-readable and machine-readable output:
+
+```bash
+# Human-readable (default)
+my-cli status
+Status: Running
+Version: 1.2.3
+Uptime: 2h 15m
+
+# Machine-readable (for scripting)
+my-cli status --json
+{"status":"running","version":"1.2.3","uptime":8100}
+```
+
+## Input Validation
+
+### Validate Early, Fail Fast
+
+```python
+def deploy(environment: str, region: str):
+    # Validate inputs immediately
+    valid_environments = ["dev", "staging", "prod"]
+    if environment not in valid_environments:
+        print(f"Error: Invalid environment '{environment}'", file=sys.stderr)
+        print(f"Valid options: {', '.join(valid_environments)}", file=sys.stderr)
+        sys.exit(1)
+    
+    valid_regions = ["us-east-1", "us-west-2", "eu-west-1"]
+    if region not in valid_regions:
+        print(f"Error: Invalid region '{region}'", file=sys.stderr)
+        sys.exit(1)
+    
+    # Proceed with deployment
+```
+
+## Security Best Practices
+
+### Never Log Secrets
+
+```python
+# ✅ GOOD: Mask secrets in logs
+logger.debug(f"Connecting to API endpoint: {endpoint}")
+logger.debug("Using API key: ***masked***")
+
+# ❌ BAD: Logging secrets
+logger.debug(f"API key: {api_key}")
+```
+
+### Input Sanitization
+
+```python
+import shlex
+
+# ✅ GOOD: Sanitize shell commands
+command = f"kubectl get pods -n {shlex.quote(namespace)}"
+subprocess.run(command, shell=True)
+
+# ❌ BAD: Unsanitized input
+command = f"kubectl get pods -n {namespace}"  # Vulnerable to injection
+subprocess.run(command, shell=True)
+```
+
+### Credential Handling
+
+```python
+import getpass
+
+# ✅ GOOD: Secure password input
+password = getpass.getpass("Enter password: ")
+
+# ✅ GOOD: Read from environment, not CLI args
+api_key = os.getenv("API_KEY")
+if not api_key:
+    print("Error: API_KEY environment variable not set", file=sys.stderr)
+    sys.exit(1)
+```
+
+## Progress Indicators
+
+### Spinner for Long Operations
+
+```python
+import sys
+import time
+
+def show_spinner(message: str):
+    spinner = "|/-\\"
+    for i in range(20):
+        sys.stdout.write(f"\r{message} {spinner[i % len(spinner)]}")
+        sys.stdout.flush()
+        time.sleep(0.1)
+    sys.stdout.write("\r" + " " * (len(message) + 2) + "\r")
+```
+
+### Progress Bars
+
+```python
+from tqdm import tqdm
+
+for item in tqdm(items, desc="Processing"):
+    process(item)
+```
+
+## Testing CLI Applications
+
+### Test Exit Codes
+
+```python
+import subprocess
+
+def test_cli_exit_code():
+    result = subprocess.run(
+        ["my-cli", "invalid-command"],
+        capture_output=True
+    )
+    assert result.returncode == 1
+    assert "Error" in result.stderr.decode()
+```
+
+### Test Output
+
+```python
+def test_cli_output():
+    result = subprocess.run(
+        ["my-cli", "status"],
+        capture_output=True,
+        text=True
+    )
+    assert result.returncode == 0
+    assert "Status: Running" in result.stdout
+```
+
+## Documentation
+
+### Help Text
+
+Always provide comprehensive help:
+
+```bash
+my-cli --help
+my-cli command --help
+my-cli command subcommand --help
+```
+
+### Man Pages
+
+For complex CLIs, consider man pages:
+
+```bash
+man my-cli
+man my-cli-deploy
+```
+
+## Platform-Specific Considerations
+
+### Windows
+
+- Use forward slashes or `os.path.join()`
+- Handle line endings (`\r\n` vs `\n`)
+- Consider PowerShell vs CMD differences
+
+### macOS / Linux
+
+- Follow Unix conventions
+- Use `~` for home directory expansion
+- Respect `$PATH` and environment variables
+
+## Review Checklist
+
+When reviewing CLI code, check:
+
+- [ ] Debug mode implemented (environment variable or flag)
+- [ ] Clear error messages with actionable hints
+- [ ] Proper exit codes
+- [ ] Input validation and sanitization
+- [ ] No secrets in logs or output
+- [ ] Help text is comprehensive
+- [ ] Follows platform conventions
+- [ ] Supports both human-readable and machine-readable output
+- [ ] Progress indicators for long operations
+---
+
+**Last Updated**: December 2025

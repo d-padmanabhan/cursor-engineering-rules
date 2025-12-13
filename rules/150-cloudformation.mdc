@@ -1,0 +1,82 @@
+---
+title: CloudFormation Engineering Ruleset
+description: Secure, maintainable CloudFormation templates with best practices for AWS infrastructure.
+priority: 150
+alwaysApply: false
+files:
+  include:
+    - "**/*.yaml"
+    - "**/*.yml"
+    - "**/*.template"
+    - "**/cloudformation/**/*"
+    - "**/cfn/**/*"
+---
+# CloudFormation Engineering Ruleset
+
+**Goal:** Create secure, maintainable CloudFormation templates following AWS best practices.
+
+## Core Principles
+
+- **Security First**: Least privilege IAM, encryption at rest and in transit
+- **Infrastructure as Code**: All resources defined in templates
+- **Parameterization**: Use parameters for environment-specific values
+- **DRY**: Use nested stacks and modules for reusable components
+- **Validation**: Validate templates before deployment
+
+## Template Structure
+
+```yaml
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Brief description of what this template does'
+
+Parameters:
+  # Environment-specific parameters
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Environment name
+
+Resources:
+  # Resource definitions
+
+Outputs:
+  # Important outputs
+```
+
+## Security Best Practices
+
+- **IAM Roles**: Use least privilege, never use root credentials
+- **Encryption**: Enable encryption for S3, RDS, EBS volumes
+- **VPC**: Use private subnets, security groups restrictively
+- **Secrets**: Use AWS Secrets Manager or Parameter Store, never hardcode
+- **Network**: Use VPC endpoints, avoid public internet where possible
+
+## Resource Naming
+
+- Use logical resource names: `MyDatabase`, `WebServerRole`
+- Use tags consistently: `Environment`, `Project`, `ManagedBy`
+- Follow AWS naming conventions
+
+## Validation
+
+```bash
+# Validate template
+aws cloudformation validate-template --template-body file://template.yaml
+
+# Check for drift
+aws cloudformation detect-stack-drift --stack-name my-stack
+```
+
+## Review Checklist
+
+- [ ] IAM roles use least privilege
+- [ ] Encryption enabled where applicable
+- [ ] Parameters used for environment-specific values
+- [ ] Tags applied consistently
+- [ ] Outputs defined for important resources
+- [ ] Template validated before deployment
+- [ ] No hardcoded secrets or credentials
+---
+
+**Last Updated**: December 2025

@@ -1,0 +1,379 @@
+---
+title: MCP Server Engineering Ruleset
+description: Patterns and best practices for building Model Context Protocol (MCP) servers and tools.
+priority: 230
+alwaysApply: false
+files:
+  include:
+    - "**/mcp/**/*.ts"
+    - "**/mcp/**/*.py"
+    - "**/mcp/**/*.js"
+    - "**/*mcp*.ts"
+    - "**/*mcp*.py"
+---
+
+# MCP Server Engineering Ruleset
+
+**Goal:** Build MCP servers with rich, AI-agent-friendly documentation that enables effective tool selection and usage.
+
+## Core Principle
+
+**Exception to lean comment rules:** MCP tools require **detailed docstrings** because AI agents rely on them for tool selection and usage. Unlike human-facing code, agents need rich descriptions to understand capabilities and constraints.
+
+## Tool Documentation Standards
+
+### Docstring Structure
+
+MCP tool docstrings serve as API documentation for AI agents. They must be comprehensive:
+
+```python
+@mcp.tool
+async def kubectl(args: str) -> str:
+    """Execute kubectl commands for Kubernetes cluster management.
+    
+    Use this tool for all kubectl operations. Provide the kubectl 
+    arguments as a single string (e.g., "get pods -n default").
+    
+    **Important:** This tool requires kubectl to be installed and 
+    configured with cluster access. Commands are executed with the 
+    current user's kubeconfig context.
+    
+    Args:
+        args: kubectl command arguments as a single string.
+              Examples:
+              - "get pods -n default"
+              - "apply -f deployment.yaml"
+              - "logs pod-name -n namespace --tail=100"
+    
+    Returns:
+        JSON string with structure:
+        {
+            "stdout": "command output",
+            "stderr": "error output (empty if success)",
+            "statusCode": 0
+        }
+        
+        Status codes:
+        - 0: Success
+        - 1: General error
+        - 2: Misuse of command
+    
+    Raises:
+        RuntimeError: If kubectl is not installed or not in PATH
+        
+    Example:
+        >>> result = await kubectl("get pods -n default")
+        >>> data = json.loads(result)
+        >>> print(data["stdout"])
+        NAME                    READY   STATUS    RESTARTS   AGE
+        pod-123                 1/1     Running   0          5m
+    """
+```
+
+### Poor Example (Don't Do This)
+
+```python
+@mcp.tool
+async def kubectl(args: str) -> str:
+    """Run kubectl.
+    
+    Returns:
+        Output: <stdout>
+    """
+```
+
+**Problems:**
+- Too vague
+- No usage examples
+- No error handling info
+- No input format specification
+- No output structure details
+
+## Input/Output Documentation
+
+### Specify Input Structure Clearly
+
+```python
+@mcp.tool
+async def create_resource(
+    resource_type: str,
+    name: str,
+    properties: dict,
+    namespace: str = "default"
+) -> str:
+    """Create a Kubernetes resource.
+    
+    Args:
+        resource_type: Type of resource (e.g., "deployment", "service", "configmap").
+                       Must be a valid Kubernetes resource type.
+        name: Name for the resource. Must be a valid DNS subdomain name
+              (lowercase alphanumeric and hyphens, max 253 chars).
+        properties: Resource specification as a dictionary. Structure depends
+                    on resource_type:
+                    - For deployments: {"replicas": int, "image": str, "ports": [...]}
+                    - For services: {"type": str, "ports": [...]}
+                    - For configmaps: {"data": dict}
+        namespace: Kubernetes namespace (default: "default").
+                   Must exist before creating resources.
+    
+    Returns:
+        JSON string with creation result:
+        {
+            "success": bool,
+            "resource": {
+                "type": "deployment",
+                "name": "my-app",
+                "namespace": "default"
+            },
+            "message": "Resource created successfully"
+        }
+    """
+```
+
+### Specify Output Structure Clearly
+
+For command execution tools, return structured JSON:
+
+```python
+@mcp.tool
+async def execute_command(command: str, timeout: int = 30) -> str:
+    """Execute a shell command and return structured output.
+    
+    Args:
+        command: Shell command to execute. Will be executed in a
+                 subprocess with shell=True. Be careful with user input.
+        timeout: Maximum execution time in seconds (default: 30).
+                 Command will be killed if it exceeds this time.
+    
+    Returns:
+        JSON string with structure:
+        {
+            "stdout": "standard output from command",
+            "stderr": "standard error output (empty if none)",
+            "statusCode": 0,
+            "duration": 1.23,
+            "timedOut": false
+        }
+        
+        Status codes follow Unix conventions:
+        - 0: Success
+        - 1-255: Command-specific error codes
+        
+        If command times out:
+        {
+            "stdout": "",
+            "stderr": "Command timed out after 30 seconds",
+            "statusCode": 124,
+            "duration": 30.0,
+            "timedOut": true
+        }
+    """
+```
+
+## Error Handling Documentation
+
+### Document All Error Cases
+
+```python
+@mcp.tool
+async def read_file(file_path: str) -> str:
+    """Read contents of a file.
+    
+    Args:
+        file_path: Path to file. Can be absolute or relative to
+                   current working directory. Supports both Unix
+                   and Windows paths.
+    
+    Returns:
+        File contents as string. Empty string if file is empty.
+    
+    Raises:
+        FileNotFoundError: If file does not exist
+        PermissionError: If file cannot be read due to permissions
+        IsADirectoryError: If path points to a directory, not a file
+        
+    Example:
+        >>> content = await read_file("/path/to/file.txt")
+        >>> print(content)
+        File contents here...
+    """
+```
+
+## Tool Naming and Organization
+
+### Use Descriptive Names
+
+```python
+# ✅ GOOD: Descriptive name
+@mcp.tool
+async def get_kubernetes_pods(namespace: str = "default") -> str:
+    """Get list of pods in a Kubernetes namespace."""
+    pass
+
+# ❌ BAD: Vague name
+@mcp.tool
+async def get_pods(ns: str = "default") -> str:
+    """Get pods."""
+    pass
+```
+
+### Group Related Tools
+
+```python
+# Group Kubernetes-related tools
+@mcp.tool
+async def k8s_get_pods(namespace: str) -> str:
+    """Get Kubernetes pods."""
+    pass
+
+@mcp.tool
+async def k8s_get_services(namespace: str) -> str:
+    """Get Kubernetes services."""
+    pass
+
+@mcp.tool
+async def k8s_create_deployment(spec: dict) -> str:
+    """Create Kubernetes deployment."""
+    pass
+```
+
+## Type Hints and Validation
+
+### Use Type Hints
+
+```python
+from typing import Optional, List, Dict, Any
+
+@mcp.tool
+async def process_data(
+    data: Dict[str, Any],
+    options: Optional[Dict[str, Any]] = None,
+    filters: Optional[List[str]] = None
+) -> Dict[str, Any]:
+    """Process data with optional filters and options.
+    
+    Args:
+        data: Input data dictionary. Required keys:
+              - "id": str
+              - "values": List[float]
+        options: Optional processing options:
+                 - "normalize": bool (default: False)
+                 - "threshold": float (default: 0.5)
+        filters: Optional list of filter names to apply.
+                 Valid filters: ["outliers", "missing", "duplicates"]
+    
+    Returns:
+        Processed data dictionary with same structure as input,
+        plus additional fields:
+        - "processed_at": ISO timestamp
+        - "filters_applied": List[str]
+    """
+```
+
+## Examples in Documentation
+
+### Include Multiple Examples
+
+```python
+@mcp.tool
+async def query_database(query: str, params: Optional[Dict] = None) -> str:
+    """Execute a database query safely using parameterized queries.
+    
+    **Security:** This tool uses parameterized queries to prevent
+    SQL injection. Never concatenate user input into queries.
+    
+    Args:
+        query: SQL query with placeholders (use ? or :name).
+               Example: "SELECT * FROM users WHERE id = ?"
+        params: Optional parameters for query placeholders.
+                Example: {"id": 123} or [123] for positional placeholders.
+    
+    Returns:
+        JSON array of result rows:
+        [
+            {"id": 1, "name": "Alice", "email": "alice@acme.com"},
+            {"id": 2, "name": "Bob", "email": "bob@acme.com"}
+        ]
+        
+        Empty array [] if no results.
+    
+    Examples:
+        # Simple query
+        >>> result = await query_database("SELECT * FROM users LIMIT 10")
+        
+        # Parameterized query
+        >>> result = await query_database(
+        ...     "SELECT * FROM users WHERE id = ?",
+        ...     params=[123]
+        ... )
+        
+        # Named parameters
+        >>> result = await query_database(
+        ...     "SELECT * FROM users WHERE email = :email",
+        ...     params={"email": "user@acme.com"}
+        ... )
+    """
+```
+
+## Security Considerations
+
+### Document Security Implications
+
+```python
+@mcp.tool
+async def execute_shell_command(command: str) -> str:
+    """Execute a shell command.
+    
+    **SECURITY WARNING:** This tool executes shell commands with
+    the privileges of the MCP server process. Use with extreme
+    caution. Never execute commands constructed from untrusted user
+    input without validation.
+    
+    Args:
+        command: Shell command to execute. Will be executed via
+                 subprocess with shell=True. Commands are logged
+                 for security auditing.
+    
+    Returns:
+        Command output as JSON:
+        {
+            "stdout": "...",
+            "stderr": "...",
+            "exitCode": 0
+        }
+    """
+```
+
+## Testing MCP Tools
+
+### Test Tool Documentation
+
+```python
+def test_tool_docstring_completeness():
+    """Verify tool docstrings contain required information."""
+    tool = kubectl
+    
+    doc = tool.__doc__
+    assert "Args:" in doc, "Missing Args section"
+    assert "Returns:" in doc, "Missing Returns section"
+    assert "Example" in doc or "Examples" in doc, "Missing examples"
+    assert "kubectl" in doc.lower(), "Tool name not in docstring"
+```
+
+## Review Checklist
+
+When reviewing MCP tool code, check:
+
+- [ ] Docstring is comprehensive and detailed
+- [ ] Input parameters are clearly documented
+- [ ] Output structure is specified (especially for JSON)
+- [ ] Error cases are documented
+- [ ] Examples are provided
+- [ ] Security implications are noted
+- [ ] Type hints are used
+- [ ] Tool name is descriptive
+- [ ] Related tools are grouped logically
+- [ ] Return format is consistent (structured JSON for commands)
+---
+
+**Last Updated**: December 2025

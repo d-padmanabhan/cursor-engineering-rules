@@ -1,0 +1,834 @@
+---
+title: Ansible Configuration Management Best Practices
+description: Ansible playbooks, roles, best practices, idempotency, and infrastructure automation patterns
+priority: 145
+alwaysApply: false
+files:
+  include:
+    - "**/*.yml"
+    - "**/*.yaml"
+    - "**/ansible.cfg"
+    - "**/inventory"
+    - "**/hosts"
+    - "playbooks/**"
+    - "roles/**"
+---
+
+# Ansible Configuration Management Best Practices
+
+## Guiding Principles
+
+1. **Idempotency**: Playbooks should produce same result regardless of how many times executed
+2. **Declarative**: Describe desired state, not imperative steps
+3. **Modularity**: Use roles for reusability
+4. **Version Control**: Track all playbooks, roles, and inventories in Git
+5. **Testing**: Test playbooks before production deployment
+
+---
+
+## Project Structure
+
+### Standard Layout
+```
+ansible/
+├── ansible.cfg               # Ansible configuration
+├── inventory/
+│   ├── production/
+│   │   ├── hosts            # Production inventory
+│   │   └── group_vars/
+│   │       ├── all.yml
+│   │       └── webservers.yml
+│   └── staging/
+│       ├── hosts
+│       └── group_vars/
+│           └── all.yml
+├── playbooks/
+│   ├── site.yml             # Master playbook
+│   ├── webservers.yml
+│   ├── database.yml
+│   └── deploy.yml
+├── roles/
+│   ├── common/
+│   │   ├── tasks/
+│   │   │   └── main.yml
+│   │   ├── handlers/
+│   │   │   └── main.yml
+│   │   ├── templates/
+│   │   ├── files/
+│   │   ├── vars/
+│   │   │   └── main.yml
+│   │   ├── defaults/
+│   │   │   └── main.yml
+│   │   └── meta/
+│   │       └── main.yml
+│   ├── nginx/
+│   ├── postgresql/
+│   └── app/
+├── group_vars/
+│   ├── all.yml              # Variables for all hosts
+│   └── webservers.yml       # Variables for webserver group
+├── host_vars/
+│   └── web1.acme.com.yml    # Variables for specific host
+└── vault/
+    └── secrets.yml          # Encrypted secrets
+```
+
+---
+
+## Ansible Configuration
+
+### ansible.cfg
+```ini
+[defaults]
+# Inventory
+inventory = inventory/production/hosts
+host_key_checking = False
+
+# Roles
+roles_path = roles
+
+# Output
+stdout_callback = yaml
+bin_ansible_callbacks = True
+
+# Performance
+forks = 10
+gathering = smart
+fact_caching = jsonfile
+fact_caching_connection = /tmp/ansible_facts
+fact_caching_timeout = 86400
+
+# SSH
+remote_user = ansible
+private_key_file = ~/.ssh/ansible_key
+timeout = 30
+
+# Privilege escalation
+become = True
+become_method = sudo
+become_user = root
+become_ask_pass = False
+
+# Logging
+log_path = /var/log/ansible.log
+
+[ssh_connection]
+ssh_args = -o ControlMaster=auto -o ControlPersist=60s
+pipelining = True
+control_path = /tmp/ansible-ssh-%%h-%%p-%%r
+```
+
+---
+
+## Inventory Management
+
+### Static Inventory
+```ini
+# inventory/production/hosts
+
+[webservers]
+web1.acme.com ansible_host=10.0.1.10
+web2.acme.com ansible_host=10.0.1.11
+
+[databases]
+db1.acme.com ansible_host=10.0.2.10
+db2.acme.com ansible_host=10.0.2.11
+
+[loadbalancers]
+lb1.acme.com ansible_host=10.0.3.10
+
+[production:children]
+webservers
+databases
+loadbalancers
+
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3
+environment=production
+```
+
+### Dynamic Inventory (AWS)
+```yaml
+# inventory/aws_ec2.yml
+plugin: aws_ec2
+regions:
+  - us-east-1
+  - us-west-2
+filters:
+  tag:Environment: production
+  instance-state-name: running
+keyed_groups:
+  - key: tags.Role
+    prefix: role
+  - key: placement.availability_zone
+    prefix: az
+hostnames:
+  - tag:Name
+compose:
+  ansible_host: public_ip_address
+```
+
+---
+
+## Playbook Basics
+
+### Simple Playbook
+```yaml
+---
+# playbooks/webservers.yml
+- name: Configure web servers
+  hosts: webservers
+  become: true
+  
+  vars:
+    nginx_port: 80
+    app_user: webapp
+  
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+    
+    - name: Install nginx
+      apt:
+        name: nginx
+        state: present
+    
+    - name: Copy nginx configuration
+      template:
+        src: templates/nginx.conf.j2
+        dest: /etc/nginx/nginx.conf
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Restart nginx
+    
+    - name: Ensure nginx is running
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+  
+  handlers:
+    - name: Restart nginx
+      service:
+        name: nginx
+        state: restarted
+```
+
+### Master Playbook
+```yaml
+---
+# playbooks/site.yml
+- import_playbook: common.yml
+- import_playbook: webservers.yml
+- import_playbook: databases.yml
+- import_playbook: loadbalancers.yml
+```
+
+---
+
+## Roles
+
+### Role Structure
+```
+roles/nginx/
+├── tasks/
+│   └── main.yml          # Main task list
+├── handlers/
+│   └── main.yml          # Handlers
+├── templates/
+│   └── nginx.conf.j2     # Jinja2 templates
+├── files/
+│   └── index.html        # Static files
+├── vars/
+│   └── main.yml          # Role variables
+├── defaults/
+│   └── main.yml          # Default variables
+└── meta/
+    └── main.yml          # Role metadata
+```
+
+### Role Tasks
+```yaml
+# roles/nginx/tasks/main.yml
+---
+- name: Install nginx
+  apt:
+    name: nginx
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Install nginx (RedHat)
+  yum:
+    name: nginx
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Create nginx directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+  loop:
+    - /var/www/html
+    - /etc/nginx/sites-available
+    - /etc/nginx/sites-enabled
+
+- name: Copy nginx configuration
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+    owner: root
+    group: root
+    mode: '0644'
+    validate: 'nginx -t -c %s'
+  notify: Reload nginx
+
+- name: Copy site configuration
+  template:
+    src: site.conf.j2
+    dest: "/etc/nginx/sites-available/{{ nginx_site_name }}"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload nginx
+
+- name: Enable site
+  file:
+    src: "/etc/nginx/sites-available/{{ nginx_site_name }}"
+    dest: "/etc/nginx/sites-enabled/{{ nginx_site_name }}"
+    state: link
+  notify: Reload nginx
+
+- name: Ensure nginx is running
+  service:
+    name: nginx
+    state: started
+    enabled: yes
+```
+
+### Role Defaults
+```yaml
+# roles/nginx/defaults/main.yml
+---
+nginx_port: 80
+nginx_user: www-data
+nginx_worker_processes: auto
+nginx_worker_connections: 1024
+nginx_site_name: default
+nginx_root: /var/www/html
+```
+
+### Role Variables
+```yaml
+# roles/nginx/vars/main.yml
+---
+nginx_config_dir: /etc/nginx
+nginx_pid_file: /run/nginx.pid
+```
+
+### Role Handlers
+```yaml
+# roles/nginx/handlers/main.yml
+---
+- name: Reload nginx
+  service:
+    name: nginx
+    state: reloaded
+
+- name: Restart nginx
+  service:
+    name: nginx
+    state: restarted
+```
+
+### Using Roles in Playbooks
+```yaml
+---
+- name: Configure web servers
+  hosts: webservers
+  become: true
+  
+  roles:
+    - role: common
+    - role: nginx
+      vars:
+        nginx_port: 8080
+        nginx_site_name: webapp
+    - role: app
+```
+
+---
+
+## Templates (Jinja2)
+
+### Basic Template
+```jinja2
+{# templates/nginx.conf.j2 #}
+user {{ nginx_user }};
+worker_processes {{ nginx_worker_processes }};
+pid {{ nginx_pid_file }};
+
+events {
+    worker_connections {{ nginx_worker_connections }};
+}
+
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+    
+    access_log /var/log/nginx/access.log;
+    error_log /var/log/nginx/error.log;
+    
+    sendfile on;
+    keepalive_timeout 65;
+    
+    include /etc/nginx/sites-enabled/*;
+}
+```
+
+### Site Configuration Template
+```jinja2
+{# templates/site.conf.j2 #}
+server {
+    listen {{ nginx_port }};
+    server_name {{ ansible_fqdn }};
+    root {{ nginx_root }};
+    
+    location / {
+        try_files $uri $uri/ =404;
+    }
+    
+    {% if nginx_enable_ssl %}
+    listen 443 ssl;
+    ssl_certificate {{ nginx_ssl_cert }};
+    ssl_certificate_key {{ nginx_ssl_key }};
+    {% endif %}
+    
+    {% if nginx_proxy_pass %}
+    location /api {
+        proxy_pass {{ nginx_proxy_pass }};
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+    {% endif %}
+}
+```
+
+---
+
+## Variables
+
+### Variable Precedence (Lowest to Highest)
+1. Role defaults (`roles/role_name/defaults/main.yml`)
+2. Inventory variables (group_vars, host_vars)
+3. Playbook variables
+4. Role vars (`roles/role_name/vars/main.yml`)
+5. Block vars
+6. Task vars
+7. Extra vars (`-e` / `--extra-vars`)
+
+### Group Variables
+```yaml
+# group_vars/webservers.yml
+---
+nginx_port: 80
+app_user: webapp
+log_level: info
+
+packages_to_install:
+  - nginx
+  - git
+  - curl
+  - vim
+```
+
+### Host Variables
+```yaml
+# host_vars/web1.acme.com.yml
+---
+nginx_port: 8080
+server_id: web1
+```
+
+### Registered Variables
+```yaml
+- name: Check if file exists
+  stat:
+    path: /etc/nginx/nginx.conf
+  register: nginx_config
+
+- name: Debug output
+  debug:
+    msg: "Config exists: {{ nginx_config.stat.exists }}"
+
+- name: Conditional task
+  command: echo "Config found"
+  when: nginx_config.stat.exists
+```
+
+---
+
+## Ansible Vault
+
+### Encrypt Secrets
+```bash
+# Create encrypted file
+ansible-vault create vault/secrets.yml
+
+# Edit encrypted file
+ansible-vault edit vault/secrets.yml
+
+# Encrypt existing file
+ansible-vault encrypt group_vars/production/secrets.yml
+
+# Decrypt file
+ansible-vault decrypt group_vars/production/secrets.yml
+
+# View encrypted file
+ansible-vault view vault/secrets.yml
+
+# Change password
+ansible-vault rekey vault/secrets.yml
+```
+
+### Encrypted Variables
+```yaml
+# vault/secrets.yml (encrypted)
+---
+db_password: "super_secret_password"
+api_key: "sk_live_abc123xyz789"
+jwt_secret: "very_secret_jwt_key"
+```
+
+### Using Vault in Playbook
+```yaml
+---
+- name: Deploy application
+  hosts: webservers
+  become: true
+  
+  vars_files:
+    - vault/secrets.yml
+  
+  tasks:
+    - name: Configure database connection
+      template:
+        src: config.yml.j2
+        dest: /etc/app/config.yml
+        owner: app
+        group: app
+        mode: '0600'
+```
+
+### Run with Vault Password
+```bash
+# Prompt for password
+ansible-playbook playbooks/site.yml --ask-vault-pass
+
+# Use password file
+ansible-playbook playbooks/site.yml --vault-password-file ~/.vault_pass
+
+# Use environment variable
+export ANSIBLE_VAULT_PASSWORD_FILE=~/.vault_pass
+ansible-playbook playbooks/site.yml
+```
+
+---
+
+## Best Practices
+
+### Idempotency
+```yaml
+# ✅ GOOD - Idempotent
+- name: Ensure nginx is installed
+  apt:
+    name: nginx
+    state: present
+
+# ✅ GOOD - Check before creating
+- name: Check if config exists
+  stat:
+    path: /etc/app/config.yml
+  register: config_file
+
+- name: Create config
+  template:
+    src: config.yml.j2
+    dest: /etc/app/config.yml
+  when: not config_file.stat.exists
+
+# ❌ BAD - Not idempotent
+- name: Append to file
+  shell: echo "option=value" >> /etc/config
+```
+
+### Use Modules Over Shell/Command
+```yaml
+# ✅ GOOD - Use built-in modules
+- name: Create directory
+  file:
+    path: /opt/app
+    state: directory
+    owner: app
+    mode: '0755'
+
+- name: Install package
+  apt:
+    name: nginx
+    state: present
+
+# ❌ BAD - Using shell
+- name: Create directory
+  shell: mkdir -p /opt/app && chown app:app /opt/app
+
+- name: Install package
+  command: apt-get install -y nginx
+```
+
+### Use Handlers
+```yaml
+# ✅ GOOD - Use handlers for service restarts
+tasks:
+  - name: Copy nginx config
+    template:
+      src: nginx.conf.j2
+      dest: /etc/nginx/nginx.conf
+    notify: Restart nginx
+
+handlers:
+  - name: Restart nginx
+    service:
+      name: nginx
+      state: restarted
+
+# ❌ BAD - Restart in every task
+tasks:
+  - name: Copy nginx config
+    template:
+      src: nginx.conf.j2
+      dest: /etc/nginx/nginx.conf
+  
+  - name: Restart nginx
+    service:
+      name: nginx
+      state: restarted
+```
+
+### Use Tags
+```yaml
+---
+- name: Configure system
+  hosts: all
+  become: true
+  
+  tasks:
+    - name: Install packages
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - vim
+        - git
+        - curl
+      tags:
+        - packages
+        - install
+    
+    - name: Configure firewall
+      ufw:
+        rule: allow
+        port: 22
+        proto: tcp
+      tags:
+        - firewall
+        - security
+```
+
+```bash
+# Run specific tags
+ansible-playbook site.yml --tags "packages"
+ansible-playbook site.yml --tags "security,firewall"
+
+# Skip tags
+ansible-playbook site.yml --skip-tags "firewall"
+```
+
+---
+
+## Common Patterns
+
+### Application Deployment
+```yaml
+---
+- name: Deploy application
+  hosts: webservers
+  become: true
+  
+  vars:
+    app_name: webapp
+    app_version: "{{ lookup('env', 'APP_VERSION') | default('latest') }}"
+    app_user: webapp
+    app_dir: /opt/webapp
+  
+  tasks:
+    - name: Create app user
+      user:
+        name: "{{ app_user }}"
+        system: yes
+        shell: /bin/bash
+    
+    - name: Create app directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: '0755'
+    
+    - name: Pull Docker image
+      docker_image:
+        name: "acme/{{ app_name }}"
+        tag: "{{ app_version }}"
+        source: pull
+    
+    - name: Stop old container
+      docker_container:
+        name: "{{ app_name }}"
+        state: stopped
+      ignore_errors: yes
+    
+    - name: Remove old container
+      docker_container:
+        name: "{{ app_name }}"
+        state: absent
+      ignore_errors: yes
+    
+    - name: Start new container
+      docker_container:
+        name: "{{ app_name }}"
+        image: "acme/{{ app_name }}:{{ app_version }}"
+        state: started
+        restart_policy: always
+        published_ports:
+          - "8080:8080"
+        env:
+          ENVIRONMENT: production
+          DATABASE_URL: "{{ db_url }}"
+        volumes:
+          - "{{ app_dir }}/data:/data"
+```
+
+### Rolling Updates
+```yaml
+---
+- name: Rolling update web servers
+  hosts: webservers
+  become: true
+  serial: 1  # Update one host at a time
+  max_fail_percentage: 0
+  
+  pre_tasks:
+    - name: Remove from load balancer
+      haproxy:
+        state: disabled
+        host: "{{ ansible_hostname }}"
+        backend: web_backend
+      delegate_to: "{{ item }}"
+      with_items: "{{ groups['loadbalancers'] }}"
+  
+  tasks:
+    - name: Deploy new version
+      include_role:
+        name: app
+  
+  post_tasks:
+    - name: Wait for health check
+      uri:
+        url: "http://localhost:8080/health"
+        status_code: 200
+      register: result
+      until: result.status == 200
+      retries: 10
+      delay: 5
+    
+    - name: Add back to load balancer
+      haproxy:
+        state: enabled
+        host: "{{ ansible_hostname }}"
+        backend: web_backend
+      delegate_to: "{{ item }}"
+      with_items: "{{ groups['loadbalancers'] }}"
+```
+
+---
+
+## Testing
+
+### Ansible Lint
+```bash
+# Install ansible-lint
+pip install ansible-lint
+
+# Run lint
+ansible-lint playbooks/site.yml
+
+# Lint all playbooks
+ansible-lint playbooks/*.yml
+```
+
+### Molecule Testing
+```bash
+# Install molecule
+pip install molecule molecule-docker
+
+# Initialize molecule
+molecule init role webapp
+
+# Test role
+molecule test
+
+# Molecule sequence
+molecule create    # Create test instance
+molecule converge  # Run playbook
+molecule idempotence  # Test idempotency
+molecule verify    # Run verification
+molecule destroy   # Destroy test instance
+```
+
+---
+
+## Best Practices Checklist
+
+- [ ] Use roles for reusability
+- [ ] Store secrets in Ansible Vault
+- [ ] Use version control for all playbooks
+- [ ] Test playbooks before production
+- [ ] Use tags for selective execution
+- [ ] Implement idempotent tasks
+- [ ] Use handlers for service restarts
+- [ ] Prefer modules over shell/command
+- [ ] Use variables for configuration
+- [ ] Document roles and playbooks
+- [ ] Use ansible-lint for quality
+- [ ] Implement rolling updates for zero downtime
+- [ ] Use dynamic inventory for cloud environments
+
+---
+
+## Related Files
+
+- `140-terraform.mdc` - Infrastructure as Code with Terraform
+- `130-bash.mdc` - Shell scripting patterns
+- `260-kubernetes.mdc` - Container orchestration
+
+---
+
+**Last Updated**: December 2025  
+**Purpose**: Ansible configuration management and automation best practices

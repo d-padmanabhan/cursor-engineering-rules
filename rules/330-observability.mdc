@@ -1,0 +1,366 @@
+---
+title: Monitoring & Observability Best Practices
+description: Logging, metrics, tracing, alerting, and observability patterns for production systems
+priority: 330
+alwaysApply: false
+files:
+  include:
+    - "**/*"
+---
+
+# Monitoring & Observability Best Practices
+
+## Guiding Principles
+
+1. **Three Pillars**: Logs, Metrics, Traces
+2. **Proactive Monitoring**: Alert before users complain
+3. **Actionable Alerts**: Every alert should require action
+4. **Context**: Correlate logs, metrics, and traces
+5. **Performance**: Low overhead instrumentation
+
+---
+
+## The Three Pillars
+
+### 1. Logging
+**What**: Discrete events that happened
+**When**: Debugging, auditing, compliance
+**Example**: "User john@acme.com logged in from IP 1.2.3.4"
+
+### 2. Metrics
+**What**: Numerical measurements over time
+**When**: Monitoring trends, capacity planning
+**Example**: "HTTP request rate: 1000 req/s, CPU: 75%, Memory: 2.5 GB"
+
+### 3. Distributed Tracing
+**What**: End-to-end request flow across services
+**When**: Debugging latency, understanding dependencies
+**Example**: "Request took 523ms: API Gateway (5ms) → Auth (50ms) → Database (450ms) → Response (18ms)"
+
+---
+
+## Structured Logging
+
+### JSON Logging (Best Practice)
+```javascript
+// ✅ GOOD - Structured JSON
+logger.info({
+  event: 'user_login',
+  userId: '123',
+  email: 'user@acme.com',
+  ip: '1.2.3.4',
+  timestamp: '2025-01-01T00:00:00Z',
+  duration: 150,
+  success: true
+});
+
+// ❌ BAD - Plain text
+console.log('User user@acme.com logged in from 1.2.3.4');
+```
+
+### Log Levels
+```
+TRACE - Very detailed, development only
+DEBUG - Detailed information for debugging
+INFO  - General informational messages
+WARN  - Warning messages (potential issues)
+ERROR - Error events (still functioning)
+FATAL - Critical errors (system unusable)
+```
+
+### Example (Node.js with Pino)
+```javascript
+const pino = require('pino');
+
+const logger = pino({
+  level: process.env.LOG_LEVEL || 'info',
+  formatters: {
+    level: (label) => ({ level: label })
+  },
+  base: {
+    env: process.env.NODE_ENV,
+    service: 'webapp'
+  }
+});
+
+// Usage
+logger.info({ userId: '123', action: 'login' }, 'User logged in');
+logger.error({ err, userId: '123' }, 'Login failed');
+```
+
+---
+
+## Metrics
+
+### Key Metrics to Track
+
+#### RED Method (Requests)
+- **Rate**: Requests per second
+- **Errors**: Error rate
+- **Duration**: Response time (latency)
+
+#### USE Method (Resources)
+- **Utilization**: % time resource is busy
+- **Saturation**: Queue depth/waiting
+- **Errors**: Error count
+
+### Prometheus Metrics
+
+```javascript
+// Counter - monotonically increasing value
+const httpRequestsTotal = new promClient.Counter({
+  name: 'http_requests_total',
+  help: 'Total HTTP requests',
+  labelNames: ['method', 'path', 'status']
+});
+
+httpRequestsTotal.inc({ method: 'GET', path: '/api/users', status: '200' });
+
+// Gauge - value that can go up or down
+const activeConnections = new promClient.Gauge({
+  name: 'active_connections',
+  help: 'Number of active connections'
+});
+
+activeConnections.set(42);
+
+// Histogram - observations (e.g., request durations)
+const httpDuration = new promClient.Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'HTTP request duration',
+  labelNames: ['method', 'path'],
+  buckets: [0.1, 0.5, 1, 2, 5]
+});
+
+httpDuration.observe({ method: 'GET', path: '/api/users' }, 0.523);
+
+// Summary - similar to histogram, calculates quantiles
+const responseSizes = new promClient.Summary({
+  name: 'http_response_size_bytes',
+  help: 'HTTP response size',
+  percentiles: [0.5, 0.9, 0.95, 0.99]
+});
+```
+
+---
+
+## Distributed Tracing
+
+### OpenTelemetry (Standard)
+
+```javascript
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
+
+// Setup tracer
+const provider = new NodeTracerProvider();
+provider.register();
+
+registerInstrumentations({
+  instrumentations: [
+    new HttpInstrumentation(),
+  ],
+});
+
+// Manual instrumentation
+const tracer = provider.getTracer('webapp');
+
+async function processOrder(orderId) {
+  const span = tracer.startSpan('process_order');
+  span.setAttribute('order.id', orderId);
+  
+  try {
+    const order = await fetchOrder(orderId);
+    await validateOrder(order);
+    await chargePayment(order);
+    await sendConfirmation(order);
+    
+    span.setStatus({ code: SpanStatusCode.OK });
+    return order;
+  } catch (error) {
+    span.recordException(error);
+    span.setStatus({ code: SpanStatusCode.ERROR });
+    throw error;
+  } finally {
+    span.end();
+  }
+}
+```
+
+---
+
+## Alerting
+
+### Good Alert Rules
+
+```yaml
+# Prometheus Alert Rules
+groups:
+  - name: api_alerts
+    rules:
+      # High error rate
+      - alert: HighErrorRate
+        expr: |
+          rate(http_requests_total{status=~"5.."}[5m])
+          / rate(http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate (>5%)"
+          description: "{{ $value }}% errors for {{ $labels.service }}"
+      
+      # High latency
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket[5m])
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High latency (p95 > 1s)"
+      
+      # Pod crash loop
+      - alert: PodCrashLooping
+        expr: |
+          rate(kube_pod_container_status_restarts_total[15m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+```
+
+---
+
+## Dashboard Design
+
+### Key Metrics Dashboard
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ Service Health Dashboard                                │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│ Request Rate:  1,234 req/s  ↑ 5%                      │
+│ Error Rate:    0.01%        ✓ Normal                   │
+│ P95 Latency:   145ms        ✓ Normal                   │
+│ P99 Latency:   523ms        ⚠ Warning                  │
+│                                                         │
+├─────────────────────────────────────────────────────────┤
+│ [Request Rate Graph]        [Error Rate Graph]        │
+│                                                         │
+│ [Latency Graph]             [CPU/Memory Graph]        │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Health Checks
+
+### HTTP Health Endpoint
+
+```javascript
+app.get('/health', async (req, res) => {
+  const health = {
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    checks: {}
+  };
+  
+  // Database check
+  try {
+    await db.query('SELECT 1');
+    health.checks.database = { status: 'up' };
+  } catch (error) {
+    health.checks.database = { status: 'down', error: error.message };
+    health.status = 'unhealthy';
+  }
+  
+  // Redis check
+  try {
+    await redis.ping();
+    health.checks.redis = { status: 'up' };
+  } catch (error) {
+    health.checks.redis = { status: 'down', error: error.message };
+    health.status = 'degraded';
+  }
+  
+  const statusCode = health.status === 'healthy' ? 200 : 503;
+  res.status(statusCode).json(health);
+});
+```
+
+---
+
+## SLO/SLI Framework
+
+### Service Level Indicators (SLIs)
+- **Availability**: % of successful requests
+- **Latency**: % of requests < threshold
+- **Durability**: % of data retained
+
+### Service Level Objectives (SLOs)
+- **Target**: 99.9% availability (43.2 min/month downtime)
+- **Target**: 95% of requests < 200ms
+- **Target**: 99.99% data durability
+
+### Error Budgets
+- 99.9% SLO = 0.1% error budget
+- 1M requests = 1,000 allowed errors
+- If exceeded: freeze features, focus on reliability
+
+---
+
+## Best Practices Checklist
+
+- [ ] Implement structured logging (JSON)
+- [ ] Track RED metrics (Rate, Errors, Duration)
+- [ ] Add distributed tracing
+- [ ] Create actionable alerts (not noise)
+- [ ] Build comprehensive dashboards
+- [ ] Implement health check endpoints
+- [ ] Define SLOs and error budgets
+- [ ] Use correlation IDs across services
+- [ ] Monitor both business and technical metrics
+- [ ] Set up on-call rotation
+- [ ] Document runbooks for alerts
+- [ ] Regularly review and update alerts
+- [ ] Implement automated remediation
+- [ ] Use log aggregation (ELK, Splunk, DataDog)
+- [ ] Retain logs for compliance requirements
+
+---
+
+## Tools
+
+### Logging
+- **Cloud**: CloudWatch, Stackdriver, Azure Monitor
+- **Self-hosted**: ELK Stack, Loki, Graylog
+
+### Metrics
+- **Cloud**: CloudWatch, Azure Monitor, Cloud Monitoring
+- **Self-hosted**: Prometheus + Grafana, InfluxDB
+
+### Tracing
+- **Standard**: OpenTelemetry
+- **Cloud**: X-Ray, Cloud Trace, Application Insights
+- **Self-hosted**: Jaeger, Zipkin
+
+### APM (All-in-one)
+- Datadog, New Relic, Dynatrace, AppDynamics
+
+---
+
+## Related Files
+
+- `310-security.mdc` - Security logging and monitoring
+- `320-api-design.mdc` - API metrics and monitoring
+- `260-kubernetes.mdc` - Kubernetes observability
+
+---
+
+**Last Updated**: December 2025  
+**Purpose**: Monitoring, logging, and observability best practices

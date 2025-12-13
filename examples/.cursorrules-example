@@ -1,0 +1,118 @@
+# Example .cursorrules Configuration
+# Copy this file to your project root as .cursorrules and customize
+
+# ═══════════════════════════════════════════════════════════════
+# OPTION 1: Use All Rules (Recommended for consistency)
+# ═══════════════════════════════════════════════════════════════
+
+rulesDirectory: .cursor/rules
+
+# This will load all .mdc files from the rules directory
+# Ensure you've symlinked or copied the rules:
+#   ln -s /path/to/cursor-engineering-rules/rules .cursor/rules
+
+# ═══════════════════════════════════════════════════════════════
+# OPTION 2: Selective Rules (For specific technology stacks)
+# ═══════════════════════════════════════════════════════════════
+
+# Uncomment and customize based on your project:
+
+# --- Python + AWS + Terraform Project ---
+# rules:
+#   - .cursor/rules/100-core.mdc            # Core standards (always)
+#   - .cursor/rules/110-git.mdc             # Git conventions (always)
+#   - .cursor/rules/160-python.mdc          # Python best practices
+#   - .cursor/rules/280-aws.mdc             # AWS patterns
+#   - .cursor/rules/140-terraform.mdc       # Terraform standards
+#   - .cursor/rules/310-security.mdc        # Security (always)
+#   - .cursor/rules/300-testing.mdc         # Testing strategies
+
+# --- TypeScript + React + GCP Project ---
+# rules:
+#   - .cursor/rules/100-core.mdc            # Core standards
+#   - .cursor/rules/110-git.mdc             # Git conventions
+#   - .cursor/rules/165-typescript.mdc      # TypeScript patterns
+#   - .cursor/rules/170-javascript.mdc      # JavaScript patterns
+#   - .cursor/rules/290-gcp.mdc             # GCP patterns
+#   - .cursor/rules/155-docker.mdc          # Docker containers
+#   - .cursor/rules/310-security.mdc        # Security
+#   - .cursor/rules/300-testing.mdc         # Testing
+
+# --- Go + Kubernetes + Azure Project ---
+# rules:
+#   - .cursor/rules/100-core.mdc            # Core standards
+#   - .cursor/rules/110-git.mdc             # Git conventions
+#   - .cursor/rules/180-go.mdc              # Go best practices
+#   - .cursor/rules/260-kubernetes.mdc      # Kubernetes patterns
+#   - .cursor/rules/285-azure.mdc           # Azure patterns
+#   - .cursor/rules/195-helm.mdc            # Helm charts
+#   - .cursor/rules/310-security.mdc        # Security
+#   - .cursor/rules/300-testing.mdc         # Testing
+
+# --- Full-Stack (Python + TypeScript + AWS) ---
+# rules:
+#   - .cursor/rules/100-core.mdc            # Core standards
+#   - .cursor/rules/110-git.mdc             # Git conventions
+#   - .cursor/rules/160-python.mdc          # Backend (Python)
+#   - .cursor/rules/165-typescript.mdc      # Frontend (TypeScript)
+#   - .cursor/rules/170-javascript.mdc      # Frontend (JavaScript)
+#   - .cursor/rules/280-aws.mdc             # Cloud (AWS)
+#   - .cursor/rules/140-terraform.mdc       # Infrastructure
+#   - .cursor/rules/270-postgresql.mdc      # Database
+#   - .cursor/rules/310-security.mdc        # Security
+#   - .cursor/rules/300-testing.mdc         # Testing
+#   - .cursor/rules/320-api-design.mdc      # API patterns
+
+# --- DevOps / Platform Engineering ---
+# rules:
+#   - .cursor/rules/100-core.mdc            # Core standards
+#   - .cursor/rules/110-git.mdc             # Git conventions
+#   - .cursor/rules/130-bash.mdc            # Shell scripting
+#   - .cursor/rules/140-terraform.mdc       # Terraform
+#   - .cursor/rules/150-cloudformation.mdc  # CloudFormation
+#   - .cursor/rules/260-kubernetes.mdc      # Kubernetes
+#   - .cursor/rules/120-gha.mdc             # GitHub Actions
+#   - .cursor/rules/145-ansible.mdc         # Ansible
+#   - .cursor/rules/155-docker.mdc          # Docker
+#   - .cursor/rules/310-security.mdc        # Security
+#   - .cursor/rules/330-observability.mdc   # Monitoring
+
+# --- AI/ML Application Development ---
+# rules:
+#   - .cursor/rules/100-core.mdc            # Core standards
+#   - .cursor/rules/110-git.mdc             # Git conventions
+#   - .cursor/rules/160-python.mdc          # Python (primary language)
+#   - .cursor/rules/295-ai-ml.mdc           # AI/ML patterns
+#   - .cursor/rules/230-mcp-servers.mdc     # MCP servers
+#   - .cursor/rules/280-aws.mdc             # AWS (Bedrock)
+#   - .cursor/rules/290-gcp.mdc             # GCP (Vertex AI)
+#   - .cursor/rules/310-security.mdc        # Security
+#   - .cursor/rules/320-api-design.mdc      # API design
+
+# ═══════════════════════════════════════════════════════════════
+# OPTION 3: Minimal (Core + Language Only)
+# ═══════════════════════════════════════════════════════════════
+
+# For small projects, start with just core rules and your primary language:
+# rules:
+#   - .cursor/rules/100-core.mdc
+#   - .cursor/rules/110-git.mdc
+#   - .cursor/rules/160-python.mdc  # Or your primary language
+
+# ═══════════════════════════════════════════════════════════════
+# Project-Specific Overrides
+# ═══════════════════════════════════════════════════════════════
+
+# Add local overrides at the end (highest priority):
+# rules:
+#   - .cursor/rules/999-local-overrides.mdc
+
+# ═══════════════════════════════════════════════════════════════
+# Notes
+# ═══════════════════════════════════════════════════════════════
+
+# 1. Rules are applied in order - later rules override earlier ones
+# 2. Use 999-local-overrides.mdc for project-specific exceptions
+# 3. Some rules have alwaysApply: true (automatically loaded)
+# 4. See rules/INDEX.md for complete rule catalog
+# 5. Test your configuration by asking Cursor to generate code

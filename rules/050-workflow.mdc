@@ -1,0 +1,590 @@
+---
+title: Development Workflow & Context Management
+description: Plan/Implement/Review workflow with context persistence for complex projects.
+alwaysApply: true
+priority: 50
+---
+
+# Development Workflow & Context Management
+
+**Role:** Workflow orchestrator that combines structured development phases with persistent context management.
+
+**Integration:** This rule works alongside your detailed coding standards (`100-core.mdc` and language-specific rules) and provides workflow structure for complex tasks.
+
+---
+
+## 🎯 Core Workflow: Plan / Implement / Review
+
+You MUST follow this three-phase approach for all non-trivial changes:
+
+### Phase 1: Planning ⚙️
+
+**When:** Before making any code changes for tasks that involve:
+- Multiple files or modules
+- New features or significant refactoring
+- Complex integrations
+- Security-sensitive changes
+
+**Process:**
+1. **Analyze the request** - Understand scope, constraints, and requirements
+2. **Check existing code** - Look for patterns, conventions, and reusable components
+3. **Design the solution** - Propose approach with alternatives considered
+4. **Create/update context files** - Document plan in `tasks.md` or `active-context.md`
+5. **Wait for approval** - Present plan and await explicit confirmation before proceeding
+
+**Output:**
+- Clear problem statement
+- Proposed solution with rationale
+- Files/modules affected
+- Dependencies and risks
+- Testing strategy
+- Updated `tasks.md` with plan
+
+**Key Questions to Answer:**
+- What is the simplest solution that meets requirements?
+- Can we reuse existing code or patterns?
+- What are the security implications?
+- How will this be tested?
+- What documentation needs updating?
+
+### Phase 2: QA Validation ✅ (Level 2+ Tasks)
+
+**When:** Before Implementation phase for Level 2+ tasks. Can be called explicitly with "QA" command.
+
+**Purpose:** Technical validation to prevent implementation failures.
+
+**Process:**
+1. **Dependency Verification** - Check all required packages/tools are installed and compatible
+2. **Configuration Validation** - Verify config files are valid and platform-compatible
+3. **Environment Validation** - Ensure build tools available and permissions sufficient
+4. **Minimal Build Test** - Test core functionality works
+
+**QA Validation Checklist:**
+- [ ] All dependencies installed and compatible
+- [ ] Configuration files valid and platform-compatible
+- [ ] Build environment ready
+- [ ] Minimal build test passes
+
+**If QA fails:**
+- Document issues clearly
+- Provide remediation steps
+- Block implementation until resolved
+- Re-run QA after fixes
+
+**Output:**
+- QA validation report (pass/fail)
+- Issues found (if any)
+- Remediation steps (if needed)
+- Clear to proceed to Implementation (if pass)
+
+### Phase 3: Implementation 🔨
+
+**When:** Only after:
+- Explicit approval in Planning phase
+- **QA Validation passed** (for Level 2+ tasks)
+- **Creative Phase completed** (for Level 4 tasks)
+
+**Process:**
+1. **Follow the agreed plan** - Implement exactly what was discussed
+2. **Make incremental changes** - Small, testable commits
+3. **Update context files** - Track progress in `progress.md` or `tasks.md`
+4. **Stop at boundaries** - Don't fix unrelated issues or add unplanned features
+5. **Complete the agreed scope** - Then stop and wait for review
+
+**Constraints:**
+- ✅ Implement only what was planned
+- ✅ Follow all coding standards from `100-core.mdc` and language-specific rules
+- ✅ Include error handling, logging, and security considerations
+- ❌ Don't refactor unrelated code
+- ❌ Don't add features not in the plan
+- ❌ Don't optimize prematurely
+
+**If you encounter issues:**
+- Trivial fixes: OK to fix immediately
+- Substantial changes: Stop, document in Review phase, discuss in next Planning phase
+
+### Phase 4: Review 🔍
+
+**When:** After implementation is complete.
+
+**Process:**
+1. **Review implemented changes** - Verify they match the plan
+2. **Check for issues** - Security, bugs, edge cases, performance
+3. **Suggest improvements** - But don't implement them yet
+4. **Update context files** - Document findings in `reflect-*.md` or `tasks.md`
+5. **Identify cleanup opportunities** - Can we remove/simplify existing code?
+6. **Propose next steps** - What should happen next?
+
+**Review Checklist:**
+- [ ] Changes match the agreed plan
+- [ ] Security considerations addressed
+- [ ] Error handling appropriate
+- [ ] Tests added/updated
+- [ ] Documentation updated
+- [ ] No unrelated changes
+- [ ] Code follows all standards from `100-core.mdc`
+
+**Output:**
+- Summary of what was implemented
+- Issues found (if any)
+- Suggestions for improvements (to be discussed in next Planning phase)
+- Updated context files
+
+---
+
+## 📁 Context File Management
+
+**IMPORTANT**: Context files are **workspace-specific** and should be in the **extras/** directory in the project root, NOT in the rules directory. This allows each workspace to have its own context while sharing rules via symlinks.
+
+For complex projects, maintain context files in the `extras/` directory:
+
+### `tasks.md` - Source of Truth
+```markdown
+# Tasks & Planning
+
+## Current Task
+- **Status:** Planning/Implementing/Reviewing/Complete
+- **Description:** [Brief description]
+- **Complexity:** Level 1-4 (see below)
+- **Files Affected:** [List]
+- **Plan:** [What we're doing]
+- **Progress:** [What's done]
+- **Notes:** [Any important context]
+```
+
+### `active-context.md` - Current Focus
+```markdown
+# Active Context
+
+## Current Phase
+[Planning/Implementing/Reviewing]
+
+## Current Focus
+[What we're working on right now]
+
+## Key Decisions
+- [Decision 1]: [Rationale]
+- [Decision 2]: [Rationale]
+
+## Blockers/Issues
+- [Issue 1]: [Status]
+```
+
+### `progress.md` - Implementation Status
+```markdown
+# Progress Tracking
+
+## Completed
+- [Task 1]: [Date] - [Summary]
+- [Task 2]: [Date] - [Summary]
+
+## In Progress
+- [Current task]: [Status]
+
+## Next Steps
+- [Next task 1]
+- [Next task 2]
+```
+
+### `reflect-*.md` - Review Documents
+Create one per significant task:
+```markdown
+# Review: [Task Name]
+
+## What Was Done
+[Summary]
+
+## Lessons Learned
+- [Lesson 1]
+- [Lesson 2]
+
+## Improvements for Next Time
+- [Improvement 1]
+```
+
+---
+
+## 🎚️ Complexity Levels
+
+Adapt workflow based on task complexity:
+
+### Level 1: Simple (Quick Fixes)
+- **Workflow:** Direct implementation → Quick review
+- **Context Files:** Optional
+- **Example:** Fix typo, update comment, simple bug fix
+
+### Level 2: Moderate (Single Feature)
+- **Workflow:** Brief plan → Implement → Review
+- **Context Files:** `tasks.md` recommended
+- **Example:** Add new function, update single module
+
+### Level 3: Complex (Multi-Module)
+- **Workflow:** Full Plan → Implement → Review → Archive
+- **Context Files:** `tasks.md`, `active-context.md`, `progress.md`
+- **Example:** New feature spanning multiple files, API changes
+
+### Level 4: Very Complex (Architectural)
+- **Workflow:** Detailed Plan → Creative Phase → Implement → Review → Archive
+- **Context Files:** All files, including `creative-*.md` for design decisions
+- **Example:** Major refactoring, new subsystem, architectural changes
+
+---
+
+## 🔄 Workflow Integration
+
+### For Simple Tasks (Level 1)
+```
+User Request → Quick Implementation → Brief Review → Done
+```
+
+### For Moderate Tasks (Level 2)
+```
+User Request → Brief Planning → QA Validation → Implementation → Review → Done
+```
+
+### For Complex Tasks (Level 3-4)
+```
+User Request → Planning Phase → Creative Phase (MANDATORY) → QA Validation → Implementation Phase → Review Phase → Archive
+```
+
+---
+
+## 🎨 Creative Phase (Level 3-4 Tasks)
+
+**⚠️ ENFORCEMENT:** Creative Phase is **MANDATORY** for Level 3-4 tasks before Implementation.
+
+**When Required:**
+- Level 3: Complex multi-module features requiring design decisions
+- Level 4: Architectural changes, multiple valid approaches exist
+- Design decisions affect multiple components
+
+**🚨 IMPLEMENTATION BLOCK:**
+If Creative Phase is required but not completed:
+```
+🚨 IMPLEMENTATION BLOCKED
+Creative phases MUST be completed before implementation.
+
+Required Creative Phases:
+- [ ] [Creative Phase 1]
+- [ ] [Creative Phase 2]
+
+⛔ This is a HARD BLOCK
+Implementation CANNOT proceed until all creative phases are completed.
+```
+
+**Process:**
+1. **Entry Gate Verification:**
+   - [ ] Task complexity is Level 3-4
+   - [ ] Design decisions identified
+   - [ ] Creative phase requirements documented
+
+2. **Design Exploration:**
+   - Identify design options (2-4 alternatives)
+   - Compare pros/cons in tabular format
+   - Analyze against requirements and constraints
+   - Document decision rationale
+
+3. **Exit Gate Verification:**
+   - [ ] All decisions documented
+   - [ ] Rationale provided for choices
+   - [ ] Implementation plan outlined
+   - [ ] Verification against requirements
+
+4. **Documentation:**
+   - Create `creative-*.md` with chosen approach
+   - Update `tasks.md` with design decisions
+   - Mark creative phase complete
+
+5. **Proceed to QA Validation** (Level 2+) then Implementation
+
+**Template:**
+```markdown
+# Creative: [Component/Feature Name]
+
+## Options Considered
+
+| Option | Pros | Cons | Decision |
+|--------|------|------|----------|
+| Option A | ... | ... | ✅ Chosen |
+| Option B | ... | ... | ❌ Rejected |
+
+## Rationale
+[Why Option A was chosen]
+
+## Implementation Notes
+[Key considerations for implementation]
+```
+
+---
+
+## ✅ QA Validation System (Detailed)
+
+**Purpose:** Technical validation to prevent implementation failures due to missing dependencies, configuration issues, or environment problems.
+
+**When:** 
+- **Mandatory** before Implementation for Level 2+ tasks
+- Can be called explicitly with **"QA"** command (interrupts any process)
+- After Creative Phase completion (Level 3-4)
+
+**Four-Point Validation Process:**
+
+### 1️⃣ Dependency Verification
+
+**Check:**
+- All required packages/tools installed
+- Versions compatible with requirements
+- No missing dependencies
+
+**Process:**
+```bash
+# Example checks:
+- Check package.json / requirements.txt / pyproject.toml
+- Verify Node.js/Python/other runtime versions
+- Check if dependencies are installed (npm list, pip list, etc.)
+- Verify version compatibility
+```
+
+**Output:**
+- List of required dependencies
+- List of installed dependencies
+- Compatibility status
+- Missing or incompatible dependencies (if any)
+
+### 2️⃣ Configuration Validation
+
+**Check:**
+- Configuration files exist and are valid
+- Syntax is correct (JSON, YAML, TOML, etc.)
+- Platform compatibility (Windows/macOS/Linux)
+- Required settings present
+
+**Process:**
+```bash
+# Example checks:
+- Validate JSON/YAML/TOML syntax
+- Check for required configuration keys
+- Verify platform-specific settings
+- Test configuration loading
+```
+
+**Output:**
+- Configuration files checked
+- Syntax validation status
+- Platform compatibility status
+- Missing or invalid configurations (if any)
+
+### 3️⃣ Environment Validation
+
+**Check:**
+- Build tools available (npm, pip, make, etc.)
+- Permissions sufficient (write access, port availability)
+- Environment variables set (if needed)
+- Required ports available
+
+**Process:**
+```bash
+# Example checks:
+- Verify build tools installed (node, python, git, etc.)
+- Check write permissions in project directory
+- Verify port availability (if needed)
+- Check environment variables
+```
+
+**Output:**
+- Build tools status
+- Permission status
+- Environment readiness
+- Missing tools or permission issues (if any)
+
+### 4️⃣ Minimal Build Test
+
+**Check:**
+- Build process works
+- Core functionality testable
+- No blocking errors
+
+**Process:**
+```bash
+# Example checks:
+- Run minimal build/test command
+- Verify core functionality
+- Check for blocking errors
+- Test basic operations
+```
+
+**Output:**
+- Build process status
+- Functionality test status
+- Errors found (if any)
+
+### QA Validation Report Format
+
+**Success Report:**
+```
+╔═════════════════ ✅ QA VALIDATION STATUS ═════════════════╗
+│ ✓ Dependencies       │ All required packages installed    │
+│ ✓ Configurations     │ Format verified for platform       │
+│ ✓ Environment        │ Suitable for implementation        │
+│ ✓ Build Test         │ Core functionality verified         │
+╚════════════════════════════════════════════════════════════╝
+✅ VERIFIED - Clear to proceed to Implementation phase
+```
+
+**Failure Report:**
+```
+⚠️⚠️⚠️ QA VALIDATION FAILED ⚠️⚠️⚠️
+
+The following issues must be resolved before proceeding:
+
+1️⃣ DEPENDENCY ISSUES:
+- [Detailed description]
+- [Recommended fix]
+
+2️⃣ CONFIGURATION ISSUES:
+- [Detailed description]
+- [Recommended fix]
+
+3️⃣ ENVIRONMENT ISSUES:
+- [Detailed description]
+- [Recommended fix]
+
+4️⃣ BUILD TEST ISSUES:
+- [Detailed description]
+- [Recommended fix]
+
+⚠️ IMPLEMENTATION BLOCKED until these issues are resolved.
+Type 'QA' after fixing issues to re-validate.
+```
+
+### QA Command Precedence
+
+**When user types "QA":**
+1. **Immediate precedence** - Interrupts any current process
+2. **Load QA process** - Execute four-point validation
+3. **Remediation priority** - Fixes take priority over pending tasks
+4. **Resume flow** - After PASS, resume previous process flow
+
+**QA Override Message:**
+```
+⚠️ QA OVERRIDE ACTIVATED
+All other processes paused
+QA validation checks now running...
+Any issues found MUST be remediated before continuing
+```
+
+### Common QA Fixes
+
+**Dependency Issues:**
+- Missing packages: Install with `npm install`, `pip install`, etc.
+- Version conflicts: Update or downgrade packages
+- Missing runtime: Install Node.js, Python, etc.
+
+**Configuration Issues:**
+- Invalid JSON/YAML: Fix syntax errors
+- Missing keys: Add required configuration
+- Platform incompatibility: Adapt for current OS
+
+**Environment Issues:**
+- Missing tools: Install required build tools
+- Permission denied: Fix file/directory permissions
+- Port in use: Kill process or change port
+
+**Build Test Issues:**
+- Build fails: Check error messages and fix
+- Test fails: Verify minimal configuration
+- Path issues: Use correct path separators for platform
+
+---
+
+## 🌐 Platform Awareness
+
+**Automatic Platform Detection:**
+- Detect operating system (Windows/macOS/Linux)
+- Identify path separator format (`\` vs `/`)
+- Detect shell environment (PowerShell/Bash/Zsh/Cmd)
+- Adapt commands accordingly
+
+**Platform Detection Process:**
+1. Detect OS environment
+2. Identify path separator format
+3. Detect shell type
+4. Adapt commands for platform
+
+**Command Adaptation:**
+- **Windows:** Use `dir`, `type`, backslash paths (`\`)
+- **macOS/Linux:** Use `ls`, `cat`, forward slash paths (`/`)
+- **PowerShell:** Use PowerShell-specific syntax
+- **Bash/Zsh:** Use Unix-style commands
+
+**Example:**
+```bash
+# Platform detection results
+Operating System: macOS
+Path Separator: /
+Shell Environment: zsh
+Command Adaptation: Required
+
+# Commands automatically adapted:
+# Windows: dir, type file.txt
+# macOS/Linux: ls, cat file.txt
+```
+
+**When to Use:**
+- Always detect platform before executing commands
+- Adapt file paths for current OS
+- Use platform-appropriate command syntax
+- Verify platform compatibility for config files
+
+---
+
+## 🚀 Quick Start Commands
+
+Users can trigger phases explicitly:
+
+- **"Plan this:"** → Enter Planning phase
+- **"QA"** → Run QA Validation (can interrupt any process)
+- **"Implement:"** → Enter Implementation phase (requires plan + QA pass for Level 2+)
+- **"Review:"** → Enter Review phase
+- **"What's the status?"** → Check context files and current phase
+
+---
+
+## 🔗 Integration with Other Rules
+
+This workflow rule integrates with:
+
+- **`100-core.mdc`**: Coding standards apply during Implementation
+- **Language-specific rules** (`160-python.mdc`, etc.): Language patterns apply during Implementation
+- **`110-git.mdc`**: Commit standards apply when creating commits
+- **`120-gha.mdc`**: CI/CD considerations during Planning
+
+---
+
+## 📝 Best Practices
+
+1. **Always check context files** before starting work
+2. **Update context files** as you progress
+3. **Don't skip phases** for complex tasks
+4. **Preserve context** between sessions using files
+5. **Be explicit** about which phase you're in
+6. **Wait for approval** before moving from Planning to Implementation
+7. **Run QA Validation** before Implementation for Level 2+ tasks
+8. **Complete Creative Phase** before Implementation for Level 3-4 tasks
+9. **Detect platform** and adapt commands automatically
+10. **Block Implementation** if QA fails or Creative Phase incomplete
+
+---
+
+## ⚠️ Important Notes
+
+- **Simple tasks** (Level 1) can skip formal phases, but still follow coding standards
+- **Context files are optional** for simple projects but highly recommended for complex ones
+- **This workflow complements** your detailed coding standards, it doesn't replace them
+- **Always follow** security and quality standards from `100-core.mdc` regardless of workflow phase
+- **QA Validation is mandatory** for Level 2+ tasks before Implementation
+- **Creative Phase is mandatory** for Level 3-4 tasks before Implementation
+- **Platform detection** happens automatically - adapt commands accordingly
+- **QA command ("QA")** can interrupt any process and takes immediate precedence
+---
+
+**Last Updated**: December 2025

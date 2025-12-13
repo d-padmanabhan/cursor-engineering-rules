@@ -1,0 +1,913 @@
+---
+title: Testing Strategies & Best Practices
+description: Comprehensive testing guide covering unit, integration, E2E, test frameworks, patterns, and CI/CD integration
+priority: 300
+alwaysApply: false
+files:
+  include:
+    - "**/*.test.ts"
+    - "**/*.test.js"
+    - "**/*.test.py"
+    - "**/*.test.go"
+    - "**/*.spec.ts"
+    - "**/*.spec.js"
+    - "**/test_*.py"
+    - "**/*_test.go"
+    - "**/jest.config.js"
+    - "**/pytest.ini"
+    - "**/vitest.config.ts"
+---
+
+# Testing Strategies & Best Practices
+
+## Guiding Principles
+
+1. **Test Pyramid**: More unit tests, fewer integration tests, minimal E2E tests
+2. **Fast Feedback**: Tests should run quickly and fail fast
+3. **Isolation**: Tests should be independent and repeatable
+4. **Clarity**: Tests are documentation - make them readable
+5. **Coverage**: Aim for 80%+ coverage, but quality > quantity
+
+---
+
+## Test Pyramid
+
+```
+         ╱╲
+        ╱  ╲          E2E Tests (Few)
+       ╱────╲         - Slow, brittle, expensive
+      ╱      ╲        - Test critical user journeys
+     ╱ E2E    ╲       - 5-10% of tests
+    ╱──────────╲
+   ╱            ╲     Integration Tests (Some)
+  ╱ Integration ╲    - Medium speed
+ ╱────────────────╲   - Test component interactions
+╱                  ╲  - 20-30% of tests
+────────────────────
+╲                  ╱  Unit Tests (Many)
+ ╲      Unit      ╱   - Fast, focused, reliable
+  ╲──────────────╱    - Test individual functions/classes
+   ╲            ╱     - 60-70% of tests
+    ╲──────────╱
+     ╲        ╱
+      ╲      ╱
+       ╲────╱
+        ╲  ╱
+         ╲╱
+```
+
+---
+
+## Unit Testing
+
+### Jest (JavaScript/TypeScript)
+
+#### Basic Test Structure
+```typescript
+// user.test.ts
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { UserService } from './user-service';
+
+describe('UserService', () => {
+  let userService: UserService;
+
+  beforeEach(() => {
+    userService = new UserService();
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('createUser', () => {
+    it('should create a user with valid data', () => {
+      const userData = { name: 'John', email: 'john@acme.com' };
+      const user = userService.createUser(userData);
+      
+      expect(user).toMatchObject(userData);
+      expect(user.id).toBeDefined();
+      expect(user.createdAt).toBeInstanceOf(Date);
+    });
+
+    it('should throw error for invalid email', () => {
+      const userData = { name: 'John', email: 'invalid' };
+      
+      expect(() => userService.createUser(userData)).toThrow('Invalid email');
+    });
+
+    it('should hash the password', () => {
+      const userData = { name: 'John', email: 'john@acme.com', password: 'secret' };
+      const user = userService.createUser(userData);
+      
+      expect(user.password).not.toBe('secret');
+      expect(user.password).toMatch(/^hashed_/);
+    });
+  });
+});
+```
+
+#### Table-Driven Tests
+```typescript
+// ✅ GOOD - Test multiple cases efficiently
+describe('calculateDiscount', () => {
+  it.each([
+    [100, 0.1, 10],
+    [200, 0.2, 40],
+    [500, 0.15, 75],
+    [0, 0.5, 0],
+  ])('should calculate discount for amount %d with rate %d', (amount, rate, expected) => {
+    expect(calculateDiscount(amount, rate)).toBe(expected);
+  });
+});
+```
+
+#### Mocking
+```typescript
+import { jest } from '@jest/globals';
+import { UserService } from './user-service';
+import { EmailService } from './email-service';
+
+// Mock external dependencies
+jest.mock('./email-service');
+
+describe('UserService with mocks', () => {
+  let userService: UserService;
+  let emailService: jest.Mocked<EmailService>;
+
+  beforeEach(() => {
+    emailService = new EmailService() as jest.Mocked<EmailService>;
+    userService = new UserService(emailService);
+  });
+
+  it('should send welcome email on user creation', async () => {
+    emailService.sendWelcome.mockResolvedValue(true);
+    
+    await userService.createUser({ name: 'John', email: 'john@acme.com' });
+    
+    expect(emailService.sendWelcome).toHaveBeenCalledTimes(1);
+    expect(emailService.sendWelcome).toHaveBeenCalledWith('john@acme.com');
+  });
+
+  it('should handle email sending failure', async () => {
+    emailService.sendWelcome.mockRejectedValue(new Error('SMTP error'));
+    
+    await expect(
+      userService.createUser({ name: 'John', email: 'john@acme.com' })
+    ).rejects.toThrow('Failed to send welcome email');
+  });
+});
+```
+
+#### Spy on Functions
+```typescript
+import { jest } from '@jest/globals';
+
+describe('Spy examples', () => {
+  it('should spy on console.log', () => {
+    const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+    
+    myFunction();
+    
+    expect(consoleLogSpy).toHaveBeenCalledWith('Expected message');
+    consoleLogSpy.mockRestore();
+  });
+
+  it('should spy on class method', () => {
+    const service = new UserService();
+    const validateSpy = jest.spyOn(service, 'validateEmail');
+    
+    service.createUser({ name: 'John', email: 'john@acme.com' });
+    
+    expect(validateSpy).toHaveBeenCalledWith('john@acme.com');
+  });
+});
+```
+
+---
+
+### pytest (Python)
+
+#### Basic Test Structure
+```python
+# test_user_service.py
+import pytest
+from datetime import datetime
+from user_service import UserService, ValidationError
+
+class TestUserService:
+    @pytest.fixture
+    def user_service(self):
+        """Fixture to create UserService instance."""
+        return UserService()
+
+    def test_create_user_with_valid_data(self, user_service):
+        """Should create user with valid data."""
+        user_data = {"name": "John", "email": "john@acme.com"}
+        user = user_service.create_user(user_data)
+        
+        assert user["name"] == "John"
+        assert user["email"] == "john@acme.com"
+        assert "id" in user
+        assert isinstance(user["created_at"], datetime)
+
+    def test_create_user_with_invalid_email(self, user_service):
+        """Should raise ValidationError for invalid email."""
+        user_data = {"name": "John", "email": "invalid"}
+        
+        with pytest.raises(ValidationError, match="Invalid email"):
+            user_service.create_user(user_data)
+
+    def test_password_is_hashed(self, user_service):
+        """Should hash the password."""
+        user_data = {"name": "John", "email": "john@acme.com", "password": "secret"}
+        user = user_service.create_user(user_data)
+        
+        assert user["password"] != "secret"
+        assert user["password"].startswith("hashed_")
+```
+
+#### Parametrized Tests
+```python
+# ✅ GOOD - Test multiple cases efficiently
+import pytest
+
+@pytest.mark.parametrize("amount,rate,expected", [
+    (100, 0.1, 10),
+    (200, 0.2, 40),
+    (500, 0.15, 75),
+    (0, 0.5, 0),
+])
+def test_calculate_discount(amount, rate, expected):
+    """Should calculate discount correctly."""
+    assert calculate_discount(amount, rate) == expected
+```
+
+#### Mocking with pytest
+```python
+from unittest.mock import Mock, patch
+import pytest
+
+class TestUserServiceWithMocks:
+    @pytest.fixture
+    def email_service_mock(self):
+        """Mock email service."""
+        return Mock()
+
+    @pytest.fixture
+    def user_service(self, email_service_mock):
+        """User service with mocked email service."""
+        return UserService(email_service=email_service_mock)
+
+    def test_send_welcome_email_on_creation(self, user_service, email_service_mock):
+        """Should send welcome email on user creation."""
+        email_service_mock.send_welcome.return_value = True
+        
+        user_service.create_user({"name": "John", "email": "john@acme.com"})
+        
+        email_service_mock.send_welcome.assert_called_once_with("john@acme.com")
+
+    def test_handle_email_sending_failure(self, user_service, email_service_mock):
+        """Should handle email sending failure."""
+        email_service_mock.send_welcome.side_effect = Exception("SMTP error")
+        
+        with pytest.raises(Exception, match="Failed to send welcome email"):
+            user_service.create_user({"name": "John", "email": "john@acme.com"})
+
+    @patch('user_service.datetime')
+    def test_created_at_timestamp(self, datetime_mock, user_service):
+        """Should use current timestamp for created_at."""
+        fixed_time = datetime(2024, 1, 1, 12, 0, 0)
+        datetime_mock.now.return_value = fixed_time
+        
+        user = user_service.create_user({"name": "John", "email": "john@acme.com"})
+        
+        assert user["created_at"] == fixed_time
+```
+
+---
+
+### Go Testing
+
+#### Basic Test Structure
+```go
+// user_test.go
+package user
+
+import (
+    "testing"
+    "github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/require"
+)
+
+func TestCreateUser(t *testing.T) {
+    service := NewUserService()
+    
+    t.Run("should create user with valid data", func(t *testing.T) {
+        userData := UserData{
+            Name:  "John",
+            Email: "john@acme.com",
+        }
+        
+        user, err := service.CreateUser(userData)
+        
+        require.NoError(t, err)
+        assert.Equal(t, "John", user.Name)
+        assert.Equal(t, "john@acme.com", user.Email)
+        assert.NotEmpty(t, user.ID)
+        assert.NotZero(t, user.CreatedAt)
+    })
+    
+    t.Run("should return error for invalid email", func(t *testing.T) {
+        userData := UserData{
+            Name:  "John",
+            Email: "invalid",
+        }
+        
+        _, err := service.CreateUser(userData)
+        
+        require.Error(t, err)
+        assert.Contains(t, err.Error(), "invalid email")
+    })
+}
+```
+
+#### Table-Driven Tests
+```go
+// ✅ GOOD - Idiomatic Go testing
+func TestCalculateDiscount(t *testing.T) {
+    tests := []struct {
+        name     string
+        amount   float64
+        rate     float64
+        expected float64
+    }{
+        {"10% off 100", 100, 0.1, 10},
+        {"20% off 200", 200, 0.2, 40},
+        {"15% off 500", 500, 0.15, 75},
+        {"50% off 0", 0, 0.5, 0},
+    }
+    
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            result := CalculateDiscount(tt.amount, tt.rate)
+            assert.Equal(t, tt.expected, result)
+        })
+    }
+}
+```
+
+#### Mocking with Interfaces
+```go
+// Define interface for dependency
+type EmailService interface {
+    SendWelcome(email string) error
+}
+
+// Mock implementation
+type MockEmailService struct {
+    SendWelcomeCalled bool
+    SendWelcomeError  error
+}
+
+func (m *MockEmailService) SendWelcome(email string) error {
+    m.SendWelcomeCalled = true
+    return m.SendWelcomeError
+}
+
+// Test with mock
+func TestCreateUserSendsWelcomeEmail(t *testing.T) {
+    mockEmail := &MockEmailService{}
+    service := NewUserService(mockEmail)
+    
+    _, err := service.CreateUser(UserData{
+        Name:  "John",
+        Email: "john@acme.com",
+    })
+    
+    require.NoError(t, err)
+    assert.True(t, mockEmail.SendWelcomeCalled)
+}
+```
+
+---
+
+## Integration Testing
+
+### Database Integration Tests
+
+#### PostgreSQL with Testcontainers (Node.js)
+```typescript
+import { GenericContainer, StartedTestContainer } from 'testcontainers';
+import { Client } from 'pg';
+
+describe('UserRepository Integration', () => {
+  let container: StartedTestContainer;
+  let client: Client;
+
+  beforeAll(async () => {
+    // Start PostgreSQL container
+    container = await new GenericContainer('postgres:16-alpine')
+      .withEnvironment({ POSTGRES_PASSWORD: 'test' })
+      .withExposedPorts(5432)
+      .start();
+
+    // Connect to container
+    client = new Client({
+      host: container.getHost(),
+      port: container.getMappedPort(5432),
+      user: 'postgres',
+      password: 'test',
+      database: 'postgres',
+    });
+    
+    await client.connect();
+    
+    // Run migrations
+    await client.query(`
+      CREATE TABLE users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100),
+        email VARCHAR(100) UNIQUE
+      )
+    `);
+  }, 60000);
+
+  afterAll(async () => {
+    await client.end();
+    await container.stop();
+  });
+
+  it('should insert and retrieve user', async () => {
+    const repo = new UserRepository(client);
+    
+    const created = await repo.create({ name: 'John', email: 'john@acme.com' });
+    const retrieved = await repo.findById(created.id);
+    
+    expect(retrieved).toMatchObject({
+      name: 'John',
+      email: 'john@acme.com',
+    });
+  });
+});
+```
+
+#### Python with pytest-postgresql
+```python
+import pytest
+from user_repository import UserRepository
+
+@pytest.fixture
+def user_repository(postgresql):
+    """Create user repository with test database."""
+    # postgresql fixture from pytest-postgresql
+    cursor = postgresql.cursor()
+    cursor.execute("""
+        CREATE TABLE users (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(100),
+            email VARCHAR(100) UNIQUE
+        )
+    """)
+    postgresql.commit()
+    
+    return UserRepository(postgresql)
+
+def test_insert_and_retrieve_user(user_repository):
+    """Should insert and retrieve user."""
+    created = user_repository.create({"name": "John", "email": "john@acme.com"})
+    retrieved = user_repository.find_by_id(created["id"])
+    
+    assert retrieved["name"] == "John"
+    assert retrieved["email"] == "john@acme.com"
+```
+
+### API Integration Tests
+
+#### FastAPI (Python)
+```python
+from fastapi.testclient import TestClient
+from main import app
+
+client = TestClient(app)
+
+def test_create_user_endpoint():
+    """Should create user via API."""
+    response = client.post(
+        "/api/users",
+        json={"name": "John", "email": "john@acme.com"}
+    )
+    
+    assert response.status_code == 201
+    data = response.json()
+    assert data["name"] == "John"
+    assert data["email"] == "john@acme.com"
+    assert "id" in data
+
+def test_get_user_endpoint():
+    """Should retrieve user by ID."""
+    # Create user first
+    create_response = client.post(
+        "/api/users",
+        json={"name": "Jane", "email": "jane@acme.com"}
+    )
+    user_id = create_response.json()["id"]
+    
+    # Retrieve user
+    response = client.get(f"/api/users/{user_id}")
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert data["name"] == "Jane"
+
+def test_get_nonexistent_user_returns_404():
+    """Should return 404 for nonexistent user."""
+    response = client.get("/api/users/99999")
+    
+    assert response.status_code == 404
+```
+
+#### Express (Node.js)
+```typescript
+import request from 'supertest';
+import { app } from './app';
+
+describe('User API Integration', () => {
+  describe('POST /api/users', () => {
+    it('should create user', async () => {
+      const response = await request(app)
+        .post('/api/users')
+        .send({ name: 'John', email: 'john@acme.com' })
+        .expect(201);
+
+      expect(response.body).toMatchObject({
+        name: 'John',
+        email: 'john@acme.com',
+      });
+      expect(response.body.id).toBeDefined();
+    });
+
+    it('should return 400 for invalid data', async () => {
+      await request(app)
+        .post('/api/users')
+        .send({ name: 'John' }) // Missing email
+        .expect(400);
+    });
+  });
+
+  describe('GET /api/users/:id', () => {
+    it('should retrieve user by ID', async () => {
+      // Create user first
+      const createResponse = await request(app)
+        .post('/api/users')
+        .send({ name: 'Jane', email: 'jane@acme.com' });
+
+      const userId = createResponse.body.id;
+
+      // Retrieve user
+      const response = await request(app)
+        .get(`/api/users/${userId}`)
+        .expect(200);
+
+      expect(response.body.name).toBe('Jane');
+    });
+
+    it('should return 404 for nonexistent user', async () => {
+      await request(app)
+        .get('/api/users/99999')
+        .expect(404);
+    });
+  });
+});
+```
+
+---
+
+## End-to-End (E2E) Testing
+
+### Playwright (Modern, Recommended)
+```typescript
+// e2e/user-flow.spec.ts
+import { test, expect } from '@playwright/test';
+
+test.describe('User Registration Flow', () => {
+  test('should allow user to register and login', async ({ page }) => {
+    // Navigate to registration page
+    await page.goto('https://app.acme.com/register');
+
+    // Fill registration form
+    await page.fill('[name="name"]', 'John Doe');
+    await page.fill('[name="email"]', 'john@acme.com');
+    await page.fill('[name="password"]', 'SecurePassword123!');
+    await page.fill('[name="confirmPassword"]', 'SecurePassword123!');
+
+    // Submit form
+    await page.click('button[type="submit"]');
+
+    // Wait for success message
+    await expect(page.locator('.success-message')).toContainText(
+      'Registration successful'
+    );
+
+    // Should redirect to dashboard
+    await expect(page).toHaveURL(/.*\/dashboard/);
+
+    // Verify user is logged in
+    await expect(page.locator('.user-profile')).toContainText('John Doe');
+  });
+
+  test('should show error for duplicate email', async ({ page }) => {
+    await page.goto('https://app.acme.com/register');
+
+    await page.fill('[name="email"]', 'existing@acme.com');
+    await page.fill('[name="password"]', 'password123');
+    await page.click('button[type="submit"]');
+
+    await expect(page.locator('.error-message')).toContainText(
+      'Email already exists'
+    );
+  });
+});
+
+// Visual regression testing
+test('homepage should look correct', async ({ page }) => {
+  await page.goto('https://app.acme.com');
+  await expect(page).toHaveScreenshot('homepage.png');
+});
+```
+
+### Playwright Configuration
+```typescript
+// playwright.config.ts
+import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './e2e',
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  reporter: 'html',
+  
+  use: {
+    baseURL: process.env.BASE_URL || 'http://localhost:3000',
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+  },
+
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+    { name: 'webkit', use: { ...devices['Desktop Safari'] } },
+    { name: 'Mobile Chrome', use: { ...devices['Pixel 5'] } },
+    { name: 'Mobile Safari', use: { ...devices['iPhone 12'] } },
+  ],
+
+  webServer: {
+    command: 'npm run start',
+    url: 'http://localhost:3000',
+    reuseExistingServer: !process.env.CI,
+  },
+});
+```
+
+---
+
+## Test Coverage
+
+### Jest Coverage
+```json
+{
+  "jest": {
+    "collectCoverage": true,
+    "coverageDirectory": "coverage",
+    "coverageReporters": ["text", "lcov", "html"],
+    "coverageThreshold": {
+      "global": {
+        "branches": 80,
+        "functions": 80,
+        "lines": 80,
+        "statements": 80
+      }
+    },
+    "collectCoverageFrom": [
+      "src/**/*.{js,ts}",
+      "!src/**/*.test.{js,ts}",
+      "!src/**/*.spec.{js,ts}"
+    ]
+  }
+}
+```
+
+### pytest Coverage
+```ini
+# pytest.ini
+[pytest]
+addopts = 
+    --cov=src
+    --cov-report=html
+    --cov-report=term-missing
+    --cov-fail-under=80
+```
+
+### Go Coverage
+```bash
+# Run tests with coverage
+go test -cover ./...
+
+# Generate coverage report
+go test -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out -o coverage.html
+
+# Coverage threshold check
+go test -coverprofile=coverage.out ./... && \
+  go tool cover -func=coverage.out | grep total | awk '{if ($3+0 < 80) exit 1}'
+```
+
+---
+
+## CI/CD Integration
+
+### GitHub Actions - Full Test Suite
+```yaml
+name: Test Suite
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run unit tests
+        run: npm run test:unit -- --coverage
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/lcov.info
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run integration tests
+        run: npm run test:integration
+        env:
+          DATABASE_URL: postgresql://postgres:test@localhost:5432/test
+
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright
+        run: npx playwright install --with-deps
+      
+      - name: Run E2E tests
+        run: npm run test:e2e
+      
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+```
+
+---
+
+## Best Practices
+
+### Test Naming Conventions
+```typescript
+// ✅ GOOD - Descriptive test names
+describe('UserService', () => {
+  describe('createUser', () => {
+    it('should create user with valid data', () => { /* ... */ });
+    it('should throw ValidationError for invalid email', () => { /* ... */ });
+    it('should hash password before storing', () => { /* ... */ });
+  });
+});
+
+// ❌ BAD - Vague test names
+describe('UserService', () => {
+  it('test1', () => { /* ... */ });
+  it('works', () => { /* ... */ });
+  it('should not fail', () => { /* ... */ });
+});
+```
+
+### AAA Pattern (Arrange, Act, Assert)
+```typescript
+it('should calculate total price with discount', () => {
+  // Arrange
+  const cart = new ShoppingCart();
+  cart.addItem({ id: '1', price: 100 });
+  cart.addItem({ id: '2', price: 50 });
+  const discount = 0.1; // 10% discount
+
+  // Act
+  const total = cart.calculateTotal(discount);
+
+  // Assert
+  expect(total).toBe(135); // (100 + 50) * 0.9
+});
+```
+
+### Test Independence
+```typescript
+// ✅ GOOD - Each test is independent
+describe('UserService', () => {
+  let service: UserService;
+
+  beforeEach(() => {
+    service = new UserService(); // Fresh instance for each test
+  });
+
+  it('test 1', () => { /* ... */ });
+  it('test 2', () => { /* ... */ });
+});
+
+// ❌ BAD - Tests depend on each other
+describe('UserService', () => {
+  const service = new UserService(); // Shared instance
+  let userId: string;
+
+  it('should create user', () => {
+    userId = service.createUser({ /* ... */ }).id; // Sets state
+  });
+
+  it('should get user', () => {
+    const user = service.getUser(userId); // Depends on previous test
+    expect(user).toBeDefined();
+  });
+});
+```
+
+---
+
+## Related Files
+
+- `160-python.mdc` - Python-specific testing with pytest
+- `170-javascript.mdc` - JavaScript testing with Jest/Vitest
+- `180-go.mdc` - Go testing patterns
+- `120-gha.mdc` - CI/CD integration for tests
+
+---
+
+**Last Updated**: December 2025  
+**Purpose**: Comprehensive testing strategies and best practices across languages

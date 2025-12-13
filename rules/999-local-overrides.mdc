@@ -1,0 +1,32 @@
+---
+title: Local Overrides
+description: Workspace-specific rule overrides. Customize this file for project-specific needs.
+priority: 999
+alwaysApply: false
+---
+# Local Overrides
+
+This file is for **workspace-specific** rule customizations.
+
+## Usage
+
+Add project-specific rules here that override or extend the standard ruleset.
+
+**Example:**
+```markdown
+# Project-Specific Rules
+
+## Custom Patterns
+- Use `internal/` package structure
+- Prefer gRPC over REST for internal services
+- Use specific logging format: [timestamp] [level] [component] message
+```
+
+## Notes
+
+- This file is workspace-specific and should be in `.cursor/rules/999-local-overrides.mdc`
+- Rules here take precedence over numbered rules (100-800)
+- Keep overrides minimal - prefer updating central rules when possible
+---
+
+**Last Updated**: December 2025
