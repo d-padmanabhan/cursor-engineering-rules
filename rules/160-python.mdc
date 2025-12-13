@@ -15,6 +15,16 @@ files:
 ## Guiding Principle
 Apply features only when they add clarity, correctness, performance, or security. Prefer simple, intentional solutions (DRY, KISS, YAGNI, Fail Fast).
 
+## 0) AI Assistant Guidelines
+
+When providing code assistance, follow these guardrails:
+
+- **Avoid Over-Engineering**: Do not recommend `boto3` client caching, `async/await`, `threading`, `multiprocessing`, or other advanced concurrency patterns unless the user explicitly requests them or performance bottlenecks are evident.
+- **Keep It Simple**: Prefer straightforward solutions using standard library features over complex architectures.
+- **Testing Guidance**: Suggest appropriate tests or improvements to existing test coverage when reviewing code.
+- **Explain Trade-offs**: When proposing optimizations or refactoring, clearly explain the benefits and costs (complexity, maintenance, performance).
+- **Respect Context**: Analyze the provided code and suggest improvements that align with its scope and purpose—don't transform a 20-line script into a 200-line framework.
+
 ## 1) Standards
 
 - **Shebang:** `#!/usr/bin/env -S uv run` (preferred) or `#!/usr/bin/env python3`.
@@ -291,17 +301,100 @@ uv sync
   ```
 
 ### Lambda Patterns
+
+**Global Scope Pattern (Recommended):**
+```python
+import boto3
+import os
+from botocore.config import Config
+
+# ✅ CORRECT: Create clients in global scope (outside handler)
+boto_config = Config(
+    retries={"max_attempts": 10, "mode": "adaptive"},
+    connect_timeout=5,
+    read_timeout=30,
+)
+
+region = os.environ["AWS_REGION"]
+s3_client = boto3.client("s3", config=boto_config, region_name=region)
+dynamodb_client = boto3.client("dynamodb", config=boto_config, region_name=region)
+
+def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Lambda handler reuses clients from global scope."""
+    response = s3_client.list_buckets()
+    return {"statusCode": 200, "body": "Success"}
+```
+
+**❌ Anti-Patterns:**
+```python
+# ❌ WRONG: Creates new client on every invocation (cold start penalty)
+def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    s3_client = boto3.client("s3")  # Bad: Recreated every time
+    return {"statusCode": 200}
+
+# ❌ WRONG: Ties client lifecycle to class instance
+class S3Manager:
+    def __init__(self):
+        self.s3_client = boto3.client("s3")  # Bad
+```
+
+**Cold Start Optimization:**
+```python
+# ✅ Lazy initialization for rarely-used clients
+_sns_client: Any = None
+
+def get_sns_client() -> Any:
+    """Lazy-load SNS client only when needed."""
+    global _sns_client
+    if _sns_client is None:
+        _sns_client = boto3.client("sns")
+    return _sns_client
+
+# ✅ Always-needed clients in global scope
+s3_client = boto3.client("s3")  # Frequently used
+
+def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    s3_client.list_buckets()  # Always available
+
+    if event.get("notify"):
+        sns = get_sns_client()  # Loaded only if needed
+        sns.publish(TopicArn="...", Message="...")
+
+    return {"statusCode": 200}
+```
+
+**AWS Lambda Powertools (Observability):**
+```python
+from aws_lambda_powertools import Logger, Tracer, Metrics
+from aws_lambda_powertools.metrics import MetricUnit
+from typing import Any
+
+logger = Logger()
+tracer = Tracer()
+metrics = Metrics()
+
+@tracer.capture_lambda_handler
+@logger.inject_lambda_context(log_event=True)
+@metrics.log_metrics(capture_cold_start_metric=True)
+def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Lambda handler with full observability."""
+    logger.info("Processing request", extra={"request_id": event.get("requestId")})
+    metrics.add_metric(name="ItemsProcessed", unit=MetricUnit.Count, value=10)
+    result = process_items(event["items"])
+    return {"statusCode": 200, "body": result}
+
+@tracer.capture_method
+def process_items(items: list[str]) -> str:
+    """Process items with automatic tracing."""
+    logger.info(f"Processing {len(items)} items")
+    return "success"
+```
+
+**Lambda Best Practices:**
 - **Handler Placement:** Place `lambda_handler` at end of file.
 - **Clients as Parameters:** Pass clients to functions (don't recreate inside functions).
 - **Correlation ID:** Use `context.aws_request_id` for tracing.
 - **Handler Signature:** Use `def lambda_handler(event: dict[str, Any], _) -> dict[str, Any]:` when context unused.
-- **Observability:** Use `aws_lambda_powertools` for structured logging, tracing, metrics:
-  ```python
-  from aws_lambda_powertools import Logger, Tracer, Metrics
-  logger = Logger()
-  tracer = Tracer()
-  metrics = Metrics()
-  ```
 - **Dry-Run Mode:** Add flag to preview actions: `if event.get("dry_run"): logger.info(f"Would perform: {action}")`.
 
 ### Region Validation
@@ -358,6 +451,94 @@ def validate_region(region: str) -> str:
 - **Configuration Management:** Use `configparser`, `os.environ`, or `.env` files.
 - **Feature Flags:** Implement toggles for gradual rollout.
 
+## 11a) Design Patterns
+
+Design patterns provide reusable solutions to common problems. Use them where they add clarity and maintainability—avoid forcing patterns where simple code suffices.
+
+### Factory Method Pattern
+Creates objects without specifying their exact class. Useful when object creation logic is complex or varies based on input.
+
+```python
+from typing import Protocol
+
+class DatabaseConnection(Protocol):
+    """Protocol for database connections."""
+    def execute(self, query: str) -> list[dict]: ...
+
+class PostgresConnection:
+    def execute(self, query: str) -> list[dict]:
+        return [{"result": "postgres_data"}]
+
+class MySQLConnection:
+    def execute(self, query: str) -> list[dict]:
+        return [{"result": "mysql_data"}]
+
+class DatabaseFactory:
+    """Factory for creating database connections."""
+    @staticmethod
+    def create_connection(db_type: str) -> DatabaseConnection:
+        match db_type.lower():
+            case "postgres": return PostgresConnection()
+            case "mysql": return MySQLConnection()
+            case _: raise ValueError(f"Unsupported: {db_type}")
+```
+
+### Singleton Pattern
+Ensures a class has only one instance. Useful for managing shared resources like boto3 clients, database connections, or configuration objects.
+
+```python
+from typing import Any
+
+class SingletonMeta(type):
+    """Metaclass that creates a Singleton base class."""
+    _instances: dict[type, object] = {}
+
+    def __call__(cls, *args: Any, **kwargs: Any) -> object:
+        if cls not in cls._instances:
+            cls._instances[cls] = super().__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+class AWSClientManager(metaclass=SingletonMeta):
+    """Singleton manager for AWS boto3 clients."""
+    def __init__(self) -> None:
+        self._clients: dict[str, Any] = {}
+
+    def get_client(self, service: str, region: str = "us-east-1") -> Any:
+        key = f"{service}:{region}"
+        if key not in self._clients:
+            self._clients[key] = boto3.client(service, region_name=region)
+        return self._clients[key]
+
+# Usage in Lambda or application code
+aws_clients = AWSClientManager()
+s3_client = aws_clients.get_client("s3", "us-east-1")
+```
+
+### Strategy Pattern
+Defines a family of interchangeable algorithms. Useful for multi-region AWS operations or varying behaviors based on environment.
+
+```python
+from typing import Protocol
+
+class DeploymentStrategy(Protocol):
+    def deploy(self, application: str) -> None: ...
+
+class DevelopmentDeployment:
+    def deploy(self, application: str) -> None:
+        print(f"Deploying {application} to dev (single instance)")
+
+class ProductionDeployment:
+    def deploy(self, application: str) -> None:
+        print(f"Deploying {application} to prod (multi-AZ, auto-scaling)")
+
+class DeploymentContext:
+    def __init__(self, strategy: DeploymentStrategy) -> None:
+        self._strategy = strategy
+
+    def execute_deployment(self, application: str) -> None:
+        self._strategy.deploy(application)
+```
+
 ## 12) CLI & User Experience
 
 - **argparse:** Add CLI options:
@@ -378,9 +559,74 @@ def validate_region(region: str) -> str:
 
 ## 13) Deployment & Distribution
 
-- **Packaging:** Use `setuptools`, `poetry`, `hatch`, or `flit`.
-- **pyproject.toml:** Define project metadata and dependencies.
-- **Executables:** Use `PyInstaller` or `cx_Freeze` for standalone apps.
+### Creating Installable Packages
+
+**Basic Package Structure:**
+```
+my_utils/
+├── my_utils/
+│   ├── __init__.py
+│   ├── aws_helper.py
+│   └── validators.py
+├── tests/
+│   └── test_aws_helper.py
+├── README.md
+├── pyproject.toml
+└── requirements.txt
+```
+
+**Modern Approach: pyproject.toml (Recommended):**
+```toml
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "my-utils"
+version = "1.0.0"
+description = "Common utility functions for AWS and validation"
+readme = "README.md"
+authors = [{name = "Your Name", email = "you@acme.com"}]
+requires-python = ">=3.12"
+dependencies = [
+    "boto3>=1.28.0",
+    "pydantic>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "black", "ruff"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+```
+
+**Installation Commands:**
+```bash
+# Development mode (editable install)
+pip install -e .
+
+# Production install
+pip install .
+
+# With optional dependencies
+pip install -e ".[dev]"
+
+# Build distribution
+python -m build
+
+# Upload to PyPI
+python -m twine upload dist/*
+```
+
+**Best Practices:**
+- **Version Management**: Use semantic versioning (MAJOR.MINOR.PATCH)
+- **Dependencies**: Pin major versions, allow minor/patch updates (`boto3>=1.28.0,<2.0.0`)
+- **Entry Points**: Add CLI commands via `[project.scripts]` in `pyproject.toml`
+- **Documentation**: Include comprehensive README with usage examples
+- **Testing**: Include tests and configure with `pytest.ini` or `pyproject.toml`
+
+### Docker & CI/CD
+
 - **Docker:** Use multi-stage builds:
   ```dockerfile
   FROM python:3.12 AS builder
@@ -391,6 +637,7 @@ def validate_region(region: str) -> str:
   COPY . .
   CMD ["python", "main.py"]
   ```
+- **Executables:** Use `PyInstaller` or `cx_Freeze` for standalone apps.
 - **CI/CD:** Automate with GitHub Actions, GitLab CI, etc.
 
 ## 14) Timestamps
@@ -661,7 +908,7 @@ if __name__ == "__main__":
 ## 19) Quick Reference Checklist
 
 Before finalizing code, verify:
-- [ ] Shebang line present
+- [ ] Shebang line present with `uv`
 - [ ] Type hints on all functions/variables
 - [ ] Google-style docstrings
 - [ ] Imports grouped and sorted
@@ -671,11 +918,54 @@ Before finalizing code, verify:
 - [ ] Error handling (specific exceptions)
 - [ ] Security checks (SQL/shell sanitization)
 - [ ] Tests written (if applicable)
-- [ ] `pylint` score ≥ 9.0
 - [ ] `black` and `ruff` pass
+- [ ] `pylint` score ≥ 9.0
 - [ ] Dry-run mode (if applicable)
 - [ ] No mutable default arguments
 - [ ] No bare `except:` clauses
+- [ ] Lambda: Clients in global scope (not in handler)
+- [ ] Lambda: AWS Lambda Powertools configured (if applicable)
+
+## 20) Comprehensive Technique Reference
+
+Where appropriate, use these techniques:
+
+**Control Flow & Error Handling:**
+- `try-except-else-finally`, `match-case`, Custom exceptions, `exceptiongroup`, Assertions
+
+**String & Data Formatting:**
+- `f-strings` (with `!r` for debugging), Context managers, Comprehensions, Tuple unpacking
+
+**Type Safety & Validation:**
+- Type annotations (Python 3.12 built-ins), `Literal` types, `Pydantic` models, `dataclasses`, `protocols`, `ABC`
+
+**Functions & Decorators:**
+- `*args`/`**kwargs`, `@property`/`getter`/`setter`, Custom decorators with `functools.wraps`, `functools.cache`, `functools.partial`, `functools.singledispatch`, `functools.total_ordering`
+
+**Object-Oriented Programming:**
+- Classes with encapsulation, `dataclasses`, `MetaClasses`, `@classmethod`/`@staticmethod`, Magic methods, Inheritance/composition
+
+**Data Structures & Collections:**
+- `defaultdict`, `Counter`, `deque`, `enum`, Generators (`yield`), Deep/shallow copying
+
+**Performance & Concurrency:**
+- `itertools`, `asyncio`, `threading`, `multiprocessing`, `requests.Session()`
+
+**CLI & Configuration:**
+- `argparse`, `os.environ`, `configparser`, Dry-run mode
+
+**AWS & Cloud:**
+- `boto3` client configuration, Global scope for Lambda, Paginators/waiters, Error handling (`ClientError` codes), `aws_lambda_powertools`
+
+**Design Patterns:**
+- Factory method, Singleton, Strategy, Decorator
+
+**Testing & Quality:**
+- `pytest`, `unittest.mock`, Profiling (`cProfile`, `memory_profiler`)
+
+**Deployment:**
+- Package creation (`pyproject.toml`), Docker multi-stage builds, CI/CD automation
+
 ---
 
 **Last Updated**: December 2025
