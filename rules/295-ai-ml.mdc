@@ -108,7 +108,7 @@ def generate_text(
                 }
             ]
         )
-        
+
         return message.content[0].text
     except anthropic.APIError as e:
         print(f"Anthropic API error ({e.status_code}): {e.message}")
@@ -141,7 +141,7 @@ def generate_with_bedrock(
     max_tokens: int = 1000,
 ) -> str:
     """Generate text using AWS Bedrock."""
-    
+
     # Claude model request format
     body = json.dumps({
         "anthropic_version": "bedrock-2023-05-31",
@@ -153,13 +153,13 @@ def generate_with_bedrock(
             }
         ]
     })
-    
+
     try:
         response = bedrock.invoke_model(
             modelId=model_id,
             body=body
         )
-        
+
         response_body = json.loads(response['body'].read())
         return response_body['content'][0]['text']
     except Exception as e:
@@ -189,9 +189,9 @@ def generate_with_vertex_ai(
     max_tokens: int = 1000,
 ) -> str:
     """Generate text using Vertex AI."""
-    
+
     model = GenerativeModel(model_name)
-    
+
     response = model.generate_content(
         prompt,
         generation_config={
@@ -201,14 +201,14 @@ def generate_with_vertex_ai(
             "top_k": 40,
         }
     )
-    
+
     return response.text
 
 # For text-bison (older PaLM model)
 def generate_with_palm(prompt: str) -> str:
     """Generate with PaLM 2 model."""
     model = TextGenerationModel.from_pretrained("text-bison@002")
-    
+
     response = model.predict(
         prompt,
         temperature=0.7,
@@ -216,7 +216,7 @@ def generate_with_palm(prompt: str) -> str:
         top_k=40,
         top_p=0.95,
     )
-    
+
     return response.text
 ```
 
@@ -231,7 +231,7 @@ const client = new OpenAIClient(
 
 async function generateWithAzure(prompt: string): Promise<string> {
   const deploymentId = 'gpt-4'; // Your deployment name
-  
+
   const result = await client.getChatCompletions(
     deploymentId,
     [
@@ -317,7 +317,7 @@ const systemPrompt = "You are a helpful assistant that reviews code.";
 ```python
 def classify_sentiment(text: str) -> str:
     """Classify sentiment with few-shot examples."""
-    
+
     prompt = f"""Classify the sentiment of the following text as positive, negative, or neutral.
 
 Examples:
@@ -332,14 +332,14 @@ Sentiment: neutral
 
 Text: "{text}"
 Sentiment:"""
-    
+
     response = client.messages.create(
         model="claude-3-5-sonnet-20241022",
         max_tokens=10,
         temperature=0,
         messages=[{"role": "user", "content": prompt}]
     )
-    
+
     return response.content[0].text.strip().lower()
 ```
 
@@ -410,18 +410,18 @@ When you have the final answer, respond with:
       });
 
       const content = response.choices[0].message.content!;
-      
+
       try {
         const parsed = JSON.parse(content);
-        
+
         if (parsed.answer) {
           return parsed.answer;
         }
-        
+
         if (parsed.tool) {
           const tool = this.tools.find(t => t.name === parsed.tool);
           if (!tool) throw new Error(`Unknown tool: ${parsed.tool}`);
-          
+
           const result = await tool.execute(parsed.input);
           history.push(
             { role: 'assistant', content },
@@ -494,11 +494,11 @@ vectorstore = Chroma.from_documents(
 # 4. Query with RAG
 def query_rag(question: str, k: int = 3) -> str:
     """Query using RAG pattern."""
-    
+
     # Retrieve relevant chunks
     docs = vectorstore.similarity_search(question, k=k)
     context = "\n\n".join([doc.page_content for doc in docs])
-    
+
     # Build prompt with context
     prompt = f"""Answer the question based on the context below.
 
@@ -508,14 +508,14 @@ Context:
 Question: {question}
 
 Answer:"""
-    
+
     # Generate answer
     response = client.messages.create(
         model="claude-3-5-sonnet-20241022",
         max_tokens=1000,
         messages=[{"role": "user", "content": prompt}]
     )
-    
+
     return response.content[0].text
 
 # Usage
@@ -529,25 +529,25 @@ from langchain.retrievers.document_compressors import CohereRerank
 
 def query_rag_with_rerank(question: str, k: int = 10) -> str:
     """RAG with reranking for better relevance."""
-    
+
     # 1. Retrieve more candidates
     retriever = vectorstore.as_retriever(search_kwargs={"k": k})
-    
+
     # 2. Rerank with Cohere
     compressor = CohereRerank(
         model="rerank-english-v2.0",
         top_n=3,
     )
-    
+
     compression_retriever = ContextualCompressionRetriever(
         base_compressor=compressor,
         base_retriever=retriever
     )
-    
+
     # 3. Get top reranked documents
     docs = compression_retriever.get_relevant_documents(question)
     context = "\n\n".join([doc.page_content for doc in docs])
-    
+
     # 4. Generate answer
     prompt = f"""Answer based on context:
 
@@ -555,7 +555,7 @@ def query_rag_with_rerank(question: str, k: int = 10) -> str:
 
 Question: {question}
 Answer:"""
-    
+
     return generate_text(prompt)
 ```
 
@@ -600,10 +600,10 @@ async function chatWithFunctions(message: string) {
   if (responseMessage.function_call) {
     const functionName = responseMessage.function_call.name;
     const functionArgs = JSON.parse(responseMessage.function_call.arguments);
-    
+
     if (functionName === 'get_weather') {
       const weatherData = await getWeather(functionArgs.location, functionArgs.unit);
-      
+
       // Send function result back to model
       const secondResponse = await openai.chat.completions.create({
         model: 'gpt-4-turbo-preview',
@@ -617,7 +617,7 @@ async function chatWithFunctions(message: string) {
           }
         ],
       });
-      
+
       return secondResponse.choices[0].message.content;
     }
   }
@@ -636,32 +636,32 @@ from anthropic import Anthropic
 
 def is_safe_content(text: str) -> bool:
     """Check if content is safe."""
-    
+
     # Use moderation API
     response = openai.moderations.create(input=text)
     result = response.results[0]
-    
+
     # Check for policy violations
     if result.flagged:
         print(f"Content flagged: {result.categories}")
         return False
-    
+
     return True
 
 def generate_with_safety(prompt: str) -> str:
     """Generate with safety checks."""
-    
+
     # Check input
     if not is_safe_content(prompt):
         return "I can't process that request."
-    
+
     # Generate response
     response = generate_text(prompt)
-    
+
     # Check output
     if not is_safe_content(response):
         return "I generated an inappropriate response. Please try again."
-    
+
     return response
 ```
 
@@ -682,7 +682,7 @@ async function safeCompletion(userInput: string) {
   const sanitized = userInput
     .replace(/system:/gi, '')
     .replace(/assistant:/gi, '');
-  
+
   const response = await openai.chat.completions.create({
     model: 'gpt-4-turbo-preview',
     messages: [
@@ -690,7 +690,7 @@ async function safeCompletion(userInput: string) {
       { role: 'user', content: `User question: ${sanitized}` }
     ],
   });
-  
+
   return response.choices[0].message.content;
 }
 ```
@@ -703,7 +703,7 @@ async function safeCompletion(userInput: string) {
 ```python
 def select_model(task_complexity: str, max_cost: float) -> str:
     """Select appropriate model based on task and budget."""
-    
+
     models = {
         'simple': {
             'model': 'gpt-3.5-turbo',
@@ -721,13 +721,13 @@ def select_model(task_complexity: str, max_cost: float) -> str:
             'speed': 'slow',
         },
     }
-    
+
     model_info = models.get(task_complexity, models['medium'])
-    
+
     if model_info['cost_per_1k_tokens'] > max_cost:
         # Fallback to cheaper model
         return models['simple']['model']
-    
+
     return model_info['model']
 ```
 
@@ -751,11 +751,11 @@ async function generateWithBudget(
   const inputTokens = countTokens(prompt);
   const totalTokens = inputTokens + maxTokens;
   const estimatedCost = totalTokens * costPerToken;
-  
+
   if (estimatedCost > budget) {
     throw new Error(`Estimated cost $${estimatedCost} exceeds budget $${budget}`);
   }
-  
+
   return generateText(prompt);
 }
 ```
@@ -775,9 +775,9 @@ def evaluate_response(
     expected_output: str | None = None
 ) -> Dict[str, any]:
     """Evaluate LLM response quality."""
-    
+
     metrics = {}
-    
+
     # 1. Relevance (using LLM as judge)
     relevance_prompt = f"""Rate the relevance of this response on a scale of 1-10.
 
@@ -785,7 +785,7 @@ Prompt: {prompt}
 Response: {response}
 
 Rating (1-10):"""
-    
+
     relevance = client.messages.create(
         model="claude-3-5-sonnet-20241022",
         max_tokens=10,
@@ -793,18 +793,18 @@ Rating (1-10):"""
         messages=[{"role": "user", "content": relevance_prompt}]
     )
     metrics['relevance'] = int(relevance.content[0].text.strip())
-    
+
     # 2. Accuracy (if expected output provided)
     if expected_output:
         similarity = calculate_similarity(response, expected_output)
         metrics['accuracy'] = similarity
-    
+
     # 3. Safety
     metrics['is_safe'] = is_safe_content(response)
-    
+
     # 4. Length
     metrics['token_count'] = countTokens(response)
-    
+
     return metrics
 ```
 
@@ -860,5 +860,5 @@ Rating (1-10):"""
 
 ---
 
-**Last Updated**: December 2025  
+**Last Updated**: December 2025
 **Purpose**: AI/ML development, LLM integration, cloud AI services, and agent patterns

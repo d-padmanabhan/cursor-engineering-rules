@@ -19,7 +19,7 @@ files:
 
 # JavaScript Engineering Ruleset - (December 2025)
 
-**Audience**: engineers writing and reviewing JavaScript/Node.js code  
+**Audience**: engineers writing and reviewing JavaScript/Node.js code
 **Goal**: secure-by-default, bug-resistant, performant, readable, well-documented, and testable JavaScript - without over-engineering
 
 ---
@@ -617,7 +617,7 @@ function merge(target, source) {
 // ✅ GOOD: Prevent prototype pollution
 function safeMerge(target, source) {
   for (const key in source) {
-    if (Object.hasOwnProperty.call(source, key) && 
+    if (Object.hasOwnProperty.call(source, key) &&
         key !== '__proto__' && key !== 'constructor') {
       target[key] = source[key];
     }
@@ -754,6 +754,6 @@ Stay in `.js` with **JSDoc + `// @ts-check`** and a `tsconfig.json` that enables
 
 ---
 
-**Last Updated**: December 2025  
-**Node.js Version**: 18+ (LTS)  
+**Last Updated**: December 2025
+**Node.js Version**: 18+ (LTS)
 **ES Version**: ES2022

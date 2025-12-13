@@ -20,11 +20,13 @@ Found a bug or have a suggestion?
 Want to add a new language, tool, or pattern?
 
 **Before creating a new rule:**
+
 - Check if it fits within an existing rule file
 - Ensure it follows the project's structure and style
 - Consider if it's broadly applicable (not too specific)
 
 **Structure for new rules:**
+
 ```markdown
 ---
 title: Clear, Descriptive Title
@@ -62,6 +64,7 @@ One paragraph explaining the overall philosophy.
 ### 3. Improve Existing Rules
 
 Enhancement ideas:
+
 - Add more examples
 - Clarify confusing sections
 - Add common mistakes/anti-patterns
@@ -71,6 +74,7 @@ Enhancement ideas:
 ### 4. Add Code Examples
 
 High-quality examples should:
+
 - ✅ Be production-ready (not toy examples)
 - ✅ Show best practices
 - ✅ Include error handling
@@ -102,6 +106,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 ```
 
 **Types:**
+
 - `feat`: New feature or rule
 - `fix`: Bug fix or correction
 - `docs`: Documentation changes
@@ -111,6 +116,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 - `chore`: Maintenance tasks
 
 **Examples:**
+
 ```
 feat(python): add asyncio best practices
 fix(terraform): correct state locking example
@@ -219,6 +225,7 @@ markdownlint rules/*.mdc
 ### Validate Code Examples
 
 Ensure all code examples:
+
 - Use correct syntax for the language
 - Include necessary imports
 - Follow the rule's own standards
@@ -246,6 +253,7 @@ Currently, all rules are in English. If you'd like to contribute translations:
 ## 💡 Areas for Contribution
 
 ### High Priority
+
 - [ ] Java best practices
 - [ ] C# / .NET patterns
 - [ ] Ruby on Rails patterns
@@ -254,12 +262,14 @@ Currently, all rules are in English. If you'd like to contribute translations:
 - [ ] Industry-specific patterns (fintech, healthcare, gaming)
 
 ### Medium Priority
+
 - [ ] More testing patterns (property-based, contract, chaos)
 - [ ] Performance benchmarking guides
 - [ ] Database migration patterns
 - [ ] CI/CD patterns for other platforms (GitLab, CircleCI, Jenkins)
 
 ### Nice to Have
+
 - [ ] Video tutorials
 - [ ] Interactive examples
 - [ ] Rule validation tooling
@@ -285,12 +295,14 @@ We are committed to providing a welcoming and inspiring community for all.
 ### Our Standards
 
 **Positive behavior includes:**
+
 - Using welcoming and inclusive language
 - Being respectful of differing viewpoints
 - Gracefully accepting constructive criticism
 - Focusing on what is best for the community
 
 **Unacceptable behavior includes:**
+
 - Trolling, insulting/derogatory comments, and personal attacks
 - Public or private harassment
 - Publishing others' private information without permission

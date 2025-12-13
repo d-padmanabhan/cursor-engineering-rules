@@ -83,7 +83,7 @@ describe('UserService', () => {
     it('should create a user with valid data', () => {
       const userData = { name: 'John', email: 'john@acme.com' };
       const user = userService.createUser(userData);
-      
+
       expect(user).toMatchObject(userData);
       expect(user.id).toBeDefined();
       expect(user.createdAt).toBeInstanceOf(Date);
@@ -91,14 +91,14 @@ describe('UserService', () => {
 
     it('should throw error for invalid email', () => {
       const userData = { name: 'John', email: 'invalid' };
-      
+
       expect(() => userService.createUser(userData)).toThrow('Invalid email');
     });
 
     it('should hash the password', () => {
       const userData = { name: 'John', email: 'john@acme.com', password: 'secret' };
       const user = userService.createUser(userData);
-      
+
       expect(user.password).not.toBe('secret');
       expect(user.password).toMatch(/^hashed_/);
     });
@@ -141,16 +141,16 @@ describe('UserService with mocks', () => {
 
   it('should send welcome email on user creation', async () => {
     emailService.sendWelcome.mockResolvedValue(true);
-    
+
     await userService.createUser({ name: 'John', email: 'john@acme.com' });
-    
+
     expect(emailService.sendWelcome).toHaveBeenCalledTimes(1);
     expect(emailService.sendWelcome).toHaveBeenCalledWith('john@acme.com');
   });
 
   it('should handle email sending failure', async () => {
     emailService.sendWelcome.mockRejectedValue(new Error('SMTP error'));
-    
+
     await expect(
       userService.createUser({ name: 'John', email: 'john@acme.com' })
     ).rejects.toThrow('Failed to send welcome email');
@@ -165,9 +165,9 @@ import { jest } from '@jest/globals';
 describe('Spy examples', () => {
   it('should spy on console.log', () => {
     const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
-    
+
     myFunction();
-    
+
     expect(consoleLogSpy).toHaveBeenCalledWith('Expected message');
     consoleLogSpy.mockRestore();
   });
@@ -175,9 +175,9 @@ describe('Spy examples', () => {
   it('should spy on class method', () => {
     const service = new UserService();
     const validateSpy = jest.spyOn(service, 'validateEmail');
-    
+
     service.createUser({ name: 'John', email: 'john@acme.com' });
-    
+
     expect(validateSpy).toHaveBeenCalledWith('john@acme.com');
   });
 });
@@ -204,7 +204,7 @@ class TestUserService:
         """Should create user with valid data."""
         user_data = {"name": "John", "email": "john@acme.com"}
         user = user_service.create_user(user_data)
-        
+
         assert user["name"] == "John"
         assert user["email"] == "john@acme.com"
         assert "id" in user
@@ -213,7 +213,7 @@ class TestUserService:
     def test_create_user_with_invalid_email(self, user_service):
         """Should raise ValidationError for invalid email."""
         user_data = {"name": "John", "email": "invalid"}
-        
+
         with pytest.raises(ValidationError, match="Invalid email"):
             user_service.create_user(user_data)
 
@@ -221,7 +221,7 @@ class TestUserService:
         """Should hash the password."""
         user_data = {"name": "John", "email": "john@acme.com", "password": "secret"}
         user = user_service.create_user(user_data)
-        
+
         assert user["password"] != "secret"
         assert user["password"].startswith("hashed_")
 ```
@@ -261,15 +261,15 @@ class TestUserServiceWithMocks:
     def test_send_welcome_email_on_creation(self, user_service, email_service_mock):
         """Should send welcome email on user creation."""
         email_service_mock.send_welcome.return_value = True
-        
+
         user_service.create_user({"name": "John", "email": "john@acme.com"})
-        
+
         email_service_mock.send_welcome.assert_called_once_with("john@acme.com")
 
     def test_handle_email_sending_failure(self, user_service, email_service_mock):
         """Should handle email sending failure."""
         email_service_mock.send_welcome.side_effect = Exception("SMTP error")
-        
+
         with pytest.raises(Exception, match="Failed to send welcome email"):
             user_service.create_user({"name": "John", "email": "john@acme.com"})
 
@@ -278,9 +278,9 @@ class TestUserServiceWithMocks:
         """Should use current timestamp for created_at."""
         fixed_time = datetime(2024, 1, 1, 12, 0, 0)
         datetime_mock.now.return_value = fixed_time
-        
+
         user = user_service.create_user({"name": "John", "email": "john@acme.com"})
-        
+
         assert user["created_at"] == fixed_time
 ```
 
@@ -301,30 +301,30 @@ import (
 
 func TestCreateUser(t *testing.T) {
     service := NewUserService()
-    
+
     t.Run("should create user with valid data", func(t *testing.T) {
         userData := UserData{
             Name:  "John",
             Email: "john@acme.com",
         }
-        
+
         user, err := service.CreateUser(userData)
-        
+
         require.NoError(t, err)
         assert.Equal(t, "John", user.Name)
         assert.Equal(t, "john@acme.com", user.Email)
         assert.NotEmpty(t, user.ID)
         assert.NotZero(t, user.CreatedAt)
     })
-    
+
     t.Run("should return error for invalid email", func(t *testing.T) {
         userData := UserData{
             Name:  "John",
             Email: "invalid",
         }
-        
+
         _, err := service.CreateUser(userData)
-        
+
         require.Error(t, err)
         assert.Contains(t, err.Error(), "invalid email")
     })
@@ -346,7 +346,7 @@ func TestCalculateDiscount(t *testing.T) {
         {"15% off 500", 500, 0.15, 75},
         {"50% off 0", 0, 0.5, 0},
     }
-    
+
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
             result := CalculateDiscount(tt.amount, tt.rate)
@@ -378,12 +378,12 @@ func (m *MockEmailService) SendWelcome(email string) error {
 func TestCreateUserSendsWelcomeEmail(t *testing.T) {
     mockEmail := &MockEmailService{}
     service := NewUserService(mockEmail)
-    
+
     _, err := service.CreateUser(UserData{
         Name:  "John",
         Email: "john@acme.com",
     })
-    
+
     require.NoError(t, err)
     assert.True(t, mockEmail.SendWelcomeCalled)
 }
@@ -419,9 +419,9 @@ describe('UserRepository Integration', () => {
       password: 'test',
       database: 'postgres',
     });
-    
+
     await client.connect();
-    
+
     // Run migrations
     await client.query(`
       CREATE TABLE users (
@@ -439,10 +439,10 @@ describe('UserRepository Integration', () => {
 
   it('should insert and retrieve user', async () => {
     const repo = new UserRepository(client);
-    
+
     const created = await repo.create({ name: 'John', email: 'john@acme.com' });
     const retrieved = await repo.findById(created.id);
-    
+
     expect(retrieved).toMatchObject({
       name: 'John',
       email: 'john@acme.com',
@@ -469,14 +469,14 @@ def user_repository(postgresql):
         )
     """)
     postgresql.commit()
-    
+
     return UserRepository(postgresql)
 
 def test_insert_and_retrieve_user(user_repository):
     """Should insert and retrieve user."""
     created = user_repository.create({"name": "John", "email": "john@acme.com"})
     retrieved = user_repository.find_by_id(created["id"])
-    
+
     assert retrieved["name"] == "John"
     assert retrieved["email"] == "john@acme.com"
 ```
@@ -496,7 +496,7 @@ def test_create_user_endpoint():
         "/api/users",
         json={"name": "John", "email": "john@acme.com"}
     )
-    
+
     assert response.status_code == 201
     data = response.json()
     assert data["name"] == "John"
@@ -511,10 +511,10 @@ def test_get_user_endpoint():
         json={"name": "Jane", "email": "jane@acme.com"}
     )
     user_id = create_response.json()["id"]
-    
+
     # Retrieve user
     response = client.get(f"/api/users/{user_id}")
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["name"] == "Jane"
@@ -522,7 +522,7 @@ def test_get_user_endpoint():
 def test_get_nonexistent_user_returns_404():
     """Should return 404 for nonexistent user."""
     response = client.get("/api/users/99999")
-    
+
     assert response.status_code == 404
 ```
 
@@ -647,7 +647,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
-  
+
   use: {
     baseURL: process.env.BASE_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
@@ -702,7 +702,7 @@ export default defineConfig({
 ```ini
 # pytest.ini
 [pytest]
-addopts = 
+addopts =
     --cov=src
     --cov-report=html
     --cov-report=term-missing
@@ -747,19 +747,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run unit tests
         run: npm run test:unit -- --coverage
-      
+
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:
@@ -780,19 +780,19 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run integration tests
         run: npm run test:integration
         env:
@@ -803,22 +803,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Install Playwright
         run: npx playwright install --with-deps
-      
+
       - name: Run E2E tests
         run: npm run test:e2e
-      
+
       - name: Upload Playwright report
         uses: actions/upload-artifact@v3
         if: always()
@@ -909,5 +909,5 @@ describe('UserService', () => {
 
 ---
 
-**Last Updated**: December 2025  
+**Last Updated**: December 2025
 **Purpose**: Comprehensive testing strategies and best practices across languages

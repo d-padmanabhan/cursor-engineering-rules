@@ -34,7 +34,7 @@ files:
     "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
-    
+
     /* Type Checking - STRICT */
     "strict": true,
     "noImplicitAny": true,
@@ -53,7 +53,7 @@ files:
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
-    
+
     /* Emit */
     "declaration": true,
     "declarationMap": true,
@@ -61,21 +61,21 @@ files:
     "removeComments": true,
     "importHelpers": true,
     "downlevelIteration": true,
-    
+
     /* Interop Constraints */
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
-    
+
     /* Output */
     "outDir": "./dist",
     "rootDir": "./src",
-    
+
     /* Advanced */
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    
+
     /* Path Mapping */
     "baseUrl": ".",
     "paths": {
@@ -425,28 +425,28 @@ function assertIsString(value: unknown): asserts value is string {
 class User {
   // Public by default
   readonly id: string;
-  
+
   // Private (truly private, not accessible even via bracket notation)
   #password: string;
-  
+
   // Protected (accessible in subclasses)
   protected createdAt: Date;
-  
+
   // Private (TypeScript only, accessible via bracket notation)
   private email: string;
-  
+
   constructor(id: string, email: string, password: string) {
     this.id = id;
     this.email = email;
     this.#password = password;
     this.createdAt = new Date();
   }
-  
+
   // Getter
   get displayEmail(): string {
     return this.email.replace(/(.{2}).*(@.*)/, '$1***$2');
   }
-  
+
   // Setter with validation
   set displayEmail(value: string) {
     if (!value.includes('@')) {
@@ -454,12 +454,12 @@ class User {
     }
     this.email = value;
   }
-  
+
   // Private method
   #hashPassword(password: string): string {
     return `hashed_${password}`;
   }
-  
+
   // Public method
   verifyPassword(password: string): boolean {
     return this.#hashPassword(password) === this.#password;
@@ -475,7 +475,7 @@ abstract class BaseRepository<T> {
   abstract create(data: Omit<T, 'id'>): Promise<T>;
   abstract update(id: string, data: Partial<T>): Promise<T>;
   abstract delete(id: string): Promise<void>;
-  
+
   // Common implementation
   async findAll(): Promise<T[]> {
     // Default implementation
@@ -489,17 +489,17 @@ class UserRepository extends BaseRepository<User> {
     // Implementation
     return null;
   }
-  
+
   async create(data: Omit<User, 'id'>): Promise<User> {
     // Implementation
     return { id: '123', ...data };
   }
-  
+
   async update(id: string, data: Partial<User>): Promise<User> {
     // Implementation
     return { id, ...data } as User;
   }
-  
+
   async delete(id: string): Promise<void> {
     // Implementation
   }
@@ -625,17 +625,17 @@ async function fetchApi<T>(
 ): Promise<T> {
   try {
     const response = await fetch(url, options);
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     const data: ApiResponse<T> = await response.json();
-    
+
     if (!data.success) {
       throw new Error(data.error.message);
     }
-    
+
     return data.data;
   } catch (error) {
     if (error instanceof Error) {
@@ -670,14 +670,14 @@ type User = z.infer<typeof UserSchema>;
 async function createUser(data: unknown): Promise<User> {
   // Throws ZodError if validation fails
   const validUser = UserSchema.parse(data);
-  
+
   // Or return success/error result
   const result = UserSchema.safeParse(data);
   if (!result.success) {
     console.error(result.error.issues);
     throw new Error('Invalid user data');
   }
-  
+
   return result.data;
 }
 ```
@@ -836,5 +836,5 @@ type Role = typeof ROLES[number];
 
 ---
 
-**Last Updated**: December 2025  
+**Last Updated**: December 2025
 **Purpose**: Modern TypeScript patterns and type safety best practices

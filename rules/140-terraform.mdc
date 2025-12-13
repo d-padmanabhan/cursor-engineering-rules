@@ -16,7 +16,7 @@ files:
 
 # Terraform Engineering Ruleset - (December 2025)
 
-**Audience**: engineers writing and reviewing Terraform infrastructure as code  
+**Audience**: engineers writing and reviewing Terraform infrastructure as code
 **Goal**: secure-by-default, efficient, modular, and highly maintainable Terraform - without over-engineering
 
 ---
@@ -278,7 +278,7 @@ terraform {
 ```hcl
 resource "aws_s3_bucket" "critical" {
   bucket = "${var.app}-${var.environment}-state"
-  
+
   lifecycle {
     prevent_destroy = true
   }
@@ -816,6 +816,6 @@ resource "aws_instance" "app" {
 
 ---
 
-**Last Updated**: December 2025  
-**Terraform Version**: 1.6.x  
+**Last Updated**: December 2025
+**Terraform Version**: 1.6.x
 **AWS Provider Version**: 5.x

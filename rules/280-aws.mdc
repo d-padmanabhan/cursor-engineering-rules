@@ -36,7 +36,7 @@ resource "aws_vpc" "main" {
   cidr_block           = "10.16.0.0/16"
   enable_dns_hostnames = true
   enable_dns_support   = true
-  
+
   tags = {
     Name = "zero-trust-vpc"
   }
@@ -48,7 +48,7 @@ resource "aws_subnet" "private" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.16.${count.index + 1}.0/24"
   availability_zone = data.aws_availability_zones.available.names[count.index]
-  
+
   tags = {
     Name = "private-subnet-${count.index + 1}"
     Type = "Private"
@@ -69,13 +69,13 @@ resource "aws_subnet" "private" {
 resource "aws_eks_cluster" "main" {
   name     = var.cluster_name
   role_arn = aws_iam_role.cluster.arn
-  
+
   # Enable Pod Identity
   pod_identity_associations {
     service_account = "default"
     namespace       = "default"
   }
-  
+
   # ... other config
 }
 
@@ -90,7 +90,7 @@ resource "aws_eks_pod_identity_association" "app" {
 # IAM Role for Pod Identity (simpler than IRSA)
 resource "aws_iam_role" "app_pod_identity" {
   name = "app-pod-identity-role"
-  
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -106,7 +106,7 @@ resource "aws_iam_role" "app_pod_identity" {
       }
     }]
   })
-  
+
   tags = {
     Name = "app-pod-identity"
   }
@@ -116,7 +116,7 @@ resource "aws_iam_role" "app_pod_identity" {
 resource "aws_iam_role_policy" "app_policy" {
   name = "app-policy"
   role = aws_iam_role.app_pod_identity.id
-  
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -166,7 +166,7 @@ resource "aws_iam_openid_connect_provider" "eks" {
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = [data.tls_certificate.eks.certificates[0].sha1_fingerprint]
   url             = aws_eks_cluster.main.identity[0].oidc[0].issuer
-  
+
   tags = {
     Name = "eks-oidc-provider"
   }
@@ -175,7 +175,7 @@ resource "aws_iam_openid_connect_provider" "eks" {
 # EKS Service Account with IRSA
 resource "aws_iam_role" "app_role" {
   name = "app-role"
-  
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -214,7 +214,7 @@ resource "aws_iam_role" "app_role" {
 resource "aws_vpclattice_service_network" "main" {
   name      = "platform-services"
   auth_type = "AWS_IAM"
-  
+
   tags = {
     Name        = "platform-services-network"
     Environment = var.environment
@@ -225,14 +225,14 @@ resource "aws_vpclattice_service_network" "main" {
 resource "aws_vpclattice_service_network_vpc_association" "vpc1" {
   service_network_identifier = aws_vpclattice_service_network.main.id
   vpc_identifier             = aws_vpc.app1.id
-  
+
   security_group_ids = [aws_security_group.lattice.id]
 }
 
 resource "aws_vpclattice_service_network_vpc_association" "vpc2" {
   service_network_identifier = aws_vpclattice_service_network.main.id
   vpc_identifier             = aws_vpc.app2.id
-  
+
   security_group_ids = [aws_security_group.lattice.id]
 }
 ```
@@ -243,7 +243,7 @@ resource "aws_vpclattice_service_network_vpc_association" "vpc2" {
 resource "aws_vpclattice_service" "api" {
   name      = "api-service"
   auth_type = "AWS_IAM"
-  
+
   tags = {
     Name = "api-service"
   }
@@ -269,7 +269,7 @@ resource "aws_vpclattice_target_group" "rds" {
   protocol        = "TCP"
   port            = 5432
   vpc_identifier  = aws_vpc.database.id
-  
+
   health_check {
     enabled                        = true
     health_check_interval_seconds  = 30
@@ -278,7 +278,7 @@ resource "aws_vpclattice_target_group" "rds" {
     port                           = 5432
     protocol                       = "TCP"
   }
-  
+
   tags = {
     Name = "rds-target-group"
   }
@@ -287,7 +287,7 @@ resource "aws_vpclattice_target_group" "rds" {
 # Register RDS endpoint as target
 resource "aws_vpclattice_target_group_attachment" "rds" {
   target_group_identifier = aws_vpclattice_target_group.rds.id
-  
+
   target {
     id   = aws_db_instance.main.address
     port = 5432
@@ -298,7 +298,7 @@ resource "aws_vpclattice_target_group_attachment" "rds" {
 resource "aws_vpclattice_service" "rds" {
   name      = "rds-service"
   auth_type = "AWS_IAM"
-  
+
   tags = {
     Name = "rds-service"
   }
@@ -336,7 +336,7 @@ resource "aws_vpclattice_target_group" "eks_service" {
   protocol        = "HTTP"
   port            = 80
   vpc_identifier  = aws_vpc.eks.id
-  
+
   health_check {
     enabled                        = true
     health_check_interval_seconds  = 30
@@ -347,7 +347,7 @@ resource "aws_vpclattice_target_group" "eks_service" {
     protocol                      = "HTTP"
     matcher                       = "200"
   }
-  
+
   tags = {
     Name = "eks-api-target-group"
   }
@@ -356,7 +356,7 @@ resource "aws_vpclattice_target_group" "eks_service" {
 # Register EKS service endpoints
 resource "aws_vpclattice_target_group_attachment" "eks_service" {
   target_group_identifier = aws_vpclattice_target_group.eks_service.id
-  
+
   # Multiple targets for high availability
   target {
     id   = "10.1.1.10"  # EKS service IP
@@ -375,7 +375,7 @@ resource "aws_vpclattice_target_group_attachment" "eks_service" {
 resource "aws_ram_resource_share" "lattice" {
   name                      = "lattice-share"
   allow_external_principals = false
-  
+
   tags = {
     Name = "lattice-share"
   }
@@ -396,7 +396,7 @@ resource "aws_ram_principal_association" "lattice" {
 resource "aws_vpclattice_service_network" "main" {
   name      = "platform-services"
   auth_type = "AWS_IAM"
-  
+
   auth_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -420,7 +420,7 @@ resource "aws_vpclattice_service_network" "main" {
 resource "aws_vpclattice_service_network" "main" {
   name      = "platform-services"
   auth_type = "AWS_IAM"
-  
+
   # Access policy for Zero Trust
   auth_policy = jsonencode({
     Version = "2012-10-17"
@@ -469,7 +469,7 @@ spec:
 resource "aws_ram_resource_share" "lattice" {
   name                      = "lattice-share"
   allow_external_principals = false
-  
+
   tags = {
     Name = "lattice-share"
   }
@@ -498,7 +498,7 @@ resource "aws_vpc_endpoint" "s3" {
   service_name      = "com.amazonaws.${var.aws_region}.s3"
   vpc_endpoint_type = "Gateway"
   route_table_ids   = aws_route_table.private[*].id
-  
+
   tags = {
     Name = "s3-endpoint"
   }
@@ -511,7 +511,7 @@ resource "aws_vpc_endpoint" "ecr_dkr" {
   vpc_endpoint_type   = "Interface"
   subnet_ids          = aws_subnet.private[*].id
   security_group_ids  = [aws_security_group.vpc_endpoint.id]
-  
+
   tags = {
     Name = "ecr-dkr-endpoint"
   }
@@ -527,20 +527,20 @@ resource "aws_eks_cluster" "main" {
   name     = var.cluster_name
   role_arn = aws_iam_role.cluster.arn
   version  = "1.28"
-  
+
   vpc_config {
     subnet_ids              = aws_subnet.private[*].id
     endpoint_private_access = true
     endpoint_public_access  = false  # Private only for Zero Trust
     public_access_cidrs     = []      # No public access
   }
-  
+
   # Enable Pod Identity (preferred over IRSA)
   pod_identity_associations {
     service_account = "default"
     namespace       = "default"
   }
-  
+
   # Enable all control plane logs
   enabled_cluster_log_types = [
     "api",
@@ -549,14 +549,14 @@ resource "aws_eks_cluster" "main" {
     "controllerManager",
     "scheduler"
   ]
-  
+
   encryption_config {
     provider {
       key_arn = aws_kms_key.eks.arn
     }
     resources = ["secrets"]
   }
-  
+
   tags = {
     Environment = var.environment
     ManagedBy   = "Terraform"
@@ -580,7 +580,7 @@ resource "aws_eks_pod_identity_association" "app" {
 # IAM Role (simpler than IRSA - no OIDC provider needed)
 resource "aws_iam_role" "app_pod_identity" {
   name = "app-pod-identity-role"
-  
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -596,7 +596,7 @@ resource "aws_iam_role" "app_pod_identity" {
       }
     }]
   })
-  
+
   tags = {
     Name = "app-pod-identity"
   }
@@ -624,32 +624,32 @@ resource "aws_eks_node_group" "main" {
   node_group_name = "main"
   node_role_arn   = aws_iam_role.node.arn
   subnet_ids      = aws_subnet.private[*].id
-  
+
   # Use multiple instance types for better availability
   instance_types = ["t3.medium", "t3.large"]
-  
+
   scaling_config {
     desired_size = 3
     max_size     = 10
     min_size     = 1
   }
-  
+
   # Update configuration
   update_config {
     max_unavailable = 1
   }
-  
+
   # Launch template for advanced configuration
   launch_template {
     id      = aws_launch_template.node.id
     version = aws_launch_template.node.latest_version
   }
-  
+
   labels = {
     Environment = var.environment
     Workload    = "general"
   }
-  
+
   tags = {
     "k8s.io/cluster-autoscaler/enabled" = "true"
     "k8s.io/cluster-autoscaler/${aws_eks_cluster.main.name}" = "owned"
@@ -665,7 +665,7 @@ resource "aws_eks_addon" "vpc_cni" {
   cluster_name = aws_eks_cluster.main.name
   addon_name   = "vpc-cni"
   addon_version = "v1.16.0-eksbuild.1"
-  
+
   resolve_conflicts_on_update = "OVERWRITE"
 }
 
@@ -673,7 +673,7 @@ resource "aws_eks_addon" "vpc_cni" {
 resource "aws_eks_addon" "coredns" {
   cluster_name = aws_eks_cluster.main.name
   addon_name   = "coredns"
-  
+
   resolve_conflicts_on_update = "OVERWRITE"
 }
 
@@ -681,7 +681,7 @@ resource "aws_eks_addon" "coredns" {
 resource "aws_eks_addon" "kube_proxy" {
   cluster_name = aws_eks_cluster.main.name
   addon_name   = "kube-proxy"
-  
+
   resolve_conflicts_on_update = "OVERWRITE"
 }
 ```
@@ -718,15 +718,15 @@ variable "subnet_ids" {
 # environments/production/main.tf
 module "eks_cluster" {
   source = "../../modules/eks-cluster"
-  
+
   cluster_name = "prod-cluster"
   vpc_id       = data.aws_vpc.production.id
   subnet_ids   = data.aws_subnets.private.ids
-  
+
   node_instance_types = ["m5.large", "m5.xlarge"]
   node_desired_size   = 5
   node_max_size       = 20
-  
+
   tags = {
     Environment = "production"
     CostCenter  = "platform"
@@ -773,7 +773,7 @@ resource "aws_kms_key" "eks" {
   description             = "KMS key for EKS cluster encryption"
   deletion_window_in_days = 30
   enable_key_rotation    = true
-  
+
   tags = {
     Name = "eks-encryption-key"
   }
@@ -786,7 +786,7 @@ resource "aws_s3_bucket" "data" {
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "data" {
   bucket = aws_s3_bucket.data.id
-  
+
   rule {
     apply_server_side_encryption_by_default {
       sse_algorithm     = "aws:kms"
@@ -806,7 +806,7 @@ resource "aws_secretsmanager_secret" "db_credentials" {
   name                    = "my-app/db-credentials"
   description             = "Database credentials for my-app"
   recovery_window_in_days = 7
-  
+
   tags = {
     Environment = var.environment
   }
@@ -823,7 +823,7 @@ resource "aws_eks_pod_identity_association" "secrets" {
 
 resource "aws_iam_role" "secrets_access" {
   name = "secrets-access-role"
-  
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -844,7 +844,7 @@ resource "aws_iam_role" "secrets_access" {
 resource "aws_iam_role_policy" "secrets_access" {
   name = "secrets-access-policy"
   role = aws_iam_role.secrets_access.id
-  
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -868,7 +868,7 @@ resource "aws_iam_role_policy" "secrets_access" {
 resource "aws_security_group" "eks_nodes" {
   name_prefix = "eks-nodes-"
   vpc_id      = aws_vpc.main.id
-  
+
   # Allow nodes to communicate with each other
   ingress {
     from_port = 0
@@ -876,7 +876,7 @@ resource "aws_security_group" "eks_nodes" {
     protocol  = "tcp"
     self      = true
   }
-  
+
   # Allow nodes to communicate with control plane
   ingress {
     from_port   = 443
@@ -884,14 +884,14 @@ resource "aws_security_group" "eks_nodes" {
     protocol    = "tcp"
     cidr_blocks = [aws_vpc.main.cidr_block]
   }
-  
+
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
+
   tags = {
     Name = "eks-nodes-sg"
   }
@@ -907,9 +907,9 @@ resource "aws_security_group" "eks_nodes" {
 resource "aws_cloudwatch_log_group" "eks_cluster" {
   name              = "/aws/eks/${var.cluster_name}/cluster"
   retention_in_days = 30
-  
+
   kms_key_id = aws_kms_key.logs.arn
-  
+
   tags = {
     Environment = var.environment
   }
@@ -930,11 +930,11 @@ resource "aws_cloudwatch_metric_alarm" "high_cpu" {
   statistic           = "Average"
   threshold           = 80
   alarm_description   = "Alert when CPU exceeds 80%"
-  
+
   dimensions = {
     ClusterName = aws_eks_cluster.main.name
   }
-  
+
   alarm_actions = [aws_sns_topic.alerts.arn]
 }
 ```
@@ -947,10 +947,10 @@ resource "aws_cloudwatch_metric_alarm" "high_cpu" {
 # Use appropriate instance types
 resource "aws_eks_node_group" "main" {
   # Use burstable instances for dev/test
-  instance_types = var.environment == "production" ? 
-    ["m5.large", "m5.xlarge"] : 
+  instance_types = var.environment == "production" ?
+    ["m5.large", "m5.xlarge"] :
     ["t3.medium", "t3.large"]
-  
+
   # ... other config
 }
 ```
@@ -964,9 +964,9 @@ resource "aws_eks_node_group" "spot" {
   node_group_name = "spot"
   capacity_type   = "SPOT"
   instance_types  = ["t3.medium", "t3.large", "t3a.medium"]
-  
+
   # ... other config
-  
+
   taints {
     key    = "spot"
     value  = "true"
@@ -1013,7 +1013,7 @@ module "eks_secondary" {
 # EBS snapshot backup
 resource "aws_ebs_snapshot" "backup" {
   volume_id = aws_ebs_volume.data.id
-  
+
   tags = {
     Name        = "data-backup"
     Environment = var.environment
@@ -1024,11 +1024,11 @@ resource "aws_ebs_snapshot" "backup" {
 # RDS automated backups
 resource "aws_db_instance" "main" {
   # ... config
-  
+
   backup_retention_period = 7
   backup_window           = "03:00-04:00"
   maintenance_window      = "mon:04:00-mon:05:00"
-  
+
   enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
 }
 ```

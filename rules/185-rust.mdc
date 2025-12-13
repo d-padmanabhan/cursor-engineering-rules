@@ -175,13 +175,13 @@ use thiserror::Error;
 pub enum AppError {
     #[error("Database error: {0}")]
     Database(#[from] sqlx::Error),
-    
+
     #[error("User not found: {0}")]
     UserNotFound(uuid::Uuid),
-    
+
     #[error("Invalid input: {0}")]
     InvalidInput(String),
-    
+
     #[error("Authentication failed")]
     AuthenticationFailed,
 }
@@ -198,7 +198,7 @@ async fn get_user(id: uuid::Uuid) -> Result<User> {
     .fetch_optional(&pool)
     .await?
     .ok_or(AppError::UserNotFound(id))?;
-    
+
     Ok(user)
 }
 
@@ -288,7 +288,7 @@ async fn fetch_all_data() -> Result<(User, Posts, Comments)> {
         fetch_posts(),
         fetch_comments(),
     )?;
-    
+
     Ok((user, posts, comments))
 }
 
@@ -298,9 +298,9 @@ async fn process_in_background() {
         // Long-running task
         heavy_computation().await
     });
-    
+
     // Do other work...
-    
+
     // Wait for background task
     let result = handle.await.unwrap();
 }
@@ -322,7 +322,7 @@ fn main() {
         .enable_all()
         .build()
         .unwrap();
-    
+
     runtime.block_on(async {
         // Your async code
     });
@@ -355,19 +355,19 @@ async fn main() {
     let db = sqlx::postgres::PgPool::connect(&std::env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
-    
+
     let state = Arc::new(AppState { db });
-    
+
     let app = Router::new()
         .route("/health", get(health_check))
         .route("/users", get(list_users).post(create_user))
         .route("/users/:id", get(get_user).delete(delete_user))
         .with_state(state);
-    
+
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8080")
         .await
         .unwrap();
-    
+
     axum::serve(listener, app).await.unwrap();
 }
 
@@ -392,7 +392,7 @@ async fn list_users(
 ) -> Result<Json<Vec<User>>, AppError> {
     let limit = query.limit.unwrap_or(10);
     let offset = query.offset.unwrap_or(0);
-    
+
     let users = sqlx::query_as!(
         User,
         "SELECT * FROM users LIMIT $1 OFFSET $2",
@@ -401,7 +401,7 @@ async fn list_users(
     )
     .fetch_all(&state.db)
     .await?;
-    
+
     Ok(Json(users))
 }
 
@@ -424,7 +424,7 @@ async fn create_user(
     )
     .fetch_one(&state.db)
     .await?;
-    
+
     Ok((StatusCode::CREATED, Json(user)))
 }
 
@@ -437,7 +437,7 @@ impl IntoResponse for AppError {
             AppError::Database(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Database error".to_string()),
             _ => (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error".to_string()),
         };
-        
+
         (status, Json(serde_json::json!({
             "error": message
         }))).into_response()
@@ -498,12 +498,12 @@ use webapp::*;
 #[tokio::test]
 async fn test_api_health_check() {
     let app = create_test_app().await;
-    
+
     let response = app
         .oneshot(Request::builder().uri("/health").body(Body::empty()).unwrap())
         .await
         .unwrap();
-    
+
     assert_eq!(response.status(), StatusCode::OK);
 }
 ```
@@ -764,5 +764,5 @@ fn process_users(users: &[User]) {
 
 ---
 
-**Last Updated**: December 2025  
+**Last Updated**: December 2025
 **Purpose**: Rust programming language best practices and patterns

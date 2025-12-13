@@ -169,13 +169,13 @@ const tracer = provider.getTracer('webapp');
 async function processOrder(orderId) {
   const span = tracer.startSpan('process_order');
   span.setAttribute('order.id', orderId);
-  
+
   try {
     const order = await fetchOrder(orderId);
     await validateOrder(order);
     await chargePayment(order);
     await sendConfirmation(order);
-    
+
     span.setStatus({ code: SpanStatusCode.OK });
     return order;
   } catch (error) {
@@ -210,7 +210,7 @@ groups:
         annotations:
           summary: "High error rate (>5%)"
           description: "{{ $value }}% errors for {{ $labels.service }}"
-      
+
       # High latency
       - alert: HighLatency
         expr: |
@@ -222,7 +222,7 @@ groups:
           severity: warning
         annotations:
           summary: "High latency (p95 > 1s)"
-      
+
       # Pod crash loop
       - alert: PodCrashLooping
         expr: |
@@ -269,7 +269,7 @@ app.get('/health', async (req, res) => {
     uptime: process.uptime(),
     checks: {}
   };
-  
+
   // Database check
   try {
     await db.query('SELECT 1');
@@ -278,7 +278,7 @@ app.get('/health', async (req, res) => {
     health.checks.database = { status: 'down', error: error.message };
     health.status = 'unhealthy';
   }
-  
+
   // Redis check
   try {
     await redis.ping();
@@ -287,7 +287,7 @@ app.get('/health', async (req, res) => {
     health.checks.redis = { status: 'down', error: error.message };
     health.status = 'degraded';
   }
-  
+
   const statusCode = health.status === 'healthy' ? 200 : 503;
   res.status(statusCode).json(health);
 });
@@ -362,5 +362,5 @@ app.get('/health', async (req, res) => {
 
 ---
 
-**Last Updated**: December 2025  
+**Last Updated**: December 2025
 **Purpose**: Monitoring, logging, and observability best practices

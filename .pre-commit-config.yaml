@@ -1,0 +1,67 @@
+---
+# Pre-commit hooks configuration
+# Install: pre-commit install
+# Update: pre-commit autoupdate
+# Run manually: pre-commit run --all-files
+
+repos:
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+        exclude: '\.md$'  # Preserve trailing spaces in Markdown
+
+      - id: end-of-file-fixer
+        name: Fix end of files
+        exclude: '\.mdc$'
+
+      - id: check-yaml
+        name: Check YAML syntax
+
+      - id: check-added-large-files
+        name: Check for large files
+        args: ['--maxkb=1000']
+
+      - id: mixed-line-ending
+        name: Fix mixed line endings
+        args: ['--fix=lf']
+
+      - id: check-case-conflict
+        name: Check for case conflicts
+
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+
+      - id: detect-private-key
+        name: Detect private keys
+
+  # Markdown linting
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.39.0
+    hooks:
+      - id: markdownlint
+        name: Lint Markdown files
+        args: ['--fix', '--config', '.markdownlint.yaml']
+        exclude: 'CHANGELOG.md'  # Changelog has specific format
+
+  # Markdown link checking (optional - can be slow)
+  # Uncomment if you want to check for broken links
+  # - repo: https://github.com/tcort/markdown-link-check
+  #   rev: v3.11.2
+  #   hooks:
+  #     - id: markdown-link-check
+  #       name: Check Markdown links
+  #       args: ['--config', '.markdown-link-check.json']
+
+# Optional: Configure which files to include/exclude
+# files: ''
+# exclude: ''
+
+# Optional: Fail fast - stop on first error
+fail_fast: false
+
+# Optional: Default language version
+default_language_version:
+  python: python3

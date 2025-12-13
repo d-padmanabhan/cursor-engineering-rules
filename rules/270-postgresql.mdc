@@ -132,7 +132,7 @@ CREATE INDEX idx_users_1 ON users(user_id);
 
 ```sql
 -- ✅ GOOD: Named constraints
-ALTER TABLE users 
+ALTER TABLE users
     ADD CONSTRAINT users_email_unique UNIQUE (email),
     ADD CONSTRAINT users_email_format CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$');
 

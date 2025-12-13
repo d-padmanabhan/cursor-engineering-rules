@@ -115,14 +115,14 @@ const { Browser } = require('@lightpanda-io/browser');
 async function readDocs() {
   const browser = await Browser.launch();
   const page = await browser.newPage();
-  
+
   await page.goto('https://interactive-docs.acme.com');
   await page.waitForSelector('.content-loaded');
-  
-  const content = await page.$eval('.documentation', 
+
+  const content = await page.$eval('.documentation',
     el => el.textContent
   );
-  
+
   await browser.close();
   return content;
 }
@@ -166,7 +166,7 @@ async function readDocs() {
 ```
 Use lynx to read [DOCUMENTATION_URL] and [TASK].
 
-If lynx fails or returns incomplete content, 
+If lynx fails or returns incomplete content,
 fall back to LightPanda.
 ```
 
@@ -188,7 +188,7 @@ and extract all examples of Pod YAML configurations.
 
 **Example 3: Terraform Provider**
 ```
-Use lynx to read the Terraform AWS Provider documentation for 
+Use lynx to read the Terraform AWS Provider documentation for
 aws_vpc_lattice_service and provide a complete working example.
 ```
 
@@ -254,7 +254,7 @@ Use lynx to read and explain the Kubernetes documentation...
 Use lynx to read the documentation...
 
 # GOOD (with fallback)
-Use lynx to read the documentation. 
+Use lynx to read the documentation.
 If lynx fails, fall back to LightPanda.
 ```
 **Why:** Some docs require JavaScript. Always have a fallback plan.
@@ -719,7 +719,7 @@ export RIPGREP_CONFIG_PATH="$HOME/.ripgreprc"
 
 ### Key Takeaway
 
-**Default to `rg` for all text search tasks on macOS.**  
+**Default to `rg` for all text search tasks on macOS.**
 Only use `grep` when:
 - Processing stdin/pipes
 - POSIX compliance required
@@ -770,5 +770,5 @@ This rule provides comprehensive guidance on command-line utilities for document
 
 ---
 
-**Last Updated**: December 2025  
+**Last Updated**: December 2025
 **Purpose**: Guide on command-line utilities and tool selection for documentation research

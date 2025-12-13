@@ -260,5 +260,5 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 
 ---
 
-**Last Updated**: December 2025  
+**Last Updated**: December 2025
 **Purpose**: Helm and Kubernetes package management best practices

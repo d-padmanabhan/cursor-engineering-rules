@@ -120,15 +120,15 @@ var (
 
 func main() {
     flag.Parse()
-    
+
     // Check environment variable
     debugMode := *debugFlag || os.Getenv("DEBUG") == "1"
-    
+
     if debugMode {
         log.SetFlags(log.LstdFlags | log.Lshortfile)
         log.SetOutput(os.Stderr)
     }
-    
+
     log.Printf("Debug mode: %v", debugMode)
     // ... rest of CLI logic
 }
@@ -224,12 +224,12 @@ def deploy(environment: str, region: str):
         print(f"Error: Invalid environment '{environment}'", file=sys.stderr)
         print(f"Valid options: {', '.join(valid_environments)}", file=sys.stderr)
         sys.exit(1)
-    
+
     valid_regions = ["us-east-1", "us-west-2", "eu-west-1"]
     if region not in valid_regions:
         print(f"Error: Invalid region '{region}'", file=sys.stderr)
         sys.exit(1)
-    
+
     # Proceed with deployment
 ```
 

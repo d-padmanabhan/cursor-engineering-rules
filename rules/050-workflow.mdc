@@ -321,7 +321,7 @@ Implementation CANNOT proceed until all creative phases are completed.
 
 **Purpose:** Technical validation to prevent implementation failures due to missing dependencies, configuration issues, or environment problems.
 
-**When:** 
+**When:**
 - **Mandatory** before Implementation for Level 2+ tasks
 - Can be called explicitly with **"QA"** command (interrupts any process)
 - After Creative Phase completion (Level 3-4)

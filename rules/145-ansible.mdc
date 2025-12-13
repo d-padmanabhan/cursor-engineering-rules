@@ -179,23 +179,23 @@ compose:
 - name: Configure web servers
   hosts: webservers
   become: true
-  
+
   vars:
     nginx_port: 80
     app_user: webapp
-  
+
   tasks:
     - name: Update apt cache
       apt:
         update_cache: yes
         cache_valid_time: 3600
       when: ansible_os_family == "Debian"
-    
+
     - name: Install nginx
       apt:
         name: nginx
         state: present
-    
+
     - name: Copy nginx configuration
       template:
         src: templates/nginx.conf.j2
@@ -204,13 +204,13 @@ compose:
         group: root
         mode: '0644'
       notify: Restart nginx
-    
+
     - name: Ensure nginx is running
       service:
         name: nginx
         state: started
         enabled: yes
-  
+
   handlers:
     - name: Restart nginx
       service:
@@ -353,7 +353,7 @@ nginx_pid_file: /run/nginx.pid
 - name: Configure web servers
   hosts: webservers
   become: true
-  
+
   roles:
     - role: common
     - role: nginx
@@ -381,13 +381,13 @@ events {
 http {
     include /etc/nginx/mime.types;
     default_type application/octet-stream;
-    
+
     access_log /var/log/nginx/access.log;
     error_log /var/log/nginx/error.log;
-    
+
     sendfile on;
     keepalive_timeout 65;
-    
+
     include /etc/nginx/sites-enabled/*;
 }
 ```
@@ -399,17 +399,17 @@ server {
     listen {{ nginx_port }};
     server_name {{ ansible_fqdn }};
     root {{ nginx_root }};
-    
+
     location / {
         try_files $uri $uri/ =404;
     }
-    
+
     {% if nginx_enable_ssl %}
     listen 443 ssl;
     ssl_certificate {{ nginx_ssl_cert }};
     ssl_certificate_key {{ nginx_ssl_key }};
     {% endif %}
-    
+
     {% if nginx_proxy_pass %}
     location /api {
         proxy_pass {{ nginx_proxy_pass }};
@@ -513,10 +513,10 @@ jwt_secret: "very_secret_jwt_key"
 - name: Deploy application
   hosts: webservers
   become: true
-  
+
   vars_files:
     - vault/secrets.yml
-  
+
   tasks:
     - name: Configure database connection
       template:
@@ -614,7 +614,7 @@ tasks:
     template:
       src: nginx.conf.j2
       dest: /etc/nginx/nginx.conf
-  
+
   - name: Restart nginx
     service:
       name: nginx
@@ -627,7 +627,7 @@ tasks:
 - name: Configure system
   hosts: all
   become: true
-  
+
   tasks:
     - name: Install packages
       apt:
@@ -640,7 +640,7 @@ tasks:
       tags:
         - packages
         - install
-    
+
     - name: Configure firewall
       ufw:
         rule: allow
@@ -670,20 +670,20 @@ ansible-playbook site.yml --skip-tags "firewall"
 - name: Deploy application
   hosts: webservers
   become: true
-  
+
   vars:
     app_name: webapp
     app_version: "{{ lookup('env', 'APP_VERSION') | default('latest') }}"
     app_user: webapp
     app_dir: /opt/webapp
-  
+
   tasks:
     - name: Create app user
       user:
         name: "{{ app_user }}"
         system: yes
         shell: /bin/bash
-    
+
     - name: Create app directory
       file:
         path: "{{ app_dir }}"
@@ -691,25 +691,25 @@ ansible-playbook site.yml --skip-tags "firewall"
         owner: "{{ app_user }}"
         group: "{{ app_user }}"
         mode: '0755'
-    
+
     - name: Pull Docker image
       docker_image:
         name: "acme/{{ app_name }}"
         tag: "{{ app_version }}"
         source: pull
-    
+
     - name: Stop old container
       docker_container:
         name: "{{ app_name }}"
         state: stopped
       ignore_errors: yes
-    
+
     - name: Remove old container
       docker_container:
         name: "{{ app_name }}"
         state: absent
       ignore_errors: yes
-    
+
     - name: Start new container
       docker_container:
         name: "{{ app_name }}"
@@ -733,7 +733,7 @@ ansible-playbook site.yml --skip-tags "firewall"
   become: true
   serial: 1  # Update one host at a time
   max_fail_percentage: 0
-  
+
   pre_tasks:
     - name: Remove from load balancer
       haproxy:
@@ -742,12 +742,12 @@ ansible-playbook site.yml --skip-tags "firewall"
         backend: web_backend
       delegate_to: "{{ item }}"
       with_items: "{{ groups['loadbalancers'] }}"
-  
+
   tasks:
     - name: Deploy new version
       include_role:
         name: app
-  
+
   post_tasks:
     - name: Wait for health check
       uri:
@@ -757,7 +757,7 @@ ansible-playbook site.yml --skip-tags "firewall"
       until: result.status == 200
       retries: 10
       delay: 5
-    
+
     - name: Add back to load balancer
       haproxy:
         state: enabled
@@ -830,5 +830,5 @@ molecule destroy   # Destroy test instance
 
 ---
 
-**Last Updated**: December 2025  
+**Last Updated**: December 2025
 **Purpose**: Ansible configuration management and automation best practices

@@ -322,14 +322,14 @@ retry_cmd() {
 # Main Logic
 main() {
   check_deps
-  
+
   local url="https://api.github.com"
-  
+
   log "INFO" "Starting job..."
-  
+
   retry_cmd curl -sfSL "$url" > /dev/null || { log "ERROR" "Connectivity check failed"; return 1; }
   log "INFO" "Connectivity check passed."
-  
+
   log "INFO" "Job completed successfully."
 }
 
@@ -360,7 +360,7 @@ fi
   ```bash
   # GNU (Linux)
   SCRIPT=$(readlink -f "$0")
-  
+
   # BSD/macOS fallback
   SCRIPT=$(readlink -f "$0" 2>/dev/null || realpath "$0")
   ```

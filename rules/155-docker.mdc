@@ -420,37 +420,37 @@ services:
     image: acme.com/webapp:${VERSION:-latest}
     container_name: webapp
     restart: unless-stopped
-    
+
     ports:
       - "8000:8000"
-    
+
     environment:
       - DATABASE_URL=postgresql://user:pass@db:5432/mydb
       - REDIS_URL=redis://redis:6379
       - LOG_LEVEL=${LOG_LEVEL:-info}
-    
+
     env_file:
       - .env
-    
+
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
-    
+
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
-    
+
     networks:
       - backend
-    
+
     volumes:
       - ./logs:/app/logs:rw
-    
+
     deploy:
       resources:
         limits:
@@ -459,49 +459,49 @@ services:
         reservations:
           cpus: '1'
           memory: 1G
-  
+
   db:
     image: postgres:16-alpine
     container_name: postgres
     restart: unless-stopped
-    
+
     environment:
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
       - POSTGRES_DB=mydb
-    
+
     secrets:
       - db_password
-    
+
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user"]
       interval: 10s
       timeout: 5s
       retries: 5
-    
+
     networks:
       - backend
-    
+
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-  
+
   redis:
     image: redis:7-alpine
     container_name: redis
     restart: unless-stopped
-    
+
     command: redis-server --appendonly yes
-    
+
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 3s
       retries: 5
-    
+
     networks:
       - backend
-    
+
     volumes:
       - redis_data:/data
 
@@ -530,23 +530,23 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    
+
     volumes:
       - ./src:/app/src:ro  # Mount source for hot reload
       - /app/node_modules  # Prevent overwriting
-    
+
     environment:
       - DEBUG=true
       - LOG_LEVEL=debug
-    
+
     ports:
       - "8000:8000"
       - "9229:9229"  # Node.js debugger
-  
+
   db:
     ports:
       - "5432:5432"  # Expose for local access
-    
+
     environment:
       - POSTGRES_PASSWORD=devpassword  # Simpler password for dev
 ```
@@ -647,17 +647,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -668,7 +668,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix=,suffix=,format=short
-      
+
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
@@ -678,14 +678,14 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      
+
       - name: Scan with Trivy
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ghcr.io/${{ github.repository }}:${{ steps.meta.outputs.version }}
           format: 'sarif'
           output: 'trivy-results.sarif'
-      
+
       - name: Upload Trivy results
         uses: github/codeql-action/upload-sarif@v2
         if: always()
@@ -782,5 +782,5 @@ docker port <container_id>
 
 ---
 
-**Last Updated**: December 2025  
+**Last Updated**: December 2025
 **Purpose**: Production-ready Docker and container best practices

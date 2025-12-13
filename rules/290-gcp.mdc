@@ -63,7 +63,7 @@ vpc-webapp-prod
 # versions.tf
 terraform {
   required_version = ">= 1.6"
-  
+
   required_providers {
     google = {
       source  = "hashicorp/google"
@@ -74,7 +74,7 @@ terraform {
       version = "~> 5.0"
     }
   }
-  
+
   backend "gcs" {
     bucket = "acme-terraform-state"
     prefix = "webapp/prod"
@@ -98,16 +98,16 @@ provider "google-beta" {
 resource "google_cloud_run_v2_service" "webapp" {
   name     = "webapp-${var.environment}"
   location = var.region
-  
+
   template {
     scaling {
       min_instance_count = var.environment == "prod" ? 2 : 0
       max_instance_count = var.environment == "prod" ? 100 : 10
     }
-    
+
     containers {
       image = "gcr.io/${var.project_id}/webapp:${var.image_tag}"
-      
+
       resources {
         limits = {
           cpu    = "1000m"
@@ -115,16 +115,16 @@ resource "google_cloud_run_v2_service" "webapp" {
         }
         cpu_idle = true
       }
-      
+
       ports {
         container_port = 8080
       }
-      
+
       env {
         name  = "ENVIRONMENT"
         value = var.environment
       }
-      
+
       env {
         name = "DATABASE_URL"
         value_source {
@@ -134,7 +134,7 @@ resource "google_cloud_run_v2_service" "webapp" {
           }
         }
       }
-      
+
       startup_probe {
         http_get {
           path = "/health"
@@ -144,7 +144,7 @@ resource "google_cloud_run_v2_service" "webapp" {
         period_seconds        = 10
         failure_threshold     = 3
       }
-      
+
       liveness_probe {
         http_get {
           path = "/health"
@@ -154,22 +154,22 @@ resource "google_cloud_run_v2_service" "webapp" {
         failure_threshold = 3
       }
     }
-    
+
     service_account = google_service_account.webapp.email
   }
-  
+
   traffic {
     type    = "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST"
     percent = 100
   }
-  
+
   depends_on = [google_project_service.cloudrun]
 }
 
 # IAM for Cloud Run (public or authenticated)
 resource "google_cloud_run_service_iam_member" "public" {
   count = var.allow_public_access ? 1 : 0
-  
+
   service  = google_cloud_run_v2_service.webapp.name
   location = google_cloud_run_v2_service.webapp.location
   role     = "roles/run.invoker"
@@ -188,13 +188,13 @@ resource "google_storage_bucket" "webapp_storage" {
   name          = "${var.project_id}-${var.environment}-storage"
   location      = var.region
   force_destroy = false
-  
+
   uniform_bucket_level_access = true
-  
+
   versioning {
     enabled = true
   }
-  
+
   lifecycle_rule {
     condition {
       age = 30
@@ -204,7 +204,7 @@ resource "google_storage_bucket" "webapp_storage" {
       storage_class = "NEARLINE"
     }
   }
-  
+
   lifecycle_rule {
     condition {
       age = 90
@@ -214,11 +214,11 @@ resource "google_storage_bucket" "webapp_storage" {
       storage_class = "COLDLINE"
     }
   }
-  
+
   encryption {
     default_kms_key_name = google_kms_crypto_key.storage_key.id
   }
-  
+
   labels = {
     environment = var.environment
     managed_by  = "terraform"
@@ -239,14 +239,14 @@ resource "google_sql_database_instance" "postgres" {
   name             = "sql-webapp-${var.environment}"
   database_version = "POSTGRES_15"
   region           = var.region
-  
+
   settings {
     tier              = var.environment == "prod" ? "db-custom-2-8192" : "db-f1-micro"
     availability_type = var.environment == "prod" ? "REGIONAL" : "ZONAL"
     disk_type         = "PD_SSD"
     disk_size         = var.environment == "prod" ? 100 : 10
     disk_autoresize   = true
-    
+
     backup_configuration {
       enabled                        = true
       start_time                     = "02:00"
@@ -256,23 +256,23 @@ resource "google_sql_database_instance" "postgres" {
         retained_backups = 30
       }
     }
-    
+
     ip_configuration {
       ipv4_enabled    = false
       private_network = google_compute_network.vpc.id
       require_ssl     = true
     }
-    
+
     database_flags {
       name  = "log_checkpoints"
       value = "on"
     }
-    
+
     database_flags {
       name  = "log_connections"
       value = "on"
     }
-    
+
     insights_config {
       query_insights_enabled  = true
       query_plans_per_minute  = 5
@@ -280,9 +280,9 @@ resource "google_sql_database_instance" "postgres" {
       record_application_tags = true
     }
   }
-  
+
   deletion_protection = var.environment == "prod"
-  
+
   depends_on = [google_project_service.sqladmin]
 }
 
@@ -390,15 +390,15 @@ steps:
   - name: 'node:20'
     entrypoint: npm
     args: ['ci']
-  
+
   - name: 'node:20'
     entrypoint: npm
     args: ['test']
-  
+
   - name: 'node:20'
     entrypoint: npm
     args: ['run', 'build']
-  
+
   # Build Docker image
   - name: 'gcr.io/cloud-builders/docker'
     args:
@@ -408,13 +408,13 @@ steps:
       - '-t'
       - 'gcr.io/$PROJECT_ID/webapp:latest'
       - '.'
-  
+
   # Push to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
       - 'gcr.io/$PROJECT_ID/webapp:$COMMIT_SHA'
-  
+
   # Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
@@ -530,11 +530,11 @@ resource "google_service_account_iam_member" "workload_identity" {
 ```hcl
 resource "google_secret_manager_secret" "db_password" {
   secret_id = "db-password-${var.environment}"
-  
+
   replication {
     automatic = true
   }
-  
+
   labels = {
     environment = var.environment
     managed_by  = "terraform"
@@ -563,10 +563,10 @@ const client = new SecretManagerServiceClient();
 
 async function getSecret(secretName) {
   const name = `projects/${process.env.GCP_PROJECT}/secrets/${secretName}/versions/latest`;
-  
+
   const [version] = await client.accessSecretVersion({ name });
   const payload = version.payload.data.toString('utf8');
-  
+
   return payload;
 }
 
@@ -583,11 +583,11 @@ const dbPassword = await getSecret('db-password-prod');
 resource "google_cloudfunctions2_function" "image_processor" {
   name     = "process-images-${var.environment}"
   location = var.region
-  
+
   build_config {
     runtime     = "nodejs20"
     entry_point = "processImage"
-    
+
     source {
       storage_source {
         bucket = google_storage_bucket.function_source.name
@@ -595,31 +595,31 @@ resource "google_cloudfunctions2_function" "image_processor" {
       }
     }
   }
-  
+
   service_config {
     max_instance_count = 100
     min_instance_count = 0
     available_memory   = "256M"
     timeout_seconds    = 60
-    
+
     environment_variables = {
       ENVIRONMENT = var.environment
     }
-    
+
     secret_environment_variables {
       key        = "API_KEY"
       project_id = var.project_id
       secret     = "api-key"
       version    = "latest"
     }
-    
+
     service_account_email = google_service_account.function.email
   }
-  
+
   event_trigger {
     trigger_region = var.region
     event_type     = "google.cloud.storage.object.v1.finalized"
-    
+
     event_filters {
       attribute = "bucket"
       value     = google_storage_bucket.uploads.name
@@ -635,13 +635,13 @@ const { Storage } = require('@google-cloud/storage');
 
 functions.cloudEvent('processImage', async (cloudEvent) => {
   console.log('Processing image:', cloudEvent.data.name);
-  
+
   const storage = new Storage();
   const file = storage.bucket(cloudEvent.data.bucket).file(cloudEvent.data.name);
-  
+
   // Process image (resize, optimize, etc.)
   // ...
-  
+
   console.log('Image processed successfully');
 });
 ```
@@ -655,30 +655,30 @@ functions.cloudEvent('processImage', async (cloudEvent) => {
 resource "google_container_cluster" "primary" {
   name     = "gke-${var.environment}"
   location = var.region
-  
+
   # Autopilot mode (fully managed)
   enable_autopilot = true
-  
+
   # VPC-native cluster
   ip_allocation_policy {}
-  
+
   # Release channel
   release_channel {
     channel = var.environment == "prod" ? "REGULAR" : "RAPID"
   }
-  
+
   # Workload Identity
   workload_identity_config {
     workload_pool = "${var.project_id}.svc.id.goog"
   }
-  
+
   # Network security
   private_cluster_config {
     enable_private_nodes    = true
     enable_private_endpoint = false
     master_ipv4_cidr_block  = "172.16.0.0/28"
   }
-  
+
   # Master authorized networks
   master_authorized_networks_config {
     cidr_blocks {
@@ -686,15 +686,15 @@ resource "google_container_cluster" "primary" {
       display_name = "All"
     }
   }
-  
+
   # Logging and monitoring
   logging_config {
     enable_components = ["SYSTEM_COMPONENTS", "WORKLOADS"]
   }
-  
+
   monitoring_config {
     enable_components = ["SYSTEM_COMPONENTS"]
-    
+
     managed_prometheus {
       enabled = true
     }
@@ -715,19 +715,19 @@ resource "google_logging_metric" "error_rate" {
     resource.labels.service_name="webapp-${var.environment}"
     severity>=ERROR
   EOT
-  
+
   metric_descriptor {
     metric_kind = "DELTA"
     value_type  = "INT64"
     unit        = "1"
-    
+
     labels {
       key         = "service"
       value_type  = "STRING"
       description = "Service name"
     }
   }
-  
+
   label_extractors = {
     "service" = "EXTRACT(resource.labels.service_name)"
   }
@@ -740,7 +740,7 @@ resource "google_monitoring_uptime_check_config" "webapp" {
   display_name = "webapp-${var.environment}-uptime"
   timeout      = "10s"
   period       = "60s"
-  
+
   http_check {
     path           = "/health"
     port           = "443"
@@ -748,7 +748,7 @@ resource "google_monitoring_uptime_check_config" "webapp" {
     validate_ssl   = true
     request_method = "GET"
   }
-  
+
   monitored_resource {
     type = "uptime_url"
     labels = {
@@ -756,7 +756,7 @@ resource "google_monitoring_uptime_check_config" "webapp" {
       host       = google_cloud_run_v2_service.webapp.uri
     }
   }
-  
+
   content_matchers {
     content = "\"status\":\"healthy\""
     matcher = "CONTAINS_STRING"
@@ -769,25 +769,25 @@ resource "google_monitoring_uptime_check_config" "webapp" {
 resource "google_monitoring_alert_policy" "high_error_rate" {
   display_name = "High Error Rate - ${var.environment}"
   combiner     = "OR"
-  
+
   conditions {
     display_name = "Error rate > 5%"
-    
+
     condition_threshold {
       filter          = "metric.type=\"logging.googleapis.com/user/${google_logging_metric.error_rate.name}\" resource.type=\"cloud_run_revision\""
       duration        = "300s"
       comparison      = "COMPARISON_GT"
       threshold_value = 5
-      
+
       aggregations {
         alignment_period   = "60s"
         per_series_aligner = "ALIGN_RATE"
       }
     }
   }
-  
+
   notification_channels = [google_monitoring_notification_channel.email.id]
-  
+
   alert_strategy {
     auto_close = "604800s" # 7 days
   }
@@ -850,5 +850,5 @@ resource "google_monitoring_alert_policy" "high_error_rate" {
 
 ---
 
-**Last Updated**: December 2025  
+**Last Updated**: December 2025
 **Purpose**: Google Cloud Platform engineering and best practices

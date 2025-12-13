@@ -45,19 +45,19 @@ type ExecutionEngineSpec struct {
 	// Address configuration for the execution service endpoint.
 	// This must be a valid network address reachable from the cluster.
 	Address AddressSpec `json:"address"`
-	
+
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=30
 	// Timeout in seconds for data workload execution.
 	// Workloads exceeding this timeout will be terminated.
 	TimeoutSeconds int32 `json:"timeoutSeconds,omitempty"`
-	
+
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=1
 	// Number of replicas for the execution engine.
 	// Scale this based on expected workload volume.
 	Replicas *int32 `json:"replicas,omitempty"`
-	
+
 	// +kubebuilder:validation:Optional
 	// Resource limits for execution engine pods.
 	// If not specified, default limits will be applied.
@@ -141,10 +141,10 @@ func (r *PhaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	if err := r.Get(ctx, req.NamespacedName, obj); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	
+
 	// Calculate new phase
 	newPhase := r.calculatePhase(obj)
-	
+
 	// Update only if changed
 	if obj.Status.Phase != newPhase {
 		obj.Status.Phase = newPhase
@@ -152,7 +152,7 @@ func (r *PhaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			return ctrl.Result{}, err
 		}
 	}
-	
+
 	return ctrl.Result{}, nil
 }
 ```
@@ -168,12 +168,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if err := r.Get(ctx, req.NamespacedName, obj); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	
+
 	// Check if already in desired state
 	if obj.Status.Phase == "Ready" && obj.Spec.DesiredReplicas == *obj.Status.Replicas {
 		return ctrl.Result{}, nil  // No work needed
 	}
-	
+
 	// Perform reconciliation
 	// ...
 }
@@ -215,20 +215,20 @@ resource "aws_eks_node_group" "main" {
   node_group_name = "main"
   node_role_arn   = aws_iam_role.node.arn
   subnet_ids      = aws_subnet.private[*].id
-  
+
   scaling_config {
     desired_size = 3
     max_size     = 10
     min_size     = 1
   }
-  
+
   instance_types = ["t3.medium"]
-  
+
   labels = {
     Environment = "production"
     Workload    = "general"
   }
-  
+
   taints {
     key    = "dedicated"
     value  = "true"
@@ -440,14 +440,14 @@ func (r *Reconciler) recordConflict(ctx context.Context, obj client.Object) {
 resource "aws_eks_cluster" "main" {
   name     = "my-cluster"
   role_arn = aws_iam_role.cluster.arn
-  
+
   vpc_config {
     subnet_ids              = aws_subnet.private[*].id
     endpoint_private_access = true
     endpoint_public_access  = true
     public_access_cidrs     = ["0.0.0.0/0"]  # Restrict in production
   }
-  
+
   enabled_cluster_log_types = [
     "api",
     "audit",

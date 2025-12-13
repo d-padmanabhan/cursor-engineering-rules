@@ -115,7 +115,7 @@ sequenceDiagram
     participant User
     participant API
     participant Database
-    
+
     User->>API: POST /login
     activate API
     API->>Database: Validate credentials
@@ -140,7 +140,7 @@ sequenceDiagram
     participant Client
     participant AuthServer
     participant ResourceServer
-    
+
     User->>Client: Request protected resource
     Client->>AuthServer: Authorization request
     AuthServer-->>User: Login prompt
@@ -221,18 +221,18 @@ classDiagram
         +login(email, password) Boolean
         +resetPassword() void
     }
-    
+
     class Role {
         +String name
         +String[] permissions
     }
-    
+
     class Session {
         +String token
         +DateTime expiresAt
         +validate() Boolean
     }
-    
+
     User "1" --> "0..*" Session : has
     User "1" --> "1..*" Role : assigned
 ```
@@ -251,7 +251,7 @@ classDiagram
         +String name
         +placeOrder(cart) Order
     }
-    
+
     class Order {
         +UUID id
         +DateTime createdAt
@@ -259,20 +259,20 @@ classDiagram
         +Decimal total
         +calculateTotal() Decimal
     }
-    
+
     class OrderItem {
         +UUID productId
         +Integer quantity
         +Decimal price
     }
-    
+
     class Product {
         +UUID id
         +String name
         +Decimal price
         +Integer stock
     }
-    
+
     Customer "1" --> "0..*" Order : places
     Order "1" *-- "1..*" OrderItem : contains
     OrderItem "1" --> "1" Product : references
@@ -307,16 +307,16 @@ stateDiagram-v2
     [*] --> Pending
     Pending --> Processing : payment_confirmed
     Pending --> Cancelled : customer_cancelled
-    
+
     Processing --> Shipped : items_packed
     Processing --> Failed : payment_failed
-    
+
     Shipped --> Delivered : received_by_customer
     Shipped --> Returned : return_requested
-    
+
     Failed --> Pending : retry_payment
     Returned --> Refunded : refund_processed
-    
+
     Delivered --> [*]
     Cancelled --> [*]
     Refunded --> [*]
@@ -357,14 +357,14 @@ erDiagram
     USER ||--o{ COMMENT : writes
     POST ||--o{ COMMENT : has
     POST }o--o{ TAG : tagged_with
-    
+
     USER {
         uuid id PK
         string email UK
         string username
         string password_hash
     }
-    
+
     POST {
         uuid id PK
         uuid author_id FK
@@ -372,14 +372,14 @@ erDiagram
         text content
         string slug UK
     }
-    
+
     COMMENT {
         uuid id PK
         uuid post_id FK
         uuid author_id FK
         text content
     }
-    
+
     TAG {
         uuid id PK
         string name UK
@@ -438,14 +438,14 @@ gitGraph
     branch develop
     checkout develop
     commit id: "Setup CI/CD"
-    
+
     branch feature/user-auth
     checkout feature/user-auth
     commit id: "Add login"
     commit id: "Add signup"
     checkout develop
     merge feature/user-auth
-    
+
     branch release/1.0
     checkout release/1.0
     commit id: "Version bump"
@@ -546,7 +546,7 @@ sequenceDiagram
     participant Client
     participant API
     participant Database
-    
+
     User->>Client: Enter credentials
     Client->>API: POST /auth/login
     activate API
@@ -555,9 +555,9 @@ sequenceDiagram
     API-->>Client: JWT token + refresh token
     deactivate API
     Client->>Client: Store tokens
-    
+
     Note over Client,API: Access protected resources
-    
+
     Client->>API: GET /api/profile (with JWT)
     API-->>Client: User profile
 ```
@@ -604,16 +604,16 @@ stateDiagram-v2
     [*] --> Unauthenticated
     Unauthenticated --> Authenticated : valid_credentials
     Unauthenticated --> Failed : invalid_credentials
-    
+
     Authenticated --> TokenExpired : timeout
     Authenticated --> Unauthenticated : logout
-    
+
     TokenExpired --> Authenticated : refresh_token_valid
     TokenExpired --> Unauthenticated : refresh_token_invalid
-    
+
     Failed --> Unauthenticated : retry
     Failed --> Locked : max_attempts_exceeded
-    
+
     Locked --> Unauthenticated : unlock_timeout
 ```
 
@@ -680,5 +680,5 @@ Generate markdown content that is informative, well-organized, visual, and makes
 
 ---
 
-**Last Updated**: December 2025  
+**Last Updated**: December 2025
 **Mermaid Version**: 10.6+

@@ -1,0 +1,75 @@
+---
+# Markdownlint Configuration
+# Relaxed rules for documentation-focused repository
+
+# Line length - disabled for documentation flexibility
+MD013:
+  line_length: 999999
+  tables: false
+  code_blocks: false
+
+# Inline HTML - allowed (needed for badges, GitHub-specific formatting)
+MD033: false
+
+# First line in file should be top-level heading - disabled
+MD041: false
+
+# Multiple top-level headings in the same document - allowed
+MD025: false
+
+# Multiple headings with the same content - allowed (common in docs)
+MD024:
+  siblings_only: true
+
+# Ordered list item prefix - consistent style
+MD029:
+  style: ordered
+
+# Code block style - use fenced code blocks
+MD046:
+  style: fenced
+
+# Emphasis style - use asterisks for consistency
+MD049:
+  style: asterisk
+
+# Strong style - use asterisks for consistency
+MD050:
+  style: asterisk
+
+# Heading style - ATX style (# Heading)
+MD003:
+  style: atx
+
+# Unordered list style - consistent dashes
+MD004:
+  style: dash
+
+# List indent - 2 spaces
+MD007:
+  indent: 2
+
+# Blanks around fences - require blank lines
+MD031: true
+MD032: true
+
+# Blanks around headings - require blank lines
+MD022:
+  lines_above: 1
+  lines_below: 1
+
+# No trailing spaces
+MD009: true
+
+# No trailing punctuation in headings
+MD026:
+  punctuation: ".,;:!"
+
+# Proper link syntax
+MD042: true
+
+# Fenced code language - allow code blocks without language
+MD040: false
+
+# Emphasis as heading - allow for progressive disclosure patterns
+MD036: false

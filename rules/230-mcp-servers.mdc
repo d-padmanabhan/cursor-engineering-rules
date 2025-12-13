@@ -30,21 +30,21 @@ MCP tool docstrings serve as API documentation for AI agents. They must be compr
 @mcp.tool
 async def kubectl(args: str) -> str:
     """Execute kubectl commands for Kubernetes cluster management.
-    
-    Use this tool for all kubectl operations. Provide the kubectl 
+
+    Use this tool for all kubectl operations. Provide the kubectl
     arguments as a single string (e.g., "get pods -n default").
-    
-    **Important:** This tool requires kubectl to be installed and 
-    configured with cluster access. Commands are executed with the 
+
+    **Important:** This tool requires kubectl to be installed and
+    configured with cluster access. Commands are executed with the
     current user's kubeconfig context.
-    
+
     Args:
         args: kubectl command arguments as a single string.
               Examples:
               - "get pods -n default"
               - "apply -f deployment.yaml"
               - "logs pod-name -n namespace --tail=100"
-    
+
     Returns:
         JSON string with structure:
         {
@@ -52,15 +52,15 @@ async def kubectl(args: str) -> str:
             "stderr": "error output (empty if success)",
             "statusCode": 0
         }
-        
+
         Status codes:
         - 0: Success
         - 1: General error
         - 2: Misuse of command
-    
+
     Raises:
         RuntimeError: If kubectl is not installed or not in PATH
-        
+
     Example:
         >>> result = await kubectl("get pods -n default")
         >>> data = json.loads(result)
@@ -76,7 +76,7 @@ async def kubectl(args: str) -> str:
 @mcp.tool
 async def kubectl(args: str) -> str:
     """Run kubectl.
-    
+
     Returns:
         Output: <stdout>
     """
@@ -102,7 +102,7 @@ async def create_resource(
     namespace: str = "default"
 ) -> str:
     """Create a Kubernetes resource.
-    
+
     Args:
         resource_type: Type of resource (e.g., "deployment", "service", "configmap").
                        Must be a valid Kubernetes resource type.
@@ -115,7 +115,7 @@ async def create_resource(
                     - For configmaps: {"data": dict}
         namespace: Kubernetes namespace (default: "default").
                    Must exist before creating resources.
-    
+
     Returns:
         JSON string with creation result:
         {
@@ -138,13 +138,13 @@ For command execution tools, return structured JSON:
 @mcp.tool
 async def execute_command(command: str, timeout: int = 30) -> str:
     """Execute a shell command and return structured output.
-    
+
     Args:
         command: Shell command to execute. Will be executed in a
                  subprocess with shell=True. Be careful with user input.
         timeout: Maximum execution time in seconds (default: 30).
                  Command will be killed if it exceeds this time.
-    
+
     Returns:
         JSON string with structure:
         {
@@ -154,11 +154,11 @@ async def execute_command(command: str, timeout: int = 30) -> str:
             "duration": 1.23,
             "timedOut": false
         }
-        
+
         Status codes follow Unix conventions:
         - 0: Success
         - 1-255: Command-specific error codes
-        
+
         If command times out:
         {
             "stdout": "",
@@ -178,20 +178,20 @@ async def execute_command(command: str, timeout: int = 30) -> str:
 @mcp.tool
 async def read_file(file_path: str) -> str:
     """Read contents of a file.
-    
+
     Args:
         file_path: Path to file. Can be absolute or relative to
                    current working directory. Supports both Unix
                    and Windows paths.
-    
+
     Returns:
         File contents as string. Empty string if file is empty.
-    
+
     Raises:
         FileNotFoundError: If file does not exist
         PermissionError: If file cannot be read due to permissions
         IsADirectoryError: If path points to a directory, not a file
-        
+
     Example:
         >>> content = await read_file("/path/to/file.txt")
         >>> print(content)
@@ -251,7 +251,7 @@ async def process_data(
     filters: Optional[List[str]] = None
 ) -> Dict[str, Any]:
     """Process data with optional filters and options.
-    
+
     Args:
         data: Input data dictionary. Required keys:
               - "id": str
@@ -261,7 +261,7 @@ async def process_data(
                  - "threshold": float (default: 0.5)
         filters: Optional list of filter names to apply.
                  Valid filters: ["outliers", "missing", "duplicates"]
-    
+
     Returns:
         Processed data dictionary with same structure as input,
         plus additional fields:
@@ -278,35 +278,35 @@ async def process_data(
 @mcp.tool
 async def query_database(query: str, params: Optional[Dict] = None) -> str:
     """Execute a database query safely using parameterized queries.
-    
+
     **Security:** This tool uses parameterized queries to prevent
     SQL injection. Never concatenate user input into queries.
-    
+
     Args:
         query: SQL query with placeholders (use ? or :name).
                Example: "SELECT * FROM users WHERE id = ?"
         params: Optional parameters for query placeholders.
                 Example: {"id": 123} or [123] for positional placeholders.
-    
+
     Returns:
         JSON array of result rows:
         [
             {"id": 1, "name": "Alice", "email": "alice@acme.com"},
             {"id": 2, "name": "Bob", "email": "bob@acme.com"}
         ]
-        
+
         Empty array [] if no results.
-    
+
     Examples:
         # Simple query
         >>> result = await query_database("SELECT * FROM users LIMIT 10")
-        
+
         # Parameterized query
         >>> result = await query_database(
         ...     "SELECT * FROM users WHERE id = ?",
         ...     params=[123]
         ... )
-        
+
         # Named parameters
         >>> result = await query_database(
         ...     "SELECT * FROM users WHERE email = :email",
@@ -323,17 +323,17 @@ async def query_database(query: str, params: Optional[Dict] = None) -> str:
 @mcp.tool
 async def execute_shell_command(command: str) -> str:
     """Execute a shell command.
-    
+
     **SECURITY WARNING:** This tool executes shell commands with
     the privileges of the MCP server process. Use with extreme
     caution. Never execute commands constructed from untrusted user
     input without validation.
-    
+
     Args:
         command: Shell command to execute. Will be executed via
                  subprocess with shell=True. Commands are logged
                  for security auditing.
-    
+
     Returns:
         Command output as JSON:
         {
@@ -352,7 +352,7 @@ async def execute_shell_command(command: str) -> str:
 def test_tool_docstring_completeness():
     """Verify tool docstrings contain required information."""
     tool = kubectl
-    
+
     doc = tool.__doc__
     assert "Args:" in doc, "Missing Args section"
     assert "Returns:" in doc, "Missing Returns section"

@@ -69,6 +69,7 @@ Quick lookup table for all cursor rules files.
 ## Quick Reference by Technology
 
 ### Languages
+
 - **Bash**: [130-bash.mdc](130-bash.mdc)
 - **Go**: [180-go.mdc](180-go.mdc)
 - **JavaScript**: [170-javascript.mdc](170-javascript.mdc)
@@ -76,35 +77,44 @@ Quick lookup table for all cursor rules files.
 - **TypeScript**: [165-typescript.mdc](165-typescript.mdc)
 
 ### Infrastructure as Code
+
 - **CloudFormation**: [150-cloudformation.mdc](150-cloudformation.mdc)
 - **Terraform**: [140-terraform.mdc](140-terraform.mdc)
 
 ### Cloud Platforms
+
 - **AWS**: [280-aws.mdc](280-aws.mdc)
 - **Cloudflare**: [250-cloudflare.mdc](250-cloudflare.mdc)
 
 ### Container & Orchestration
+
 - **Docker**: [155-docker.mdc](155-docker.mdc)
 - **Kubernetes**: [260-kubernetes.mdc](260-kubernetes.mdc)
 
 ### CI/CD & Testing
+
 - **GitHub Actions**: [120-gha.mdc](120-gha.mdc)
 - **Testing**: [300-testing.mdc](300-testing.mdc)
 
 ### Security
+
 - **Security Best Practices**: [310-security.mdc](310-security.mdc)
 
 ### Databases
+
 - **PostgreSQL**: [270-postgresql.mdc](270-postgresql.mdc)
 
 ### Utilities
+
 - **Command-Line Tools**: [115-utilities.mdc](115-utilities.mdc) (lynx, curl, jq, httpie)
 
 ### Documentation
+
 - **Markdown & Diagrams**: [800-markdown.mdc](800-markdown.mdc)
 - **Documentation Engineering**: [220-documentation.mdc](220-documentation.mdc)
 
 ### Development Patterns
+
 - **CLI Applications**: [200-cli.mdc](200-cli.mdc)
 - **Configuration**: [240-configuration.mdc](240-configuration.mdc)
 - **MCP Servers**: [230-mcp-servers.mdc](230-mcp-servers.mdc)

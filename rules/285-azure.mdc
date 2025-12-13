@@ -394,9 +394,9 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/fu
 
 export async function httpTrigger(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
   context.log('HTTP trigger function processed a request.');
-  
+
   const name = request.query.get('name') || await request.text() || 'World';
-  
+
   return {
     status: 200,
     headers: {
@@ -878,5 +878,5 @@ resource autoScaleSettings 'Microsoft.Insights/autoscalesettings@2022-10-01' = {
 
 ---
 
-**Last Updated**: December 2025  
+**Last Updated**: December 2025
 **Purpose**: Microsoft Azure platform engineering and best practices

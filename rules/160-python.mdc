@@ -23,7 +23,7 @@ Apply features only when they add clarity, correctness, performance, or security
 - **Linting:** Run `black`, `ruff`, and `pylint`. Aim for a score of ≥9.0 on `pylint`.
 - **String Formatting:** Use double quotes `"` unless the string contains double quotes (use `'` then). `black` handles this.
 - **Imports:** Grouped: stdlib / third-party / local. Sorted alphabetically within groups. Separate groups with blank lines.
-- **Documentation:** 
+- **Documentation:**
   - Google-style docstrings for all functions, classes, methods.
   - Module docstring immediately below shebang (leave space between shebang and docstring).
   - Include workflow with numbered steps if applicable.
@@ -160,26 +160,26 @@ uv sync
   ```python
   import logging
   import time
-  
+
   def setup_custom_logger(name: str) -> logging.Logger:
       """Create and configure a logger with UTC timestamps."""
       logger = logging.getLogger(name)
       logger.setLevel(logging.DEBUG)
-      
+
       class UTCFormatter(logging.Formatter):
           converter = time.gmtime
-      
+
       formatter = UTCFormatter(
-          "%(asctime)s - %(levelname)s - %(message)s", 
+          "%(asctime)s - %(levelname)s - %(message)s",
           datefmt="%c %Z"
       )
-      
+
       if not logger.handlers:
           handler = logging.StreamHandler()
           handler.setFormatter(formatter)
           logger.addHandler(handler)
       return logger
-  
+
   logger = setup_custom_logger(__name__)
   ```
 - **Structured Logging:** Use `loguru` or JSON format for observability pipelines where needed.
@@ -248,13 +248,13 @@ uv sync
   ```python
   import boto3
   from botocore.config import Config
-  
+
   boto_config = Config(
       retries={"max_attempts": 5, "mode": "standard"},
       connect_timeout=5,
       read_timeout=30
   )
-  
+
   s3_client = boto3.client("s3", config=boto_config, region_name="us-east-1")
   ```
 - **Region Handling:** Retrieve from `AWS_REGION` env var, default to `us-east-1`, allow override via parameter.
@@ -444,13 +444,13 @@ from utils import setup_custom_logger
 def function_name(param: str) -> int:
     """
     Brief description of what the function does.
-    
+
     Args:
         param (str): Description of parameter.
-    
+
     Returns:
         int: Description of return value.
-    
+
     Raises:
         ValueError: When param is invalid.
     """
@@ -502,15 +502,15 @@ def setup_custom_logger(name: str) -> logging.Logger:
     """Create and configure a logger with UTC timestamps."""
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
-    
+
     class UTCFormatter(logging.Formatter):
         converter = time.gmtime
-    
+
     formatter = UTCFormatter(
         "%(asctime)s - %(levelname)s - %(message)s",
         datefmt="%c %Z"
     )
-    
+
     if not logger.handlers:
         handler = logging.StreamHandler(sys.stdout)
         handler.setFormatter(formatter)

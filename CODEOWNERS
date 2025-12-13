@@ -1,0 +1,53 @@
+# CODEOWNERS
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything in the repo
+* @d-padmanabhan
+
+# Documentation files
+*.md @d-padmanabhan
+docs/ @d-padmanabhan
+
+# Core configuration files
+.github/ @d-padmanabhan
+.gitignore @d-padmanabhan
+.editorconfig @d-padmanabhan
+.markdownlint.yaml @d-padmanabhan
+.pre-commit-config.yaml @d-padmanabhan
+
+# License and legal
+LICENSE @d-padmanabhan
+CONTRIBUTING.md @d-padmanabhan
+
+# Rules directory - all .mdc files
+rules/ @d-padmanabhan
+rules/*.mdc @d-padmanabhan
+
+# Core workflow and standards (high priority)
+rules/050-workflow.mdc @d-padmanabhan
+rules/100-core.mdc @d-padmanabhan
+rules/110-git.mdc @d-padmanabhan
+rules/310-security.mdc @d-padmanabhan
+
+# Language-specific rules
+rules/160-python.mdc @d-padmanabhan
+rules/180-go.mdc @d-padmanabhan
+rules/170-javascript.mdc @d-padmanabhan
+rules/165-typescript.mdc @d-padmanabhan
+
+# Cloud platform rules
+rules/280-aws.mdc @d-padmanabhan
+rules/285-azure.mdc @d-padmanabhan
+rules/290-gcp.mdc @d-padmanabhan
+
+# DevOps and infrastructure
+rules/140-terraform.mdc @d-padmanabhan
+rules/260-kubernetes.mdc @d-padmanabhan
+rules/120-gha.mdc @d-padmanabhan
+
+# Examples and templates
+examples/ @d-padmanabhan
+
+# Note: Add additional maintainers as the project grows
+# Format: path @github-username
+# Example: rules/200-*.mdc @contributor-username

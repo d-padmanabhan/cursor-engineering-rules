@@ -20,6 +20,7 @@ This guide explains how to integrate Cursor Engineering Rules into your projects
 ### Method 1: Symlink (Recommended for Multiple Projects)
 
 **Advantages:**
+
 - Update rules once, all projects benefit
 - No duplication
 - Easy maintenance
@@ -51,6 +52,7 @@ rulesDirectory: .cursor/rules
 ### Method 2: Copy Rules (Recommended for Single Project)
 
 **Advantages:**
+
 - Self-contained project
 - Version control rules with project
 - Custom modifications per project
@@ -84,6 +86,7 @@ rules:
 ### Method 3: Git Submodule (Recommended for Team Projects)
 
 **Advantages:**
+
 - Track specific version
 - Easy updates via git
 - Team consistency
@@ -126,6 +129,7 @@ git commit -m "chore: update cursor rules"
 ### Strategy 1: Load All Rules (Comprehensive)
 
 **Use when:**
+
 - Large, complex projects
 - Multiple technologies in one repo
 - Want maximum guidance
@@ -138,11 +142,13 @@ rulesDirectory: .cursor/rules
 ```
 
 **Pros:**
+
 - No maintenance needed
 - All patterns available
 - Consistent standards
 
 **Cons:**
+
 - May load unnecessary rules
 - Slightly slower (negligible)
 
@@ -151,6 +157,7 @@ rulesDirectory: .cursor/rules
 ### Strategy 2: Selective Loading (Focused)
 
 **Use when:**
+
 - Clear technology stack
 - Want faster rule loading
 - Smaller projects
@@ -176,11 +183,13 @@ rules:
 ```
 
 **Pros:**
+
 - Faster loading
 - Clear dependencies
 - Easy to understand
 
 **Cons:**
+
 - Manual maintenance
 - May miss relevant rules
 
@@ -189,6 +198,7 @@ rules:
 ### Strategy 3: Progressive Enhancement (Start Small)
 
 **Use when:**
+
 - New to Cursor rules
 - Evaluating value
 - Small projects
@@ -239,6 +249,7 @@ rules:
 ### By Project Type
 
 #### Web Application (Full-Stack)
+
 ```yaml
 rules:
   - .cursor/rules/100-core.mdc
@@ -252,6 +263,7 @@ rules:
 ```
 
 #### Microservices (Go + Kubernetes)
+
 ```yaml
 rules:
   - .cursor/rules/100-core.mdc
@@ -265,6 +277,7 @@ rules:
 ```
 
 #### Infrastructure/Platform Engineering
+
 ```yaml
 rules:
   - .cursor/rules/100-core.mdc
@@ -277,6 +290,7 @@ rules:
 ```
 
 #### Data Engineering
+
 ```yaml
 rules:
   - .cursor/rules/100-core.mdc
@@ -288,6 +302,7 @@ rules:
 ```
 
 #### AI/ML Application
+
 ```yaml
 rules:
   - .cursor/rules/100-core.mdc
@@ -306,6 +321,7 @@ rules:
 ### 1. Verify Rules Are Loaded
 
 Open Cursor and check:
+
 1. Go to Settings → Rules & Memories
 2. Verify your rules appear in the list
 3. Check that `alwaysApply` rules are marked
@@ -315,16 +331,19 @@ Open Cursor and check:
 Ask Cursor to generate code that exercises your rules:
 
 **Test Python rules:**
+
 ```
 Generate a Python function to fetch data from an API with proper error handling, type hints, and async support.
 ```
 
 **Test AWS rules:**
+
 ```
 Create a Terraform module for an S3 bucket with versioning, encryption, and lifecycle policies.
 ```
 
 **Test Security rules:**
+
 ```
 Create a REST API endpoint with authentication, input validation, and rate limiting.
 ```
@@ -332,6 +351,7 @@ Create a REST API endpoint with authentication, input validation, and rate limit
 ### 3. Verify Rule Application
 
 Check that generated code follows patterns:
+
 - ✅ Proper error handling
 - ✅ Type annotations
 - ✅ Security best practices
@@ -349,12 +369,14 @@ Check that generated code follows patterns:
 **Solutions:**
 
 1. **Check file paths**
+
    ```bash
    ls -la .cursor/rules/
    cat .cursorrules
    ```
 
 2. **Verify symlink** (if using symlinks)
+
    ```bash
    readlink .cursor/rules
    # Should show absolute path to rules directory
@@ -444,12 +466,14 @@ cp .cursorrules.prod .cursorrules
 For team projects:
 
 1. **Commit `.cursorrules` to git**
+
    ```bash
    git add .cursorrules
    git commit -m "chore: add cursor rules configuration"
    ```
 
 2. **Document in README**
+
    ```markdown
    ## Development Setup
    

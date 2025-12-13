@@ -15,7 +15,7 @@ files:
 
 # Go Engineering Ruleset - (December 2025)
 
-**Audience**: engineers writing and reviewing Go code  
+**Audience**: engineers writing and reviewing Go code
 **Goal**: secure, idiomatic, efficient, and highly maintainable Go - without over-engineering
 
 **Core Philosophy**: Correctness & Safety ➔ Simplicity & Maintainability ➔ Evidence-Based Performance
@@ -288,14 +288,14 @@ import "golang.org/x/sync/errgroup"
 func processFiles(ctx context.Context, files []string) error {
     g, ctx := errgroup.WithContext(ctx)
     g.SetLimit(10)  // Max 10 concurrent goroutines
-    
+
     for _, file := range files {
         file := file
         g.Go(func() error {
             return processFile(ctx, file)
         })
     }
-    
+
     return g.Wait()
 }
 ```
@@ -316,7 +316,7 @@ func BenchmarkProcessData(b *testing.B) {
     data := generateTestData()
     b.ResetTimer()
     b.ReportAllocs()
-    
+
     for i := 0; i < b.N; i++ {
         ProcessData(data)
     }
@@ -355,11 +355,11 @@ func TestAdd(t *testing.T) {
         {"positive", 1, 2, 3},
         {"negative", -1, -2, -3},
     }
-    
+
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
             t.Parallel()
-            
+
             got := Add(tt.a, tt.b)
             if got != tt.want {
                 t.Errorf("Add(%d, %d) = %d, want %d", tt.a, tt.b, got, tt.want)
@@ -371,7 +371,7 @@ func TestAdd(t *testing.T) {
 // ✅ GOOD: Fuzz test
 func FuzzParseURL(f *testing.F) {
     f.Add("https://acme.com")
-    
+
     f.Fuzz(func(t *testing.T, url string) {
         _, err := ParseURL(url)
         _ = err  // Must not panic
@@ -558,14 +558,14 @@ jobs:
     strategy:
       matrix:
         go-version: ['1.21', '1.22']
-    
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
           cache: true
-      
+
       - run: go mod download
       - run: gofmt -s -l . | tee /dev/stderr | test -z "$(cat)"
       - run: go vet ./...
@@ -585,7 +585,7 @@ jobs:
 func fanOutFanIn(ctx context.Context, inputs []Input) ([]Result, error) {
     jobs := make(chan Input, len(inputs))
     results := make(chan Result, len(inputs))
-    
+
     // Start workers
     var wg sync.WaitGroup
     for i := 0; i < runtime.NumCPU(); i++ {
@@ -601,7 +601,7 @@ func fanOutFanIn(ctx context.Context, inputs []Input) ([]Result, error) {
             }
         }()
     }
-    
+
     // Send jobs and close
     go func() {
         for _, input := range inputs {
@@ -609,19 +609,19 @@ func fanOutFanIn(ctx context.Context, inputs []Input) ([]Result, error) {
         }
         close(jobs)
     }()
-    
+
     // Wait and close results
     go func() {
         wg.Wait()
         close(results)
     }()
-    
+
     // Collect results
     var collected []Result
     for result := range results {
         collected = append(collected, result)
     }
-    
+
     return collected, nil
 }
 ```
@@ -702,5 +702,5 @@ func GetUser(ctx context.Context, id string) (*User, error) {
 
 **Context Matters**: These rules optimize for long-lived production services. A one-off script has different needs than a high-traffic API. Deviations are fine when justified and intentional.
 
-**Last Updated**: December 2025  
+**Last Updated**: December 2025
 **Go Version**: 1.21+ (with 1.18+ generics support)

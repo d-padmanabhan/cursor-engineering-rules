@@ -46,12 +46,12 @@ app.get('/api/users/:id', async (req, res) => {
 app.get('/api/users/:id', authenticate, async (req, res) => {
   const requestedUserId = req.params.id;
   const currentUserId = req.user.id;
-  
+
   // Users can only access their own data
   if (requestedUserId !== currentUserId && !req.user.isAdmin) {
     return res.status(403).json({ error: 'Forbidden' });
   }
-  
+
   const user = await User.findById(requestedUserId);
   res.json(user);
 });
@@ -59,8 +59,8 @@ app.get('/api/users/:id', authenticate, async (req, res) => {
 // ✅ EXCELLENT - Policy-based access control
 import { authorize } from './policies';
 
-app.get('/api/users/:id', 
-  authenticate, 
+app.get('/api/users/:id',
+  authenticate,
   authorize('user', 'read'),
   async (req, res) => {
     const user = await User.findById(req.params.id);
@@ -127,28 +127,28 @@ import crypto from 'crypto';
 function encrypt(text: string, key: string): string {
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv('aes-256-gcm', Buffer.from(key, 'hex'), iv);
-  
+
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
-  
+
   const authTag = cipher.getAuthTag();
-  
+
   return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted;
 }
 
 // Decrypt data
 function decrypt(encryptedData: string, key: string): string {
   const [ivHex, authTagHex, encrypted] = encryptedData.split(':');
-  
+
   const iv = Buffer.from(ivHex, 'hex');
   const authTag = Buffer.from(authTagHex, 'hex');
   const decipher = crypto.createDecipheriv('aes-256-gcm', Buffer.from(key, 'hex'), iv);
-  
+
   decipher.setAuthTag(authTag);
-  
+
   let decrypted = decipher.update(encrypted, 'hex', 'utf8');
   decrypted += decipher.final('utf8');
-  
+
   return decrypted;
 }
 ```
@@ -247,20 +247,20 @@ import { spawn } from 'child_process';
 
 app.post('/api/ping', (req, res) => {
   const host = req.body.host;
-  
+
   // Validate input
   if (!/^[a-zA-Z0-9.-]+$/.test(host)) {
     return res.status(400).json({ error: 'Invalid host' });
   }
-  
+
   // Use spawn with separate arguments (no shell interpretation)
   const ping = spawn('ping', ['-c', '4', host]);
-  
+
   let output = '';
   ping.stdout.on('data', (data) => {
     output += data.toString();
   });
-  
+
   ping.on('close', (code) => {
     res.json({ output, code });
   });
@@ -403,7 +403,7 @@ app.use((err, req, res, next) => {
 // ✅ GOOD - Safe error handling
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  
+
   if (process.env.NODE_ENV === 'production') {
     res.status(500).json({ error: 'Internal server error' });
   } else {
@@ -456,15 +456,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Run Snyk
         uses: snyk/actions/node@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      
+
       - name: Run npm audit
         run: npm audit --audit-level=high
-      
+
       - name: Run Trivy
         uses: aquasecurity/trivy-action@master
         with:
@@ -536,7 +536,7 @@ function generateTOTPSecret(email: string) {
     name: `Acme (${email})`,
     issuer: 'Acme',
   });
-  
+
   return {
     secret: secret.base32,
     qrCode: secret.otpauth_url,
@@ -556,24 +556,24 @@ function verifyTOTP(secret: string, token: string): boolean {
 // Enforce MFA
 app.post('/api/login', async (req, res) => {
   const { email, password, mfaToken } = req.body;
-  
+
   // Verify credentials
   const user = await User.findOne({ email });
   if (!user || !(await user.verifyPassword(password))) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
-  
+
   // Verify MFA if enabled
   if (user.mfaEnabled) {
     if (!mfaToken) {
       return res.status(401).json({ error: 'MFA token required' });
     }
-    
+
     if (!verifyTOTP(user.mfaSecret, mfaToken)) {
       return res.status(401).json({ error: 'Invalid MFA token' });
     }
   }
-  
+
   // Create session
   req.session.userId = user.id;
   res.json({ success: true });
@@ -598,7 +598,7 @@ npm ci  # Install exact versions from package-lock.json
 npm install --ignore-scripts  # Prevent post-install scripts
 
 # Use Subresource Integrity (SRI) for CDN resources
-<script 
+<script
   src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"
   integrity="sha384-..."
   crossorigin="anonymous">
@@ -660,7 +660,7 @@ function logSecurityEvent(event: string, details: Record<string, unknown>) {
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email });
-  
+
   if (!user || !(await user.verifyPassword(password))) {
     logSecurityEvent('failed_login', {
       email,
@@ -669,13 +669,13 @@ app.post('/api/login', async (req, res) => {
     });
     return res.status(401).json({ error: 'Invalid credentials' });
   }
-  
+
   logSecurityEvent('successful_login', {
     userId: user.id,
     email,
     ip: req.ip,
   });
-  
+
   res.json({ token: generateToken(user) });
 });
 ```
@@ -688,7 +688,7 @@ const failedAttempts = new Map<string, number>();
 function trackFailedLogin(email: string): boolean {
   const attempts = (failedAttempts.get(email) || 0) + 1;
   failedAttempts.set(email, attempts);
-  
+
   // Lock account after 5 failed attempts
   if (attempts >= 5) {
     logger.warn('Account locked due to failed login attempts', {
@@ -698,7 +698,7 @@ function trackFailedLogin(email: string): boolean {
     // Send alert, lock account, etc.
     return true;
   }
-  
+
   return false;
 }
 
@@ -734,17 +734,17 @@ const BLOCKED_IPS = ['127.0.0.1', '0.0.0.0', '169.254.169.254']; // Block metada
 function isUrlSafe(urlString: string): boolean {
   try {
     const url = new URL(urlString);
-    
+
     // Only allow HTTP/HTTPS
     if (!['http:', 'https:'].includes(url.protocol)) {
       return false;
     }
-    
+
     // Check against allowlist
     if (!ALLOWED_DOMAINS.includes(url.hostname)) {
       return false;
     }
-    
+
     // Block private IP ranges (simplified)
     if (
       url.hostname === 'localhost' ||
@@ -754,7 +754,7 @@ function isUrlSafe(urlString: string): boolean {
     ) {
       return false;
     }
-    
+
     return true;
   } catch {
     return false;
@@ -763,11 +763,11 @@ function isUrlSafe(urlString: string): boolean {
 
 app.post('/api/fetch', async (req, res) => {
   const url = req.body.url;
-  
+
   if (!isUrlSafe(url)) {
     return res.status(400).json({ error: 'Invalid URL' });
   }
-  
+
   try {
     const response = await fetch(url, {
       // Set timeout
@@ -775,7 +775,7 @@ app.post('/api/fetch', async (req, res) => {
       // Limit redirects
       redirect: 'manual',
     });
-    
+
     const data = await response.text();
     res.send(data);
   } catch (error) {
@@ -810,12 +810,12 @@ import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-sec
 
 async function getSecret(secretName: string): Promise<string> {
   const client = new SecretsManagerClient({ region: 'us-east-1' });
-  
+
   try {
     const response = await client.send(
       new GetSecretValueCommand({ SecretId: secretName })
     );
-    
+
     return response.SecretString!;
   } catch (error) {
     console.error('Failed to retrieve secret', { secretName, error });
@@ -866,13 +866,13 @@ repos:
         name: TruffleHog
         entry: trufflehog filesystem --no-update
         language: system
-        
+
   - repo: https://github.com/Yelp/detect-secrets
     rev: v1.4.0
     hooks:
       - id: detect-secrets
         name: Detect Secrets
-        
+
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.18.1
     hooks:
@@ -891,7 +891,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
@@ -899,17 +899,17 @@ jobs:
           scan-ref: '.'
           format: 'sarif'
           output: 'trivy-results.sarif'
-      
+
       - name: Run Snyk
         uses: snyk/actions/node@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      
+
       - name: Run GitGuardian
         uses: GitGuardian/ggshield-action@master
         env:
           GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_API_KEY }}
-      
+
       - name: Run Bandit (Python)
         run: |
           pip install bandit
@@ -963,5 +963,5 @@ jobs:
 
 ---
 
-**Last Updated**: December 2025  
+**Last Updated**: December 2025
 **Purpose**: Comprehensive security best practices and OWASP Top 10 mitigation strategies
