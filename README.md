@@ -255,8 +255,8 @@ This project was inspired by and incorporates patterns from:
 
 ## 📧 Contact & Support
 
-- **Issues**: [GitHub Issues](https://github.com/YOUR_USERNAME/cursor-engineering-rules/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/YOUR_USERNAME/cursor-engineering-rules/discussions)
+- **Issues**: [GitHub Issues](https://github.com/d-padmanabhan/cursor-engineering-rules/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/d-padmanabhan/cursor-engineering-rules/discussions)
 
 ---
 

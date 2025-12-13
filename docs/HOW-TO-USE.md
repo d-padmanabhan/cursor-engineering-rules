@@ -28,7 +28,7 @@ This guide explains how to integrate Cursor Engineering Rules into your projects
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/cursor-engineering-rules.git
+git clone https://github.com/d-padmanabhan/cursor-engineering-rules.git
 cd /path/to/your/workspace
 
 # From your project
@@ -95,7 +95,7 @@ rules:
 cd /path/to/your/project
 
 # Add as submodule
-git submodule add https://github.com/YOUR_USERNAME/cursor-engineering-rules.git .cursor-rules
+git submodule add https://github.com/d-padmanabhan/cursor-engineering-rules.git .cursor-rules
 
 # Symlink to .cursor/rules
 mkdir -p .cursor
@@ -499,4 +499,4 @@ cat .cursorrules
 
 ---
 
-**Need Help?** Open an issue on [GitHub](https://github.com/YOUR_USERNAME/cursor-engineering-rules/issues)
+**Need Help?** Open an issue on [GitHub](https://github.com/d-padmanabhan/cursor-engineering-rules/issues)
