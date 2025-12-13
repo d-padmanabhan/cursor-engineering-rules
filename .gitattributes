@@ -1,0 +1,32 @@
+# Normalize line endings to LF in source files; enforce CRLF for Windows scripts
+* text=auto eol=lf
+*.sh text eol=off
+*.bash text eol=lf
+*.zsh text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.tf   text eol=lf
+*.tfvars text eol=lf
+*.tfvars.json text eol=lf
+*.md   text eol=lf
+*.mdc  text eol=lf
+*.js   text eol=lf
+*.jsx  text eol=lf
+*.ts   text eol=lf
+*.tsx  text eol=lf
+*.py   text eol=lf
+*.go   text eol=lf
+*.json text eol=lf
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.tar.gz binary
