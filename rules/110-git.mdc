@@ -84,6 +84,72 @@ perf(python): cache IAM role lookups
 
 ---
 
+# 🔐 Commit Approval & User Confirmation
+
+**CRITICAL:** AI agents must **NEVER** commit or push code without explicit user approval.
+
+## Pre-Commit Workflow
+
+Before executing any `git commit` or `git push` command:
+
+1. **Show the complete commit message** in a formatted preview:
+
+```
+==================== COMMIT MESSAGE PREVIEW ====================
+<type>(<scope>): <short summary>
+
+- <change 1>
+- <change 2>
+- <change 3>
+
+<optional explanatory paragraph>
+================================================================
+```
+
+2. **Display files to be committed:**
+```
+Files to be committed:
+  modified:   path/to/file1.py
+  new file:   path/to/file2.md
+  deleted:    path/to/file3.txt
+```
+
+3. **Ask for explicit confirmation:**
+```
+Should I proceed with this commit? (yes/no)
+Would you also like me to push to remote? (yes/no)
+```
+
+4. **Only execute** after receiving explicit user approval
+
+## Example Interaction
+
+```
+I've prepared the following commit:
+
+==================== COMMIT MESSAGE PREVIEW ====================
+feat(communication): add 31 modern workplace phrases
+
+- Add sync up, take it offline, level set phrases
+- Add sanity check, gut check, smell test
+- Add land the plane, spin up, heavy lift
+- Add remote work terms (async, OOO, WFH)
+- Add collaboration phrases (pick brain, have back)
+
+Enhances workplace communication guide with commonly used
+modern tech industry terminology.
+================================================================
+
+Files to be committed:
+  modified:   100-ai/pdb/100a-communications-samples.md
+
+Should I proceed with this commit? (yes/no)
+```
+
+**User must explicitly respond "yes" before commit executes.**
+
+---
+
 # 🔀 Branch & Merge Policy
 
 ## Branch Naming
