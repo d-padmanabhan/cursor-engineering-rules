@@ -7,6 +7,7 @@ Quick lookup table for all cursor rules files.
 | File | Description | Priority | Always Apply |
 |------|-------------|----------|--------------|
 | [050-workflow.mdc](050-workflow.mdc) | Workflow orchestration (Plan/Implement/Review) | 50 | Context-aware |
+| [060-agent-audit.mdc](060-agent-audit.mdc) | Agent workflow + audit requirements (no remote writes, verification gate, audit report) | 60 | Yes |
 | [100-core.mdc](100-core.mdc) | Core coding standards and best practices | 100 | Yes |
 | [110-git.mdc](110-git.mdc) | Git standards and workflows | 110 | Context-aware |
 
@@ -127,9 +128,10 @@ Quick lookup table for all cursor rules files.
 
 These rules are automatically applied to all projects:
 
-1. **[100-core.mdc](100-core.mdc)** - Core coding standards
-2. **[310-security.mdc](310-security.mdc)** - Security best practices
-3. **[800-markdown.mdc](800-markdown.mdc)** - Markdown standards
+1. **[060-agent-audit.mdc](060-agent-audit.mdc)** - Agent workflow & audit requirements
+2. **[100-core.mdc](100-core.mdc)** - Core coding standards
+3. **[310-security.mdc](310-security.mdc)** - Security best practices
+4. **[800-markdown.mdc](800-markdown.mdc)** - Markdown standards
 
 ---
 
@@ -145,5 +147,5 @@ These rules are automatically applied to all projects:
 ---
 
 **Last Updated**: December 2025  
-**Total Rules**: 23 files  
+**Total Rules**: 24 files  
 **Lines of Code**: ~11,716 lines

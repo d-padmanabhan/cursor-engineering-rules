@@ -13,6 +13,9 @@ priority: 50
 2. **IMPLEMENT** → Code ONLY what was approved → **STOP** when agreed scope is complete
 3. **REVIEW** → Verify results → Suggest improvements → Return to PLAN phase
 
+**AGENT AUDIT REQUIREMENTS (ADDITIONAL):**
+- Follow `060-agent-audit.mdc` for **no remote writes**, **local branch discipline**, **mandatory checkpoints**, **local verification**, and a **verifiable audit report**.
+
 ** CRITICAL VIOLATIONS TO AVOID:**
 
 ```diff

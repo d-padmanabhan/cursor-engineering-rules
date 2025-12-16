@@ -86,11 +86,13 @@ perf(python): cache IAM role lookups
 
 #  Commit Approval & User Confirmation
 
-**CRITICAL:** AI agents must **NEVER** commit or push code without explicit user approval.
+**CRITICAL:** AI agents must **NEVER** commit code without explicit user approval.
+
+**Remote writes are forbidden:** Do **not** `git push`, open PRs, or take any action that modifies remote state. See `060-agent-audit.mdc`.
 
 ## Pre-Commit Workflow
 
-Before executing any `git commit` or `git push` command:
+Before executing any `git commit` command:
 
 1. **Show the complete commit message** in a formatted preview:
 
@@ -117,7 +119,6 @@ Files to be committed:
 3. **Ask for explicit confirmation:**
 ```
 Should I proceed with this commit? (yes/no)
-Would you also like me to push to remote? (yes/no)
 ```
 
 4. **Only execute** after receiving explicit user approval

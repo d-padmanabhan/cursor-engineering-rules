@@ -1,0 +1,135 @@
+---
+title: Agent Workflow & Audit Requirements
+description: Enforce no-remote-writes, mandatory verification, checkpoints/backups, and an auditable run report for AI agents.
+alwaysApply: true
+priority: 60
+---
+
+# Agent Workflow & Audit Requirements
+
+These rules apply to **AI agents operating in this workspace**. They are designed to make work **reversible**, **verifiable**, and **auditable**.
+
+---
+
+## 1) No Remote Writes (Non-Negotiable)
+
+AI agents MUST NOT modify **any remote state**.
+
+This includes (non-exhaustive):
+- **Git remote**: `git push`, `git fetch` + forced updates, `git tag` pushes, changing remotes, or any operation that writes to `origin`/`upstream`.
+- **GitHub remote**: creating/merging PRs, pushing branches, forking repos, editing issues/PRs via write APIs.
+- **Cloud / infra / data planes**: `terraform apply`, `kubectl apply`, `helm upgrade`, `aws cloudformation deploy`, database migrations against non-local DBs, or any command that changes remote resources.
+
+**Commits are local-only** and allowed **only after explicit user authorization** (see “Commit Authorization” below).
+
+---
+
+## 2) Local Branch Discipline
+
+All work MUST be performed on a **new local branch**.
+
+Requirements:
+- **Propose a branch name first** (follow `110-git.mdc` naming).
+- Create the branch locally and make all changes there.
+- Keep `main` untouched; do not fast-forward or rewrite shared history.
+
+---
+
+## 3) Backups & Checkpoints (Mandatory)
+
+Before making changes, create **identifiable, reversible checkpoints** and record them in the audit report.
+
+Minimum checkpoints:
+- **Baseline identifier**: record `HEAD` SHA and current branch name.
+- **Working tree backup**: create a stash that includes untracked files:
+  - `git stash push -u -m "checkpoint/<id>"`
+- **Rollback anchor**: create a local checkpoint reference:
+  - `git branch "checkpoint/<id>" <baseline-sha>`
+
+Checkpoint rules:
+- Each checkpoint MUST have a unique `<id>` (recommend `YYYYMMDD_HHMMSS`).
+- Every checkpoint MUST be recorded with a timestamp and identifier in the audit report.
+
+---
+
+## 4) Local Verification Gate (Mandatory)
+
+Before proposing any commit messages (or asking to commit), run local verification **as applicable**:
+- **Unit/integration tests**
+- **Lint**
+- **Formatting**
+- **Type checks**
+- **Build/package step**
+
+“As applicable” means:
+- If the repo/tooling supports it, run it.
+- If it cannot be run (missing tool, missing dependency install, platform limitation, no config present), you MUST state:
+  - the exact reason,
+  - the closest substitute you ran instead (if any),
+  - and what evidence you relied on.
+
+Examples (not exhaustive):
+- Python: `pytest`, `ruff`, `black`, `mypy`/`pyright`
+- JS/TS: `npm test`, `npm run lint`, `npm run build`, `tsc --noEmit`
+- General: `pre-commit run --all-files` (if configured)
+
+---
+
+## 5) Verifiable Audit Report (Mandatory)
+
+For every non-trivial task, write **one** report file at a deterministic path.
+
+### Path rules
+- If the repo has an `extras/` folder **and** it is gitignored, write to:
+  - `extras/agent_reports/agent_report_<repo>_<branch>_<yyyymmdd_HHMMSS>.md`
+- Otherwise write to:
+  - `/tmp/agent_report_<repo>_<branch>_<yyyymmdd_HHMMSS>.md`
+
+### Required contents
+The report MUST include:
+- Start and end timestamps (**local time and UTC**)
+- Repo name, branch name, `HEAD` SHA
+- Every command executed (copy-pasteable) with **exit codes**
+- Summary of changes:
+  - `git status`
+  - `git diff --stat`
+  - list of changed files
+- Verification outputs: test/lint/format/type-check/build summaries
+- “Planned commits” section with proposed commit messages (even if no commit is made)
+- Checkpoints/backups section with timestamps and identifiers
+
+---
+
+## 6) If Commits Are Authorized Later
+
+Only after the user explicitly authorizes commits:
+- Commit **locally** with the agreed messages.
+- Append to the audit report:
+  - commit SHAs and commit messages
+  - `git log --date=iso-strict -n <N>` output (where `<N>` covers the new commits)
+
+---
+
+## 7) GitHub CLI (gh) Read-Only Mode
+
+Allowed:
+- `gh repo view`
+- `gh issue list` / `gh issue view`
+- `gh pr list` / `gh pr view`
+- `gh api` **GET requests only**
+
+Disallowed (non-exhaustive):
+- `gh pr create`, `gh pr merge`
+- `gh repo fork`
+- any `gh api` mutation (POST/PATCH/PUT/DELETE)
+
+---
+
+## 8) Method to the Madness (Required Sequence)
+
+Understand task → propose plan → create minimal change set → take checkpoints →
+run verification → produce audit report → propose commit(s) → wait for approval
+
+---
+
+**Last Updated**: December 2025
