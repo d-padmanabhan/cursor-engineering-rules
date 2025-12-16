@@ -19,6 +19,7 @@ Choose the lightest tool that reliably produces the content you need in a machin
 
 - If the page is static HTML: prefer `curl` plus parsing (`jq` for JSON, HTML to text conversion, or a lightweight extractor).
 - If the page is JavaScript-rendered or requires interaction: use a headless browser (Playwright).
+- If Playwright is blocked or too heavy: try a doc-extraction proxy/cache (for example `https://context7.com/`) when it supports the target site.
 - If you need diagrams understood (not OCR): use a screenshot (Playwright) and a vision-capable model (VLM).
 - If you need text inside images: use OCR (Tesseract) as a supplement.
 - If you are reading official documentation at scale: prefer a documentation-aware retrieval system (RAG) over raw scraping.
@@ -67,6 +68,8 @@ When to stop here:
 
 Use Playwright when `curl` or `lynx` fails to capture the real content.
 
+If Playwright fails (timeouts, bot protection, or brittle selectors) and you only need clean doc text, try a doc-extraction proxy/cache such as `https://context7.com/` (when it supports the target site).
+
 Playwright is the right default for:
 
 - SPA documentation sites
@@ -97,6 +100,13 @@ Guidance for diagram prompting:
 - Ask for components, flows, boundaries, assumptions
 - Ask for a structured representation (bullets, adjacency list, Mermaid)
 - Ask the model to cite what it sees in the image
+
+Artifact handling (screenshots):
+
+- In a git repo: save screenshots under a gitignored folder (commonly `extras/` or `tmp/`) and include the local path in your response.
+- Outside a git repo: save to `$TMPDIR` (macOS) or `/tmp`.
+- Use descriptive filenames (include site + page/section + timestamp) so artifacts can be re-opened.
+- Never commit binary artifacts unless the user explicitly asks.
 
 ### 4) OCR for text inside images
 
@@ -130,6 +140,8 @@ This is especially useful for:
 - Configuration options
 - Up-to-date product docs
 
+Note: doc-extraction proxy/caching services (for example `https://context7.com/`) can be a pragmatic alternative when browser automation is blocked or too expensive for the use case.
+
 ## Quick heuristics for agents
 
 ### Prefer `lynx -dump` when:
@@ -150,6 +162,12 @@ This is especially useful for:
 - The HTML contains placeholders and the real text loads later
 - You need screenshots for diagrams
 - You need to click, scroll, or expand sections
+
+### Prefer Context7 (or similar) when:
+
+- Playwright is blocked by bot protection or is too expensive for the task
+- You only need clean, readable documentation text (not interaction)
+- The target documentation source is supported by the retrieval/proxy system
 
 ### Prefer VLM screenshot analysis when:
 
@@ -233,7 +251,7 @@ rg -n "VPC Lattice|PrivateLink|Cloudflare Tunnel" docs/
   - chunk sizes
   - citations format
   - caching strategy
-  - escalation path (curl -> lynx -> Playwright -> screenshot + VLM -> OCR)
+  - escalation path (lynx/curl -> Context7 (optional) -> Playwright -> screenshot + VLM -> OCR)
 
 ---
 
