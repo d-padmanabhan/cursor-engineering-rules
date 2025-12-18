@@ -8,21 +8,36 @@ These files are **examples/templates** to help you configure MCP servers.
 
 ## Files
 
-- **`claude_desktop_config.common.example.json`**: A starter `mcpServers` block for common servers (AWS + Cloudflare). **Does not include** GitHub remote
+- **`claude_desktop_config.common.example.json`**: A starter `mcpServers` block for common servers (AWS + Cloudflare)
 - **`claude_desktop_config.github_remote.example.json`**: A separate example for the GitHub remote MCP server
 
-## How to use (Claude Desktop)
+## How to use (Cursor Agent)
 
-1. Open Claude Desktop config:
+1. Open (or create) your Cursor MCP config:
 
 ```bash
-code ~/Library/Application\ Support/Claude/claude_desktop_config.json
+mkdir -p .cursor
+code .cursor/mcp.json
 ```
 
-1. Merge one or both example files under the top-level `mcpServers` key.
+1. Cursor expects a top-level `servers` object. Take the entries under each example file’s `mcpServers` object and paste them under `servers`.
+
+Example:
+
+```json
+{
+  "servers": {
+    "aws-docs": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["awslabs.aws-documentation-mcp-server@latest"]
+    }
+  }
+}
+```
 
 > [!TIP]
-> Claude Desktop expects a single `mcpServers` object. If you copy/paste multiple examples, merge the objects (don’t nest `mcpServers` inside `mcpServers`).
+> If you copy/paste multiple examples, merge server entries at the same level (don’t nest `servers` inside `servers`).
 
 ## Environment variables
 
