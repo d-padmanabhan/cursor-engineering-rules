@@ -821,6 +821,5 @@ resource "aws_instance" "app" {
 
 ---
 
-**Last Updated**: December 2025
 **Terraform Version**: 1.6.x
 **AWS Provider Version**: 5.x

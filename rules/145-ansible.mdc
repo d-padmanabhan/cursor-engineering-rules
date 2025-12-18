@@ -830,5 +830,4 @@ molecule destroy   # Destroy test instance
 
 ---
 
-**Last Updated**: December 2025
 **Purpose**: Ansible configuration management and automation best practices

@@ -836,5 +836,4 @@ type Role = typeof ROLES[number];
 
 ---
 
-**Last Updated**: December 2025
 **Purpose**: Modern TypeScript patterns and type safety best practices

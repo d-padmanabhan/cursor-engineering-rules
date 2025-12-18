@@ -855,5 +855,4 @@ resource "google_monitoring_alert_policy" "high_error_rate" {
 
 ---
 
-**Last Updated**: December 2025
 **Purpose**: Google Cloud Platform engineering and best practices

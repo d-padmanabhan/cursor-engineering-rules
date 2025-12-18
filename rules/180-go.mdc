@@ -702,5 +702,4 @@ func GetUser(ctx context.Context, id string) (*User, error) {
 
 **Context Matters**: These rules optimize for long-lived production services. A one-off script has different needs than a high-traffic API. Deviations are fine when justified and intentional.
 
-**Last Updated**: December 2025
 **Go Version**: 1.21+ (with 1.18+ generics support)

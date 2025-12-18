@@ -673,6 +673,5 @@ curl -X PATCH \
 
 ---
 
-**Last Updated**: December 2025
 **Cloudflare API Version**: v4
 **Terraform Provider Version**: >= 5.14

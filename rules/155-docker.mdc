@@ -787,5 +787,4 @@ docker port <container_id>
 
 ---
 
-**Last Updated**: December 2025
 **Purpose**: Production-ready Docker and container best practices

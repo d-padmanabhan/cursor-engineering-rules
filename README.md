@@ -3,10 +3,8 @@
 > **Production-grade Cursor rules for 15+ languages and cloud platforms**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Rules: 35](https://img.shields.io/badge/Rules-35-blue.svg)](rules/)
-[![Lines: 22K+](https://img.shields.io/badge/Lines-22K%2B-green.svg)](rules/)
 
-Comprehensive, battle-tested Cursor IDE rules for professional software engineering. 35 curated `.mdc` files covering languages, cloud platforms, DevOps tools, and engineering patterns.
+Comprehensive, battle-tested Cursor IDE rules for professional software engineering. Curated `.mdc` files covering languages, cloud platforms, DevOps tools, and engineering patterns.
 
 ---
 
@@ -98,7 +96,7 @@ npm link
 
 - Fetch workflow guide (Plan/Implement/Review)
 - Fetch specific rules by category/topic
-- List all 35+ available rules
+- List all available rules
 - Just-in-time rule loading (load only what you need)
 
 See [mcp/cursor-rules-mcp/README.md](mcp/cursor-rules-mcp/README.md) for full documentation.

@@ -754,6 +754,5 @@ Stay in `.js` with **JSDoc + `// @ts-check`** and a `tsconfig.json` that enables
 
 ---
 
-**Last Updated**: December 2025
 **Node.js Version**: 18+ (LTS)
 **ES Version**: ES2022

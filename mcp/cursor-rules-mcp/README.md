@@ -253,7 +253,6 @@ mcp/cursor-rules-mcp/
 | Feature | AI Developer Guide | Cursor Engineering Rules |
 |---------|-------------------|--------------------------|
 | **Focus** | Workflow philosophy | Production standards |
-| **Lines of Code** | ~4,000 | ~22,000+ |
 | **Languages** | 3 (Python, Go, Shell) | 15+ |
 | **Cloud Platforms** | 0 | 4 (AWS, Azure, GCP, Cloudflare) |
 | **Infrastructure** | Basic | Comprehensive (Terraform, K8s, Docker, etc.) |

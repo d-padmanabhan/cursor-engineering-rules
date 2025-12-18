@@ -878,5 +878,4 @@ resource autoScaleSettings 'Microsoft.Insights/autoscalesettings@2022-10-01' = {
 
 ---
 
-**Last Updated**: December 2025
 **Purpose**: Microsoft Azure platform engineering and best practices

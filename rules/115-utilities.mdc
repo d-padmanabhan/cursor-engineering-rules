@@ -255,5 +255,4 @@ rg -n "VPC Lattice|PrivateLink|Cloudflare Tunnel" docs/
 
 ---
 
-**Last Updated**: December 2025
 **Purpose**: Tool selection and repeatable patterns for agents reading docs, blogs, logs, and diagrams

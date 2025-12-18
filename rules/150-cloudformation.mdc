@@ -79,4 +79,3 @@ aws cloudformation detect-stack-drift --stack-name my-stack
 - [ ] No hardcoded secrets or credentials
 ---
 
-**Last Updated**: December 2025

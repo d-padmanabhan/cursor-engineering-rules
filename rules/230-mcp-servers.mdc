@@ -694,5 +694,4 @@ When reviewing MCP tool code, check:
 
 ---
 
-**Last Updated**: December 2025
 **Purpose**: MCP server patterns, OAuth, long-running tasks, security, and registry publishing

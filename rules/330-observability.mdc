@@ -374,5 +374,4 @@ app.get('/health', async (req, res) => {
 
 ---
 
-**Last Updated**: December 2025
 **Purpose**: Monitoring, logging, and observability best practices

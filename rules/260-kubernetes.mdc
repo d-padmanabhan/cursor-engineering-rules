@@ -510,4 +510,3 @@ When reviewing Kubernetes code, check:
 - [ ] Observability configured (metrics, logs)
 ---
 
-**Last Updated**: December 2025

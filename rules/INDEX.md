@@ -150,7 +150,3 @@ These rules are automatically applied to all projects:
 - **[CHANGELOG.md](../CHANGELOG.md)** - Version history
 
 ---
-
-**Last Updated**: December 2025  
-**Total Rules**: 36 files  
-**Lines of Code**: ~22,517 lines
