@@ -8,19 +8,23 @@ These files are **examples/templates** to help you configure MCP servers.
 
 ## Files
 
-- **`claude_desktop_config.common.example.json`**: A starter `mcpServers` block for common servers (AWS + Cloudflare)
-- **`claude_desktop_config.github_remote.example.json`**: A separate example for the GitHub remote MCP server
+- **`mcpServers.common.example.json`**: Common MCP servers (AWS + Cloudflare)
+- **`mcpServers.github_remote.example.json`**: Optional GitHub remote MCP server example
 
-## How to use (Cursor Agent)
+## How to use the common MCP servers
 
-1. Open (or create) your Cursor MCP config:
+This section shows how to use `mcpServers.common.example.json`.
+
+### Cursor Agent
+
+1. Open (or create) your project MCP config:
 
 ```bash
 mkdir -p .cursor
 code .cursor/mcp.json
 ```
 
-1. Cursor expects a top-level `servers` object. Take the entries under each example file’s `mcpServers` object and paste them under `servers`.
+1. Cursor expects a top-level `servers` object. Copy the server entries from `mcpServers.common.example.json`’s `mcpServers` object and paste them under `servers`.
 
 Example:
 
@@ -37,7 +41,15 @@ Example:
 ```
 
 > [!TIP]
-> If you copy/paste multiple examples, merge server entries at the same level (don’t nest `servers` inside `servers`).
+> If you add more servers later, merge entries at the same level (don’t nest `servers` inside `servers`).
+
+### Claude Desktop (optional)
+
+If you use a client that expects `mcpServers` at the top level, you can usually paste the contents of `mcpServers.common.example.json` directly into that client’s config (or merge the keys under its existing `mcpServers` object).
+
+## Optional: GitHub remote MCP server
+
+If you want to add GitHub’s remote MCP server, use `mcpServers.github_remote.example.json` and provide `GITHUB_MCP_PAT` via environment variables.
 
 ## Environment variables
 
