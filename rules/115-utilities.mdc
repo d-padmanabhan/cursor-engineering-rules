@@ -2,7 +2,7 @@
 title: Command-Line Utilities & Documentation Ingestion Tools
 description: Practical tool selection for agents reading docs, blogs, logs, and diagrams (curl, lynx, jq, httpie, ripgrep, Playwright, OCR, VLM)
 priority: 115
-alwaysApply: false
+alwaysApply: true
 files:
   include:
     - "**/*.sh"
