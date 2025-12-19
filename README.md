@@ -289,7 +289,7 @@ This project was inspired by and incorporates patterns from:
 
 ## Related Projects
 
-- [dotcursorrules.com](https://dotcursorrules.com/) - Community directory of framework-specific cursor rules (Next.js, Laravel, React, etc.). Great complement to this repo: use dotcursorrules for **framework recipes** and this repo for **engineering discipline**.
+- [dotcursorrules.com](https://dotcursorrules.com/) - Community directory of framework-specific cursor rules (Next.js, Laravel, React, etc.). Use dotcursorrules for **framework recipes** and this repo for **engineering discipline**.
 - [eslint-config-airbnb](https://github.com/airbnb/javascript) - JavaScript style guide
 - [google-styleguides](https://github.com/google/styleguide) - Google's style guides
 - [uber-go-guide](https://github.com/uber-go/guide) - Uber's Go style guide
