@@ -36,7 +36,7 @@ files:
 
 **Tooling Baseline (CI/Lint/Format):**
 
-  * **Python:** `ruff` + `black` (fixed line length), `pip-audit`, pylint (≥9.0)
+  * **Python:** `ruff` + `black` (fixed line length), `ty` or `mypy --strict` (type checking), `pip-audit`, pylint (≥9.0)
   * **Bash:** `shfmt` + `shellcheck`
   * **Go:** `gofmt` + `golangci-lint`, `govulncheck`
   * **JS/TS:** `eslint --max-warnings=0` (strict), `npm audit`
@@ -61,9 +61,9 @@ When providing feedback, organize by impact:
 
 1.  **Identify main issues first** before diving into details.
 2.  **Provide specific, actionable suggestions** with working code examples.
-3.  **Explain the "why"** — what benefit does the change provide?
+3.  **Explain the "why"** - what benefit does the change provide?
 4.  **Suggest incremental refactoring** over big-bang rewrites.
-5.  **Preserve existing code** — no placeholders like `// ... (existing code)` or incomplete sections.
+5.  **Preserve existing code** - no placeholders like `// ... (existing code)` or incomplete sections.
 
 ### What to Evaluate
 
@@ -121,11 +121,11 @@ Prioritize high-impact changes that don't require major refactoring.
 
 ### Generation Approach
 
-1.  **Handle ambiguity proactively** — If scope is ambiguous, proceed with minimal **Assumptions** and list ≤3 targeted questions that could change the approach materially.
-2.  **Design clean architecture** — Easy to test, maintain, and extend.
-3.  **Provide complete, runnable code** — No TODOs, placeholders, or incomplete sections.
-4.  **Include practical examples** — Usage examples or basic test cases.
-5.  **Document appropriately** — Inline comments for complex logic only; clear function/class docs.
+1.  **Handle ambiguity proactively** - If scope is ambiguous, proceed with minimal **Assumptions** and list ≤3 targeted questions that could change the approach materially.
+2.  **Design clean architecture** - Easy to test, maintain, and extend.
+3.  **Provide complete, runnable code** - No TODOs, placeholders, or incomplete sections.
+4.  **Include practical examples** - Usage examples or basic test cases.
+5.  **Document appropriately** - Inline comments for complex logic only; clear function/class docs.
 
 ### What to Include
 
@@ -198,14 +198,14 @@ When asking questions (limit to ≤3), prioritize those that would most change t
 
 Before delivering code or feedback, verify:
 
-  * [ ] **Addresses the actual problem** — Not solving a different problem.
-  * [ ] **Simplest viable solution** — No unnecessary complexity.
-  * [ ] **No new bugs introduced** — Changes don't break existing functionality.
-  * [ ] **Working code examples** — All suggestions include runnable code.
-  * [ ] **Clear explanations** — The "why" is explained for non-obvious changes.
-  * [ ] **Appropriate scope** — Matches problem complexity (not over/under-engineered).
-  * [ ] **Preserves existing code** — Only changes what's necessary.
-  * [ ] **Evidence-based recommendations** — Mark any unverified claim as **Assumption**; prefer references (docs/benchmarks) for non-obvious recommendations.
+  * [ ] **Addresses the actual problem** - Not solving a different problem.
+  * [ ] **Simplest viable solution** - No unnecessary complexity.
+  * [ ] **No new bugs introduced** - Changes don't break existing functionality.
+  * [ ] **Working code examples** - All suggestions include runnable code.
+  * [ ] **Clear explanations** - The "why" is explained for non-obvious changes.
+  * [ ] **Appropriate scope** - Matches problem complexity (not over/under-engineered).
+  * [ ] **Preserves existing code** - Only changes what's necessary.
+  * [ ] **Evidence-based recommendations** - Mark any unverified claim as **Assumption**; prefer references (docs/benchmarks) for non-obvious recommendations.
 
 -----
 
@@ -326,7 +326,7 @@ To refine the solution, clarify:
 
 **Terraform / CloudFormation:**
 - **Terraform Naming:** `snake_case` for resource, variable, output names.
-- **CloudFormation Naming:** Hungarian notation — parameters `p*`, resources `r*`, conditions `c*`, outputs `o*`.
+- **CloudFormation Naming:** Hungarian notation - parameters `p*`, resources `r*`, conditions `c*`, outputs `o*`.
 - **Terraform Best Practices:**
   - Use remote state with locking (S3 + DynamoDB).
   - Tag all resources with `owner`, `environment`, `cost_center`.
@@ -382,7 +382,7 @@ Justification: Query runs \~1000/min against mostly-static data
 
 ##  Remember
 
-> "Perfection is achieved not when there is nothing more to add, but when there is nothing left to take away." — Antoine de Saint-Exupéry
+> "Perfection is achieved not when there is nothing more to add, but when there is nothing left to take away." - Antoine de Saint-Exupéry
 
 The best code is **Simple**, **Correct**, **Maintainable**, and **Appropriate** to the problem.
 ---

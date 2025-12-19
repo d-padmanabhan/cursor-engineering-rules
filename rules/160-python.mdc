@@ -23,7 +23,7 @@ When providing code assistance, follow these guardrails:
 - **Keep It Simple**: Prefer straightforward solutions using standard library features over complex architectures.
 - **Testing Guidance**: Suggest appropriate tests or improvements to existing test coverage when reviewing code.
 - **Explain Trade-offs**: When proposing optimizations or refactoring, clearly explain the benefits and costs (complexity, maintenance, performance).
-- **Respect Context**: Analyze the provided code and suggest improvements that align with its scope and purpose—don't transform a 20-line script into a 200-line framework.
+- **Respect Context**: Analyze the provided code and suggest improvements that align with its scope and purpose - don't transform a 20-line script into a 200-line framework.
 
 ## 1) Standards
 
@@ -46,8 +46,12 @@ When providing code assistance, follow these guardrails:
     - `Set` → `set`
     - `Union[X, Y]` → `X | Y`
     - `Optional[X]` → `X | None`
-- **Type Checking:** Enable strict mode (`mypy --strict`, `pyright`, or `pyre`) where appropriate. Use `NewType`, `TypedDict`, or `TypeAlias` for specificity.
-- **Dependencies:** Use `uv` for package management. Define dependencies in `pyproject.toml` (not `requirements.txt`). Introduce third-party libraries only when needed—stick to stdlib otherwise.
+- **Type Checking:** Use `ty` (recommended), `mypy --strict`, or `pyright`.
+  - **ty** (recommended): Astral's Rust-based type checker, 10-60x faster than mypy with excellent diagnostics. Install: `uv tool install ty@latest`, run: `ty check .`
+  - **mypy**: Stable, widely adopted. Run with `--strict` for full coverage.
+  - **pyright**: Microsoft's type checker, good VS Code integration.
+  - Use `NewType`, `TypedDict`, or `TypeAlias` for specificity.
+- **Dependencies:** Use `uv` for package management. Define dependencies in `pyproject.toml` (not `requirements.txt`). Introduce third-party libraries only when needed - stick to stdlib otherwise.
 - **Circular Imports:** Avoid by restructuring (move shared logic to separate module).
 - **Local Libraries:** Use `aws_utils.py`, `cloudflare_utils.py`, `utils.py` for common tasks to avoid duplication.
 
@@ -82,9 +86,9 @@ uv sync
 ### Core Language Features
 - **f-strings:** Use `f"User: {user_name}"` for formatting. Python 3.14: `f"{text!r}"` for debugging.
 - **Exception Handling:** Use `try-except-else-finally` for complex flows.
-- **Assertions:** Use `assert stock >= 0, "Stock cannot be negative"` for development—not production.
-- **Comprehensions:** Use `[price * 2 for price in prices]` where clear—avoid if it reduces readability.
-- **Walrus Operator (`:=`):** Use `if (count := len(items)) > 5:` for inline assignments—don't force it.
+- **Assertions:** Use `assert stock >= 0, "Stock cannot be negative"` for development - not production.
+- **Comprehensions:** Use `[price * 2 for price in prices]` where clear - avoid if it reduces readability.
+- **Walrus Operator (`:=`):** Use `if (count := len(items)) > 5:` for inline assignments - don't force it.
 - **match-case:** Simplify complex conditionals:
   ```python
   def handle_response(code: int) -> str:
@@ -102,7 +106,7 @@ uv sync
 - **`functools.partial`:** Pre-specify function arguments: `partial(multiply, 2)`.
 - **`functools.singledispatch`:** Polymorphic functions based on type.
 - **`functools.total_ordering`:** Reduce comparison method boilerplate.
-- **map/filter/reduce:** Use where readable—prefer comprehensions otherwise.
+- **map/filter/reduce:** Use where readable - prefer comprehensions otherwise.
 
 ### Data Structures
 - **dataclasses:** Use for data-centric classes:
@@ -269,7 +273,7 @@ uv sync
 - **Speed Boosts:** Use `numba` or `cython` for performance-critical loops (if profiling justifies).
 - **Efficient Lookups:** Use `set` for O(1) lookups, `heapq` for priority queues, `bisect` for sorted lists.
 - **Parallel Computing:** Use `ray` or `dask` for distributed workloads if needed.
-- **Complexity Analysis:** Avoid O(n²) loops—refactor with better data structures.
+- **Complexity Analysis:** Avoid O(n²) loops - refactor with better data structures.
 
 ## 8) AWS & Boto3 Best Practices
 
@@ -441,7 +445,7 @@ def validate_region(region: str) -> str:
 - **Mocking:** Use `unittest.mock.patch` or `pytest-mock` for external dependencies.
 - **Parameterized Tests:** Use `@pytest.mark.parametrize` for multiple inputs.
 - **Test-Driven Development (TDD):** Write tests before implementation where appropriate.
-- **Type Checking:** Run `mypy --strict` to catch type errors.
+- **Type Checking:** Run `ty check .` (fast, recommended) or `mypy --strict` (stable) to catch type errors.
 
 ## 10) Data Handling & Integration
 
@@ -473,7 +477,7 @@ def validate_region(region: str) -> str:
 
 ## 11a) Design Patterns
 
-Design patterns provide reusable solutions to common problems. Use them where they add clarity and maintainability—avoid forcing patterns where simple code suffices.
+Design patterns provide reusable solutions to common problems. Use them where they add clarity and maintainability - avoid forcing patterns where simple code suffices.
 
 ### Factory Method Pattern
 Creates objects without specifying their exact class. Useful when object creation logic is complex or varies based on input.
@@ -749,7 +753,7 @@ def function_name(param: str) -> int:
 
 ## 17) Scaling Guidelines
 
-- **Small Scripts (<50 lines):** Stick to basics—skip advanced features unless critical.
+- **Small Scripts (<50 lines):** Stick to basics - skip advanced features unless critical.
 - **Medium Scripts (50–200 lines):** Add type hints, logging, small functions. Consider `argparse` or `Pydantic`.
 - **Large Projects (>200 lines):** Use OOP, SOLID principles, plugins, deployment tools. Optimize with profiling/concurrency.
 

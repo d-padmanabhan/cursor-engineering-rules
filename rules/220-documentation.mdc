@@ -147,6 +147,19 @@ docs/
 - Define technical terms
 - Use examples liberally
 
+### Punctuation
+
+**Never use em dashes (—) or en dashes (–). Use hyphens (-) instead.**
+
+- **Bad:** `Astral's type checker—10x faster than mypy—is now available.`
+- **Good:** `Astral's type checker - 10x faster than mypy - is now available.`
+
+**Rationale:**
+- Em dashes render inconsistently across fonts and platforms
+- Hyphens are universally supported and easier to type
+- Simpler punctuation improves readability in technical docs
+- Consistent with code style (where em dashes don't exist)
+
 ### Emoji Usage
 
 **Avoid emojis in professional technical documentation:**

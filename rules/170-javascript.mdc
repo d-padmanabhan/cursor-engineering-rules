@@ -200,7 +200,7 @@ const logger = {
 * **Array methods**: `map/filter/reduce` where they increase clarity
 * **Async/await** over raw promises; use **timeouts** where relevant
 * **Higher-order functions** for cross-cutting concerns (timing, retries, caching)
-* **Generators/iterators** for lazy/streaming pipelines—document yield/close semantics
+* **Generators/iterators** for lazy/streaming pipelines - document yield/close semantics
 * **Decorators** only if the toolchain supports them; otherwise HOFs
 
 *Plain-JS "decorator" alternative:*
@@ -666,13 +666,13 @@ import { total } from './priceService.js';
    **After:** …
    **Why:** impact/trade-offs.
 
-2. **[Bug] Title** — Before / After / Why
+2. **[Bug] Title** - Before / After / Why
 
-3. **[Performance] Title** — Before / After / Why
+3. **[Performance] Title** - Before / After / Why
 
-4. **[Readability] Title** — Before / After / Why
+4. **[Readability] Title** - Before / After / Why
 
-5. **[Best Practice] Title** — Before / After / Why
+5. **[Best Practice] Title** - Before / After / Why
 
 **Tests to add/update:** bullets with small Jest snippets.
 **Docs to add:** which exports need JSDoc/examples.
@@ -715,7 +715,7 @@ export function doThing(items) {
 
 ---
 
-## 24) Appendix — JSDoc Cheatsheet
+## 24) Appendix - JSDoc Cheatsheet
 
 * **Union/optional/nullable**
 
@@ -748,7 +748,7 @@ async function ping(url) { return fetch(url); }
 
 ---
 
-## 25) FAQ — "Type annotations can only be used in TS files"
+## 25) FAQ - "Type annotations can only be used in TS files"
 
 Stay in `.js` with **JSDoc + `// @ts-check`** and a `tsconfig.json` that enables `"allowJs": true, "checkJs": true, "noEmit": true`. If you need inline TS syntax, rename to `.ts` and adopt a TS toolchain.
 
