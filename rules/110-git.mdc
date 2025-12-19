@@ -276,11 +276,88 @@ refactor(go): extract S3 client init
 
 ---
 
+#  Git Worktrees & Parallel Development
+
+Git worktrees allow you to work on multiple branches simultaneously in separate directories. This is especially useful for:
+
+- AI agents working on multiple features in parallel
+- Reviewing PRs while continuing development
+- Running long tests on one branch while coding on another
+- Comparing implementations side-by-side
+
+## Phantom (Recommended)
+
+**Phantom** simplifies Git worktree management with intuitive commands and AI agent integration.
+
+**Installation:**
+```bash
+brew install phantom
+# or
+npm install -g @aku11i/phantom
+```
+
+**Basic Usage:**
+```bash
+# Create a worktree for a new feature
+phantom create feature-auth
+
+# List all worktrees
+phantom list
+
+# Open shell in worktree
+phantom shell feature-auth
+
+# Run command in any worktree
+phantom exec feature-auth npm test
+
+# Open editor in worktree
+phantom edit feature-auth
+
+# Delete when done
+phantom delete feature-auth
+```
+
+**AI Agent Integration:**
+
+Phantom provides an MCP server for AI coding assistants to autonomously manage worktrees:
+
+```bash
+# Configure AI assistant
+phantom preferences set ai claude
+
+# Launch AI in worktree
+phantom ai feature-auth
+```
+
+> [!TIP]
+> For parallel AI development, configure the Phantom MCP server in your editor. AI agents can then create isolated worktrees for each feature, enabling true parallel development without branch conflicts.
+
+**Editor Integration:**
+```bash
+# Configure preferred editor (stored in git config)
+phantom preferences set editor "cursor --reuse-window"
+
+# Open worktree in editor
+phantom edit feature-auth
+```
+
+**GitHub Integration:**
+```bash
+# Create worktree from PR
+phantom create --pr 123
+
+# Create worktree from issue
+phantom create --issue 456
+```
+
+---
+
 #  Optional Tooling
 
 * **commitlint** for CI validation of headers
 * **auto-changelog** from conventional commits
 * **actionlint** for `.github/workflows/**`
+* **phantom** for Git worktree management and parallel development
 
 ---
 
