@@ -270,7 +270,7 @@ uv sync
   - **`asyncio`:** For I/O-bound tasks.
   - **`threading`:** For I/O-bound with blocking libraries.
   - **`multiprocessing`:** For CPU-bound tasks.
-- **Speed Boosts:** Use `numba` or `cython` for performance-critical loops (if profiling justifies).
+- **Speed Boosts:** Use `numba` (NumPy-focused), `cython` (C extensions), or `codon` (`@codon.jit` for general Python) for performance-critical code. Codon has fewer restrictions than Numba but isn't a full CPython drop-in. Profile first.
 - **Efficient Lookups:** Use `set` for O(1) lookups, `heapq` for priority queues, `bisect` for sorted lists.
 - **Parallel Computing:** Use `ray` or `dask` for distributed workloads if needed.
 - **Complexity Analysis:** Avoid O(n²) loops - refactor with better data structures.
@@ -450,6 +450,8 @@ def validate_region(region: str) -> str:
 ## 10) Data Handling & Integration
 
 - **pandas:** Use for tabular data analysis: `df[df["sales"] > 100]`.
+- **polars:** Rust-based DataFrame library, 10-100x faster than pandas for large datasets. Prefer for ETL/data pipelines.
+- **duckdb:** In-process SQL analytics - query CSV/Parquet/DataFrames without loading into memory.
 - **SQLAlchemy:** Use for database ORM if needed.
 - **cerberus:** Alternative to Pydantic for simple validation.
 - **jinja/jinjasql:** Use for templating (HTML, SQL, etc.).
