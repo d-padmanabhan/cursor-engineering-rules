@@ -5,6 +5,48 @@ alwaysApply: true
 priority: 110
 ---
 
+# Git Fundamentals
+
+## What is a Ref?
+
+A **ref** (reference) is Git's way of creating human-readable names for commit hashes. Instead of remembering `a3f8b2c...`, you use names like `main` or `v1.2.3`.
+
+Refs are bookmarks pointing to specific commits in your repository's history. They are stored as simple text files in `.git/refs/` containing a 40-character commit SHA.
+
+## Types of Refs
+
+| Ref Type | Location | Purpose |
+|----------|----------|---------|
+| Local branches | `refs/heads/main` | Track your local work |
+| Remote-tracking branches | `refs/remotes/origin/main` | Your local copy of what the remote server has |
+| Tags | `refs/tags/v1.2.3` | Permanent markers for releases |
+| HEAD | `.git/HEAD` | Special pointer to wherever you are right now |
+
+## The Three-Tier Model
+
+Understanding the relationship between remote and local branches prevents confusion:
+
+```
+Remote branch (on server)     :  main
+                                  ↓
+Remote-tracking branch (local):  origin/main
+                                  ↓
+Local branch (your work)      :  main
+```
+
+**Key insight:** When you run `git fetch`, only the remote-tracking branch updates. Your local branch and working files remain untouched.
+
+This is why you can safely inspect remote changes before integrating them:
+
+```bash
+git fetch origin
+git log origin/main          # See what's new on remote
+git diff origin/main         # Compare with your local state
+git merge origin/main        # Integrate when ready
+```
+
+---
+
 #  Commit Message Standards
 
 **Goal:** clean, conventional, descriptive commits that communicate intent and feed changelogs.
@@ -174,6 +216,149 @@ docs/upgrade-guide-3-8
 * Squash only noisy/WIP histories
 * Rebase onto `main` before merge (unless policy forbids)
 * Separate mechanical formatting from logical changes
+
+---
+
+# Fetch, Pull & Sync Patterns
+
+## Fetch vs Pull
+
+| Command | What It Does | Touches Working Tree? |
+|---------|--------------|----------------------|
+| `git fetch` | Downloads commits, updates remote-tracking refs | No |
+| `git pull` | Fetch + merge (or rebase) into current branch | Yes |
+
+**Why fetch is safer:** You can inspect what changed remotely before deciding to integrate. Fetch updates your "map" of the remote without changing your actual location or files.
+
+## Always Prune Stale Refs
+
+When branches are deleted on the remote, your local remote-tracking refs become stale "ghosts." Use `--prune` to clean them up:
+
+```bash
+git fetch origin --prune
+```
+
+**Recommended:** Enable automatic pruning globally:
+
+```bash
+git config --global fetch.prune true
+```
+
+Now every `git fetch` and `git pull` automatically removes stale remote-tracking branches.
+
+> [!NOTE]
+> `--prune` only removes remote-tracking branches (like `origin/feat-old`). It does NOT delete your local branches. Your local work is always safe.
+
+## Robust Feature Branch Workflow
+
+When creating a feature branch from an updated `main`, use this explicit pattern:
+
+```bash
+# Step 1: Download latest from remote, clean up deleted branches
+git fetch origin --prune
+
+# Step 2: Move to main branch explicitly
+git switch main
+
+# Step 3: Fast-forward only (refuses to create merge commits)
+git pull --ff-only
+
+# Step 4: Create and switch to feature branch
+git switch -c feat/your-feature-name
+```
+
+**Why this pattern?**
+
+| Step | Purpose |
+|------|---------|
+| `git fetch origin --prune` | Get latest state, clean stale refs |
+| `git switch main` | Ensures you start from the right place |
+| `git pull --ff-only` | Prevents accidental merge bubbles |
+| `git switch -c` | Creates branch from now-updated main |
+
+## Quick Alternative (With Caveats)
+
+Skip your local `main` entirely by branching directly from `origin/main`:
+
+```bash
+git fetch origin --prune && git switch -c feat/your-feature origin/main
+```
+
+**Advantages:**
+- Faster (one fewer step)
+- Works even if your local `main` is in a weird state
+- Guaranteed to start from remote's latest
+
+**Use when:** Creating throwaway branches or when local `main` is messy.
+
+## One-Liner (Legacy, Less Safe)
+
+```bash
+git pull origin main && git checkout -b feat/your-feature
+```
+
+**Downsides:**
+- No guarantee you were on `main` first (can mix changes if on wrong branch)
+- No `--ff-only` protection (could create merge commit)
+- Uses `checkout` (works on older Git but less clear than `switch`)
+
+---
+
+# Modern Git Commands
+
+Git 2.23+ split the multi-purpose `checkout` into focused commands for clarity and safety.
+
+## `git switch` vs `git checkout`
+
+| Old Command | New Command | Purpose |
+|-------------|-------------|---------|
+| `git checkout branch` | `git switch branch` | Switch branches |
+| `git checkout -b new` | `git switch -c new` | Create and switch to new branch |
+| `git checkout -- file` | `git restore file` | Restore file from index |
+| `git checkout HEAD -- file` | `git restore -s HEAD file` | Restore file from commit |
+
+**Why prefer `switch`?**
+
+`checkout` is a multi-purpose tool that does many different things: switch branches, create branches, restore files, detach HEAD. When you see `git checkout somename`, you cannot immediately tell if it is switching to a branch, restoring a file, or going to a specific commit.
+
+`switch` has one job: work with branches only. The intent is clear when you read it.
+
+```bash
+# Ambiguous - what does this do?
+git checkout main.py
+
+# Clear - restores the file
+git restore main.py
+
+# Clear - switches to branch (would error on file name collision)
+git switch main
+```
+
+**Recommendation:** Use `git switch` and `git restore` for new work. Use `git checkout` only for older Git versions or compatibility scripts.
+
+## `git mv` vs `mv`
+
+| Command | What Happens | Git Awareness |
+|---------|--------------|---------------|
+| `mv old new` | Filesystem move only | Git sees delete + new file |
+| `git mv old new` | Move + stage in one step | Git tracks as rename |
+
+**Using `mv` (three commands):**
+```bash
+mv src/utils.js src/helpers.js
+git add src/helpers.js
+git rm src/utils.js
+```
+
+**Using `git mv` (one command):**
+```bash
+git mv src/utils.js src/helpers.js
+```
+
+Both end up in the same place, but `git mv` is cleaner and preserves rename history more reliably.
+
+> [!TIP]
+> If you `mv` a file and heavily modify it before committing, Git might not recognize it as a rename (it uses content similarity heuristics). Use `git mv` when you want history tracking preserved.
 
 ---
 

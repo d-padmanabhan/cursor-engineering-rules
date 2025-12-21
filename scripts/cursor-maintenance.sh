@@ -11,7 +11,8 @@
 # Options:
 #   -n, --dry-run    Show what would be deleted without actually deleting
 #   -v, --verbose    Enable verbose output
-#   -a, --aggressive Include additional cleanup (terminal history, backups)
+#   -a, --aggressive Include additional cleanup (terminal history, backups, stale projects)
+#   -d, --days N     Age threshold for stale projects (default: 30 days)
 #   -h, --help       Show this help message
 #
 # Safe to run weekly. Cursor should be closed for best results.
@@ -49,6 +50,7 @@ fi
 DRY_RUN=false
 VERBOSE=false
 AGGRESSIVE=false
+STALE_DAYS=30
 
 # Counters
 TOTAL_SIZE=0
@@ -96,14 +98,16 @@ USAGE:
 OPTIONS:
     -n, --dry-run      Show what would be deleted without actually deleting
     -v, --verbose      Enable verbose output
-    -a, --aggressive   Include additional cleanup (terminal history, backups)
+    -a, --aggressive   Include additional cleanup (terminal history, backups, stale projects)
+    -d, --days N       Age threshold for stale projects in days (default: 30)
     -h, --help         Show this help message
 
 EXAMPLES:
     ${SCRIPT_NAME}                # Standard cleanup
     ${SCRIPT_NAME} -n             # Dry run - preview what would be deleted
     ${SCRIPT_NAME} -v             # Verbose output
-    ${SCRIPT_NAME} -a             # Aggressive cleanup including backups
+    ${SCRIPT_NAME} -a             # Aggressive cleanup including backups and stale projects
+    ${SCRIPT_NAME} -a -d 60       # Aggressive cleanup, projects older than 60 days
     ${SCRIPT_NAME} -n -a -v       # Dry run with aggressive + verbose
 
 CLEANED DIRECTORIES:
@@ -118,6 +122,7 @@ CLEANED DIRECTORIES:
     Aggressive (-a):
       - Backups/            Old file backups
       - projects/*/terminals/  Terminal session history
+      - projects/*          Stale project directories (older than N days)
 
 NOTES:
     - Close Cursor before running for best results
@@ -261,6 +266,73 @@ clean_terminal_directories() {
   TOTAL_SIZE=$((TOTAL_SIZE + total_terminal_size))
 }
 
+clean_stale_projects() {
+  local projects_dir="${CURSOR_DIR}/projects"
+  local days="${STALE_DAYS}"
+
+  if [[ ! -d "${projects_dir}" ]]; then
+    log_verbose "Skipping stale projects (no projects directory)"
+    return 0
+  fi
+
+  # Find project directories not modified in the last N days
+  # Exclude hidden files like .DS_Store
+  local stale_projects
+  stale_projects=$(find "${projects_dir}" -mindepth 1 -maxdepth 1 -type d -mtime +"${days}" 2> /dev/null || true)
+
+  if [[ -z "${stale_projects}" ]]; then
+    log_verbose "Skipping stale projects (none older than ${days} days)"
+    return 0
+  fi
+
+  local total_stale_size=0
+  local stale_count=0
+  local stale_list=()
+
+  while IFS= read -r project_dir; do
+    if [[ -d "${project_dir}" ]]; then
+      local size_bytes
+      size_bytes=$(get_dir_size_bytes "${project_dir}")
+      total_stale_size=$((total_stale_size + size_bytes))
+      ((stale_count++)) || true
+      stale_list+=("$(basename "${project_dir}")")
+    fi
+  done <<< "${stale_projects}"
+
+  if [[ "${total_stale_size}" -eq 0 ]]; then
+    log_verbose "Skipping stale projects (empty)"
+    return 0
+  fi
+
+  local size
+  size=$(format_bytes $((total_stale_size * 1024)))
+
+  if [[ "${DRY_RUN}" == true ]]; then
+    log_info "[DRY RUN] Would remove ${stale_count} stale project(s) older than ${days} days: ${size}"
+    if [[ "${VERBOSE}" == true ]]; then
+      for project in "${stale_list[@]}"; do
+        log_verbose "Would remove: ${project}"
+      done
+    fi
+  else
+    log_info "Removing ${stale_count} stale project(s) older than ${days} days: ${size}"
+    if [[ "${VERBOSE}" == true ]]; then
+      for project in "${stale_list[@]}"; do
+        log_verbose "Removing: ${project}"
+      done
+    fi
+    while IFS= read -r project_dir; do
+      if [[ -d "${project_dir}" ]]; then
+        rm -rf "${project_dir:?}" 2> /dev/null || true
+      fi
+    done <<< "${stale_projects}"
+    log_success "Removed ${stale_count} stale project(s)"
+    ((ITEMS_CLEANED++)) || true
+  fi
+
+  TOTAL_SIZE=$((TOTAL_SIZE + total_stale_size))
+}
+
 # -----------------------------------------------------------------------------
 # Main
 # -----------------------------------------------------------------------------
@@ -280,6 +352,14 @@ main() {
       -a | --aggressive)
         AGGRESSIVE=true
         shift
+        ;;
+      -d | --days)
+        if [[ -z "${2:-}" ]] || [[ ! "${2}" =~ ^[0-9]+$ ]]; then
+          log_error "Option --days requires a numeric argument"
+          exit 1
+        fi
+        STALE_DAYS="$2"
+        shift 2
         ;;
       -h | --help)
         usage
@@ -331,9 +411,10 @@ main() {
 
   # Aggressive cleanup
   if [[ "${AGGRESSIVE}" == true ]]; then
-    log_info "Aggressive cleanup:"
+    log_info "Aggressive cleanup (stale threshold: ${STALE_DAYS} days):"
     clean_directory "${CURSOR_DIR}/Backups" "Backups"
     clean_terminal_directories
+    clean_stale_projects
     echo ""
   fi
 
