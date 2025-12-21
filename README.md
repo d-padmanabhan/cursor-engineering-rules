@@ -212,6 +212,12 @@ rules:
 
 See [examples/.cursorrules-example](examples/.cursorrules-example) for tech-stack templates.
 
+### Multi-Repo Workspaces
+
+For workspaces with many repositories, rules load based on file patterns. Open a `.py` file and Python rules load; open a `.go` file and Go rules load. Most repos need zero per-repo configuration.
+
+See [Multi-Repo Workspaces](docs/HOW-TO-USE.md#multi-repo-workspaces) for detailed guidance.
+
 ---
 
 ## Quick Start

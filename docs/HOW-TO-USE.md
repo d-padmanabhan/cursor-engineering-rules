@@ -547,6 +547,128 @@ cp .cursorrules.dev .cursorrules
 cp .cursorrules.prod .cursorrules
 ```
 
+### Multi-Repo Workspaces
+
+When you have many repositories (e.g., 100 repos in a parent directory) with global rules in `~/.cursor/rules`, here's how selective loading works:
+
+#### What Loads Automatically
+
+Rules with `alwaysApply: true` load for **every** repository:
+
+| Rule | Purpose |
+|------|---------|
+| `050-workflow.mdc` | Plan/Build/Review workflow |
+| `060-agent-audit.mdc` | Agent audit requirements |
+| `100-core.mdc` | Core coding standards |
+| `110-git.mdc` | Git conventions |
+| `115-utilities.mdc` | CLI tools |
+| `240-configuration.mdc` | Configuration management |
+| `310-security.mdc` | Security best practices |
+| `800-markdown.mdc` | Markdown formatting |
+
+These cannot be disabled per-repo.
+
+#### File Pattern-Based Loading
+
+Other rules use file patterns in their frontmatter and load automatically when you open matching files:
+
+```yaml
+# Example frontmatter from 160-python.mdc
+---
+title: Python Best Practices
+alwaysApply: false
+files:
+  include:
+    - "**/*.py"
+    - "**/pyproject.toml"
+---
+```
+
+| You open... | Rules that auto-load |
+|-------------|---------------------|
+| `*.py`, `pyproject.toml` | `160-python.mdc` |
+| `*.tf`, `*.tfvars` | `140-terraform.mdc` |
+| `*.go`, `go.mod` | `180-go.mdc` |
+| `*.ts`, `*.tsx` | `165-typescript.mdc` |
+| `*.js`, `*.jsx` | `170-javascript.mdc` |
+| `Dockerfile`, `docker-compose.yml` | `155-docker.mdc` |
+| `*.yaml` in `.github/workflows/` | `120-gha.mdc` |
+
+**This means most repos need zero configuration.** Open a Python file, Python rules load. Open a Go file, Go rules load.
+
+#### Per-Repo Explicit Control
+
+For repos that need specific rule combinations, add a `.cursorrules` file:
+
+```yaml
+# python-aws-repo/.cursorrules
+rules:
+  - ~/.cursor/rules/160-python.mdc
+  - ~/.cursor/rules/280-aws.mdc
+  - ~/.cursor/rules/140-terraform.mdc
+```
+
+```yaml
+# go-k8s-repo/.cursorrules
+rules:
+  - ~/.cursor/rules/180-go.mdc
+  - ~/.cursor/rules/260-kubernetes.mdc
+  - ~/.cursor/rules/155-docker.mdc
+```
+
+#### Per-Repo Overrides
+
+For repos that need custom patterns on top of global rules:
+
+```bash
+# Create repo-specific overrides
+mkdir -p .cursor/rules
+cat > .cursor/rules/999-local-overrides.mdc << 'EOF'
+---
+title: Repo-Specific Overrides
+priority: 999
+alwaysApply: true
+---
+
+# Project Overrides
+
+## Custom Patterns
+- This repo uses MongoDB instead of PostgreSQL
+- API responses use camelCase, not snake_case
+EOF
+```
+
+#### Recommended Directory Structure
+
+```
+~/.cursor/rules/              <- Global (symlink to cursor-engineering-rules)
+  ├── 100-core.mdc            <- alwaysApply: true (all repos)
+  ├── 160-python.mdc          <- loads when *.py opened
+  ├── 180-go.mdc              <- loads when *.go opened
+  └── ...
+
+~/code/
+  ├── repo-a/                 <- Python project
+  │   └── (no config needed, file patterns handle it)
+  │
+  ├── repo-b/                 <- Go + K8s project
+  │   └── .cursorrules        <- explicit rule list
+  │
+  └── repo-c/                 <- Has custom requirements
+      └── .cursor/rules/
+          └── 999-local-overrides.mdc
+```
+
+#### Decision Guide
+
+| Scenario | Solution |
+|----------|----------|
+| Standard project, single language | No config needed (file patterns work) |
+| Multi-language project | No config needed (each file type loads its rules) |
+| Need specific cloud/platform rules | Add `.cursorrules` with explicit list |
+| Need to override global patterns | Add `999-local-overrides.mdc` |
+| Team project, need consistency | Commit `.cursorrules` to git |
+
 ### Team Standardization
 
 For team projects:
