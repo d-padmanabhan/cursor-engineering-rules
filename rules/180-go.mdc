@@ -557,7 +557,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: ['1.21', '1.22']
+        go-version: ['1.24', '1.25']
 
     steps:
       - uses: actions/checkout@v4
@@ -702,4 +702,4 @@ func GetUser(ctx context.Context, id string) (*User, error) {
 
 **Context Matters**: These rules optimize for long-lived production services. A one-off script has different needs than a high-traffic API. Deviations are fine when justified and intentional.
 
-**Go Version**: 1.21+ (with 1.18+ generics support)
+**Go Version**: 1.25+
