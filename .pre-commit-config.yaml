@@ -7,7 +7,7 @@
 repos:
   # General file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
         name: Trim trailing whitespace
@@ -39,7 +39,7 @@ repos:
 
   # Markdown linting
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.39.0
+    rev: v0.47.0
     hooks:
       - id: markdownlint
         name: Lint Markdown files
@@ -47,7 +47,7 @@ repos:
 
   # Link checking (manual - can be slow/flaky depending on network)
   - repo: https://github.com/lycheeverse/lychee
-    rev: lychee-v0.22.0
+    rev: nightly
     hooks:
       - id: lychee
         name: Lychee (link checker)

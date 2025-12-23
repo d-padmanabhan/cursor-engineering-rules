@@ -20,6 +20,30 @@ files:
 
 **Core Philosophy**: Correctness & Safety  Simplicity & Maintainability  Evidence-Based Performance
 
+**Essential Reading:**
+- [Go Proverbs](https://go-proverbs.github.io/) - Simple, poetic, pithy principles from Rob Pike
+- [Effective Go](https://go.dev/doc/effective_go) - Official idiomatic Go guide (note: written in 2009, still valuable for language idioms)
+
+---
+
+## Go Proverbs (Core Principles)
+
+These proverbs from Rob Pike guide idiomatic Go:
+
+- **"Don't communicate by sharing memory, share memory by communicating"** - Use channels for coordination
+- **"Concurrency is not parallelism"** - Concurrency is about structure, parallelism is about execution
+- **"Channels orchestrate; mutexes serialize"** - Use channels for coordination, mutexes for mutual exclusion
+- **"The bigger the interface, the weaker the abstraction"** - Keep interfaces small and focused
+- **"Make the zero value useful"** - Types should work correctly when zero-initialized
+- **"interface{} says nothing"** - Prefer specific types; use generics or type assertions when needed
+- **"Gofmt's style is no one's favorite, yet gofmt is everyone's favorite"** - Always use `gofmt`
+- **"A little copying is better than a little dependency"** - Prefer copying small code over adding dependencies
+- **"Clear is better than clever"** - Readability over cleverness
+- **"Reflection is never clear"** - Avoid reflection unless necessary
+- **"Errors are values"** - Handle errors explicitly; don't ignore them
+- **"Don't just check errors, handle them gracefully"** - Provide context and recovery paths
+- **"Don't panic"** - Use errors, not panics, for normal error handling
+
 ---
 
 ## Quick Reference
@@ -109,6 +133,8 @@ func TestAdd(t *testing.T) {
 
 ### Error Handling
 
+**Proverb**: "Errors are values" and "Don't just check errors, handle them gracefully"
+
 ```go
 //  GOOD: Sentinel errors
 var ErrNotFound = errors.New("not found")
@@ -123,7 +149,7 @@ func (e *ValidationError) Error() string {
     return fmt.Sprintf("validation failed on %s: %s", e.Field, e.Issue)
 }
 
-//  GOOD: Error wrapping
+//  GOOD: Error wrapping with context
 func processUser(id string) error {
     user, err := fetchUser(id)
     if err != nil {
@@ -132,10 +158,86 @@ func processUser(id string) error {
     // ...
 }
 
-//  GOOD: Error checking
-if errors.Is(err, ErrNotFound) { /* handle */ }
+//  GOOD: Error checking and handling
+if errors.Is(err, ErrNotFound) {
+    return nil  // Handle gracefully, don't just check
+}
 var valErr *ValidationError
-if errors.As(err, &valErr) { /* handle */ }
+if errors.As(err, &valErr) {
+    log.Printf("validation error on %s: %s", valErr.Field, valErr.Issue)
+    return fmt.Errorf("invalid input: %w", valErr)
+}
+
+//  GOOD: Errors as values - can be stored, passed, and composed
+type ErrorHandler func(error) error
+
+func withRetry(maxAttempts int) ErrorHandler {
+    return func(err error) error {
+        // Retry logic here
+        return err
+    }
+}
+
+//  BAD: Ignoring errors
+result, _ := someFunc()  // Never ignore errors
+
+//  BAD: Panic for normal errors
+if err != nil {
+    panic(err)  // Use errors, not panics
+}
+```
+
+### Don't Panic
+
+**Proverb**: "Don't panic"
+
+Panics are for truly exceptional, unrecoverable situations (programming errors). Use errors for normal error handling.
+
+```go
+//  BAD: Panic for normal errors
+func GetUser(id string) *User {
+    user, err := fetchUser(id)
+    if err != nil {
+        panic(err)  // Wrong! Use errors
+    }
+    return user
+}
+
+//  GOOD: Return errors
+func GetUser(id string) (*User, error) {
+    user, err := fetchUser(id)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get user %s: %w", id, err)
+    }
+    return user, nil
+}
+
+//  GOOD: Panic only for programming errors (unrecoverable)
+func MustGetUser(id string) *User {
+    user, err := fetchUser(id)
+    if err != nil {
+        panic(fmt.Sprintf("programming error: user %s must exist", id))
+    }
+    return user
+}
+
+//  GOOD: Recover only at package boundaries (main, HTTP handlers)
+func httpHandler(w http.ResponseWriter, r *http.Request) {
+    defer func() {
+        if r := recover(); r != nil {
+            log.Printf("panic recovered: %v", r)
+            http.Error(w, "internal server error", http.StatusInternalServerError)
+        }
+    }()
+    // Handler logic
+}
+
+//  BAD: Recover in library code
+func libraryFunction() {
+    defer func() {
+        recover()  // Libraries should return errors, not recover
+    }()
+}
 ```
 
 ### Context & Cancellation
@@ -190,8 +292,101 @@ _, err := db.ExecContext(ctx, "INSERT INTO users (email) VALUES ($1)", email)
 
 - **KISS/DRY/YAGNI**: Avoid speculative abstractions
 - **Small Functions**: Do one thing well
-- **Small Interfaces**: Define at the consumer
+- **Small Interfaces**: Define at the consumer ("The bigger the interface, the weaker the abstraction")
 - **Composition First**: Prefer composing types
+- **Make the Zero Value Useful**: Types should work correctly when zero-initialized
+- **A Little Copying is Better Than a Little Dependency**: Prefer copying small, stable code over adding dependencies
+
+### Dependency Management
+
+**Proverb**: "A little copying is better than a little dependency"
+
+```go
+//  BAD: Adding dependency for simple utility
+import "github.com/some/lib/stringutils"
+
+func process(s string) string {
+    return stringutils.TrimAndLower(s)  // Dependency for 10 lines of code
+}
+
+//  GOOD: Copy small, stable utility code
+func trimAndLower(s string) string {
+    return strings.ToLower(strings.TrimSpace(s))
+}
+
+func process(s string) string {
+    return trimAndLower(s)
+}
+
+//  GOOD: Use stdlib when possible
+import (
+    "strings"
+    "fmt"
+    "time"
+)
+
+//  BAD: External dependency for what stdlib provides
+import "github.com/lib/timeutils"  // When time package works fine
+
+//  GOOD: Add dependency only when:
+//  - Functionality is complex (crypto, networking, parsing)
+//  - Maintenance burden is high
+//  - Code is large (>100 lines)
+//  - It's a well-maintained, stable library
+```
+
+### Make the Zero Value Useful
+
+**Proverb**: "Make the zero value useful"
+
+```go
+//  GOOD: Zero value is useful
+type Buffer struct {
+    data []byte
+}
+
+func (b *Buffer) Write(p []byte) (int, error) {
+    b.data = append(b.data, p...)
+    return len(p), nil
+}
+
+// Can use without initialization:
+var buf Buffer
+buf.Write([]byte("hello"))  // Works!
+
+//  GOOD: Zero value for sync primitives
+var mu sync.Mutex
+mu.Lock()  // Zero value mutex is ready to use
+
+//  GOOD: Zero value for slices and maps
+var users []User  // nil slice, safe to append
+var cache map[string]int  // nil map, but must initialize before use
+
+//  BAD: Zero value requires initialization to be safe
+type Server struct {
+    port int  // Zero value (0) is invalid!
+}
+
+func NewServer(port int) *Server {
+    if port == 0 {
+        panic("port required")  // Zero value not useful
+    }
+    return &Server{port: port}
+}
+
+//  GOOD: Zero value is safe
+type Server struct {
+    port int
+}
+
+func NewServer() *Server {
+    return &Server{port: 8080}  // Sensible default
+}
+
+func (s *Server) SetPort(port int) {
+    s.port = port
+}
+```
 
 ```go
 //  GOOD: Small interface at consumer
@@ -215,6 +410,101 @@ func NewServer(opts ...ServerOption) *Server {
 }
 ```
 
+### Clear is Better Than Clever
+
+**Proverb**: "Clear is better than clever"
+
+```go
+//  BAD: Clever but unclear
+func process(data interface{}) interface{} {
+    switch v := data.(type) {
+    case int:
+        return v * 2
+    case string:
+        return len(v)
+    default:
+        return nil
+    }
+}
+
+//  GOOD: Clear and explicit
+func DoubleInt(n int) int {
+    return n * 2
+}
+
+func StringLength(s string) int {
+    return len(s)
+}
+
+//  BAD: Clever one-liner
+result := strings.Join([]string{strings.TrimSpace(s1), strings.TrimSpace(s2)}, ",")
+
+//  GOOD: Clear and readable
+s1Trimmed := strings.TrimSpace(s1)
+s2Trimmed := strings.TrimSpace(s2)
+result := strings.Join([]string{s1Trimmed, s2Trimmed}, ",")
+
+//  BAD: Clever but confusing
+func find(items []Item, fn func(Item) bool) *Item {
+    for i := range items {
+        if fn(items[i]) {
+            return &items[i]
+        }
+    }
+    return nil
+}
+
+//  GOOD: Clear intent
+func FindItem(items []Item, predicate func(Item) bool) *Item {
+    for i := range items {
+        if predicate(items[i]) {
+            return &items[i]
+        }
+    }
+    return nil
+}
+```
+
+### Avoid interface{} When Possible
+
+**Proverb**: "interface{} says nothing"
+
+```go
+//  BAD: interface{} loses type safety
+func Process(data interface{}) error {
+    // Must use type assertions everywhere
+    switch v := data.(type) {
+    case string:
+        // ...
+    case int:
+        // ...
+    }
+}
+
+//  GOOD: Use generics (Go 1.18+)
+func Process[T any](data T) error {
+    // Type-safe, no assertions needed
+    // ...
+}
+
+//  GOOD: Use specific types
+func ProcessString(s string) error { /* ... */ }
+func ProcessInt(n int) error { /* ... */ }
+
+//  GOOD: Use type constraints for flexibility
+type Numeric interface {
+    ~int | ~int64 | ~float64
+}
+
+func Sum[T Numeric](items []T) T {
+    var sum T
+    for _, item := range items {
+        sum += item
+    }
+    return sum
+}
+```
+
 ### Project Layout
 
 ```
@@ -233,20 +523,76 @@ project/
 
 ### Naming
 
-- **`gofmt -s`**: Required
+**Effective Go**: Names are important and have semantic effect (visibility).
+
+- **`gofmt -s`**: Required ("Gofmt's style is no one's favorite, yet gofmt is everyone's favorite")
 - **Imports**: Group as stdlib | third-party | internal
 - **Exported**: PascalCase; unexported: camelCase
 - **Acronyms**: Uppercase (`HTTPServer`, `UserID`)
-- **Interfaces**: `-er` suffix (`Reader`, `Hasher`)
+- **Interfaces**: `-er` suffix (`Reader`, `Hasher`) - keep interfaces small ("The bigger the interface, the weaker the abstraction")
+- **Package names**: Lowercase, single-word, concise (`bytes`, `ring`, not `bytesPackage` or `ringPackage`)
+- **Getters**: Don't use `Get` prefix (`Owner()`, not `GetOwner()`)
+
+```go
+//  GOOD: Package name is concise
+package user  // Not userPackage or userManagement
+
+//  GOOD: Exported type uses package name context
+type User struct {  // Users see it as user.User
+    name string  // unexported field
+}
+
+//  GOOD: Getter without "Get" prefix (Effective Go)
+func (u *User) Name() string {  // Not GetName()
+    return u.name
+}
+
+//  GOOD: Setter can use "Set" prefix
+func (u *User) SetName(name string) {
+    u.name = name
+}
+
+//  GOOD: Small interface at consumer
+type Reader interface {  // Small, focused
+    Read([]byte) (int, error)
+}
+
+//  BAD: Large interface ("The bigger the interface, the weaker the abstraction")
+type Everything interface {
+    Read([]byte) (int, error)
+    Write([]byte) (int, error)
+    Close() error
+    Flush() error
+    Seek(int64, int) (int64, error)
+    // ... too many methods
+}
+
+//  GOOD: Avoid interface{} - use generics or specific types
+func Process[T any](items []T) {  // Generic, type-safe
+    // ...
+}
+
+//  BAD: interface{} says nothing
+func Process(items []interface{}) {  // No type safety
+    // ...
+}
+```
 
 ---
 
 ## 3. Concurrency
 
+**Proverbs**:
+- "Don't communicate by sharing memory, share memory by communicating"
+- "Channels orchestrate; mutexes serialize"
+- "Concurrency is not parallelism"
+
 ### Choose the Simplest Correct Primitive
 
+**Rule**: Use channels for coordination/orchestration, mutexes for mutual exclusion.
+
 ```go
-//  GOOD: Mutex for protecting shared state
+//  GOOD: Mutex for protecting shared state (serialization)
 type SafeCounter struct {
     mu    sync.Mutex
     count int
@@ -254,18 +600,45 @@ type SafeCounter struct {
 
 func (c *SafeCounter) Increment() {
     c.mu.Lock()
+    defer c.mu.Unlock()  // Always use defer
     c.count++
-    c.mu.Unlock()
 }
 
-//  GOOD: Channel for communication
+//  GOOD: Channel for communication/orchestration
 func worker(jobs <-chan Job, results chan<- Result) {
     for job := range jobs {
         results <- process(job)
     }
 }
 
-//  GOOD: sync.Once for initialization
+//  GOOD: Channel for coordination (orchestration)
+func processWithCoordination(ctx context.Context, items []Item) error {
+    done := make(chan error, 1)
+    go func() {
+        // Process items
+        done <- nil
+    }()
+
+    select {
+    case err := <-done:
+        return err
+    case <-ctx.Done():
+        return ctx.Err()
+    }
+}
+
+//  BAD: Using channel for simple mutual exclusion
+type Counter struct {
+    ch chan int  // Overkill for simple counter
+}
+
+//  GOOD: Mutex for simple mutual exclusion
+type Counter struct {
+    mu sync.Mutex
+    count int
+}
+
+//  GOOD: sync.Once for one-time initialization
 var (
     instance *Singleton
     once     sync.Once
@@ -685,18 +1058,22 @@ func GetUser(ctx context.Context, id string) (*User, error) {
 ## Anti-Patterns (Automatic Rejection)
 
 ### Critical
--  Panic/recover as control flow
+-  Panic/recover as control flow ("Don't panic" - use errors for normal error handling)
 -  Goroutines without lifecycle management
--  Swallowed errors
+-  Swallowed errors ("Don't just check errors, handle them gracefully")
 -  Global mutable state
 -  Logging secrets/PII
+-  Zero values that require initialization to be safe ("Make the zero value useful")
 
 ### Code Smells
--  Channels for simple mutual exclusion
--  Reflection/unsafe without benchmarks
--  "God" interfaces
--  Premature abstraction
+-  Channels for simple mutual exclusion (use mutexes)
+-  Reflection/unsafe without benchmarks ("Reflection is never clear")
+-  "God" interfaces ("The bigger the interface, the weaker the abstraction")
+-  Premature abstraction ("A little copying is better than a little dependency")
 -  Missing context propagation
+-  Using `interface{}` when generics or specific types would work ("interface{} says nothing")
+-  Clever code over clear code ("Clear is better than clever")
+-  Zero values that require initialization to be safe ("Make the zero value useful")
 
 ---
 
