@@ -217,6 +217,15 @@ If only Recommended/Optional issues remain, summarize and ask if user wants fixe
 > [!NOTE]
 > By default, `/self-review` performs **read-only analysis**. Checkpoints are only created if automated fixes (Phase 5) are applied.
 
+**Optional: CodeRabbit Integration**
+
+If CodeRabbit is available and configured for the repository:
+
+- CodeRabbit can provide automated PR reviews after local validation
+- Use CodeRabbit as a secondary layer for team consistency
+- Always complete local review first for audit compliance
+- CodeRabbit reviews complement but do not replace local review commands
+
 ---
 
 **Integration:** This workflow aligns with:

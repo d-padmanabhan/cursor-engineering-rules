@@ -202,6 +202,15 @@ Propose **one primary commit message** following `110-git.mdc` format:
 - **If only Recommended/Optional issues:** Summarize, user can decide to fix or proceed
 - **If clean:** Propose commit message, user can stage/commit when ready
 
+**Optional: CodeRabbit Integration**
+
+If CodeRabbit is available and configured:
+
+- CodeRabbit can provide automated PR reviews after local validation
+- Use as secondary layer for team consistency across PRs
+- Always complete local review first for audit compliance
+- CodeRabbit complements but does not replace local review commands
+
 ---
 
 **Integration:** This workflow aligns with:
