@@ -27,6 +27,8 @@ ln -s /path/to/cursor-engineering-rules/commands .cursor/commands
 | `/qa` | Run QA validation | Before implementation (Level 2+ tasks) |
 | `/build` | Enter implementation phase | After plan is approved |
 | `/review` | Enter review phase | After implementation complete |
+| `/self-review` | Comprehensive local PR review | Before creating PR, compare branch to main |
+| `/quick-review` | Fast critical issues check | Pre-commit validation, rapid iteration |
 | `/archive` | Archive completed task | Document lessons learned (Level 3-4) |
 
 ## Workflow
@@ -59,11 +61,38 @@ Type the command in Cursor chat:
 
 The AI will enter that phase and follow the corresponding workflow guidelines.
 
+## Review Commands
+
+### `/self-review` - Comprehensive Local PR Review
+
+Performs a full code review comparing your branch to `main`:
+
+- **6-phase structured review** following `100-core.mdc` and `050-workflow.mdc`
+- **Priority framework:** Critical → Recommended → Optional issues
+- **Language-specific tooling:** Runs appropriate linters (ruff, pylint, shellcheck, etc.)
+- **Security focus:** OWASP Top 10 checks, secrets scanning, dependency audits
+- **Audit integration:** Creates checkpoints and audit reports per `060-agent-audit.mdc`
+- **Automated fixes:** Applies formatters and re-stages files
+- **PR-ready output:** Structured report suitable for PR comments
+
+**Use when:** Before creating a PR, need comprehensive analysis, want full audit trail.
+
+### `/quick-review` - Fast Critical Issues Check
+
+Streamlined review for rapid iteration:
+
+- **Critical issues only:** Security vulnerabilities, bugs, breaking changes
+- **Fast checks:** Runs only essential linters (errors, not warnings)
+- **Quick feedback:** Minimal report focusing on must-fix issues
+- **No deep analysis:** Skips style/documentation improvements
+
+**Use when:** Pre-commit validation, rapid development cycles, small changes.
+
 ## Relationship to Rules
 
 Commands trigger specific behaviors but work alongside rules:
 
-- **Commands** - Explicit phase transitions (`/plan`, `/build`)
+- **Commands** - Explicit phase transitions (`/plan`, `/build`, `/self-review`)
 - **Rules** - Standards that apply based on file patterns (`.mdc` files)
 - **MCP Server** - On-demand rule loading via tool calls
 
