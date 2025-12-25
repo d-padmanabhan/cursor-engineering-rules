@@ -1,7 +1,7 @@
 ---
 title: Configuration Management Engineering Ruleset
 description: Patterns for managing configuration with proper precedence, environment variables, and validation.
-priority: 240
+priority: 200
 alwaysApply: true
 ---
 

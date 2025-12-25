@@ -1,7 +1,7 @@
 ---
 title: Open Source Project Engineering Ruleset
 description: Best practices for open source projects including contribution guidelines, documentation, and community management.
-priority: 210
+priority: 820
 alwaysApply: false
 files:
   include:

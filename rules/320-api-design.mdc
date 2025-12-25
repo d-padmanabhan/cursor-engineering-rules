@@ -16,6 +16,63 @@ files:
 
 # API Design Best Practices
 
+**Audience**: engineers designing and reviewing REST, GraphQL, and gRPC APIs
+**Goal**: Create consistent, secure, well-documented APIs that provide excellent developer experience
+
+## API Design Philosophy (Core Principles)
+
+**Core Principles:**
+
+- **"Consistency is king"** - Follow conventions consistently across all endpoints
+- **"Developer experience matters"** - APIs should be intuitive, well-documented, and easy to use
+- **"Versioning from day one"** - Plan for evolution, maintain backward compatibility
+- **"Security by default"** - Authentication, authorization, rate limiting, input validation
+- **"Documentation is part of the API"** - Clear, accurate, up-to-date docs are essential
+- **"Fail fast, fail clearly"** - Return meaningful error messages with actionable information
+- **"Performance matters"** - Use pagination, caching, compression where appropriate
+- **"Idempotency where possible"** - Make operations safe to retry
+
+**Applying API Design Principles:**
+
+```typescript
+// BAD: Inconsistent, insecure, undocumented
+app.get('/getUsers', (req, res) => {
+  const users = db.getUsers();
+  res.json(users);
+});
+
+// GOOD: Consistent, secure, documented
+/**
+ * GET /api/v1/users
+ * List users with pagination
+ *
+ * @query limit - Number of results (default: 20, max: 100)
+ * @query offset - Pagination offset (default: 0)
+ * @returns {User[]} Array of users
+ */
+app.get('/api/v1/users', authenticate, authorize('read:users'), async (req, res) => {
+  const { limit = 20, offset = 0 } = req.query;
+
+  // Validate input
+  const validatedLimit = Math.min(parseInt(limit) || 20, 100);
+  const validatedOffset = Math.max(parseInt(offset) || 0, 0);
+
+  const users = await userService.listUsers({
+    limit: validatedLimit,
+    offset: validatedOffset,
+  });
+
+  res.json({
+    data: users,
+    pagination: {
+      limit: validatedLimit,
+      offset: validatedOffset,
+      total: await userService.countUsers(),
+    },
+  });
+});
+```
+
 ## Guiding Principles
 
 1. **Consistency**: Follow REST/GraphQL conventions consistently
@@ -291,6 +348,470 @@ components:
 
 ---
 
+## Advanced Patterns
+
+### GraphQL API Design
+
+```typescript
+// schema.graphql
+type User {
+  id: ID!
+  name: String!
+  email: String!
+  posts: [Post!]!
+  createdAt: DateTime!
+}
+
+type Post {
+  id: ID!
+  title: String!
+  content: String!
+  author: User!
+  createdAt: DateTime!
+}
+
+type Query {
+  user(id: ID!): User
+  users(limit: Int = 20, offset: Int = 0): [User!]!
+  posts(userId: ID, limit: Int = 20): [Post!]!
+}
+
+type Mutation {
+  createUser(input: CreateUserInput!): User!
+  updateUser(id: ID!, input: UpdateUserInput!): User!
+  deleteUser(id: ID!): Boolean!
+}
+
+input CreateUserInput {
+  name: String!
+  email: String!
+}
+
+input UpdateUserInput {
+  name: String
+  email: String
+}
+```
+
+### gRPC API Design
+
+```protobuf
+// user.proto
+syntax = "proto3";
+
+package api.v1;
+
+service UserService {
+  rpc GetUser(GetUserRequest) returns (User);
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+  rpc CreateUser(CreateUserRequest) returns (User);
+  rpc UpdateUser(UpdateUserRequest) returns (User);
+  rpc DeleteUser(DeleteUserRequest) returns (google.protobuf.Empty);
+}
+
+message User {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  google.protobuf.Timestamp created_at = 4;
+}
+
+message GetUserRequest {
+  string id = 1;
+}
+
+message ListUsersRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+}
+
+message ListUsersResponse {
+  repeated User users = 1;
+  int32 total = 2;
+}
+
+message CreateUserRequest {
+  string name = 1;
+  string email = 2;
+}
+
+message UpdateUserRequest {
+  string id = 1;
+  optional string name = 2;
+  optional string email = 3;
+}
+
+message DeleteUserRequest {
+  string id = 1;
+}
+```
+
+### Webhooks
+
+```typescript
+// Webhook payload structure
+interface WebhookPayload<T> {
+  event: string;
+  timestamp: string;
+  data: T;
+  signature: string;
+}
+
+// Webhook endpoint
+app.post('/webhooks/users', async (req, res) => {
+  const signature = req.headers['x-webhook-signature'];
+  const payload = req.body;
+
+  // Verify signature
+  if (!verifyWebhookSignature(payload, signature)) {
+    return res.status(401).json({ error: 'Invalid signature' });
+  }
+
+  // Process webhook
+  await processWebhook(payload);
+
+  res.status(200).json({ received: true });
+});
+```
+
+## Performance Optimization
+
+### Caching Strategies
+
+```typescript
+// HTTP caching headers
+app.get('/api/v1/users/:id', async (req, res) => {
+  const user = await userService.getUser(req.params.id);
+
+  // Cache for 5 minutes
+  res.set('Cache-Control', 'public, max-age=300');
+  res.set('ETag', generateETag(user));
+
+  res.json(user);
+});
+
+// Conditional requests
+app.get('/api/v1/users/:id', async (req, res) => {
+  const ifNoneMatch = req.headers['if-none-match'];
+  const user = await userService.getUser(req.params.id);
+  const etag = generateETag(user);
+
+  if (ifNoneMatch === etag) {
+    return res.status(304).end(); // Not Modified
+  }
+
+  res.set('ETag', etag);
+  res.json(user);
+});
+```
+
+### Compression
+
+```typescript
+import compression from 'compression';
+
+// Enable gzip compression
+app.use(compression({
+  level: 6,
+  threshold: 1024, // Only compress responses > 1KB
+}));
+```
+
+### Database Query Optimization
+
+```typescript
+// BAD: N+1 queries
+app.get('/api/v1/users/:id/posts', async (req, res) => {
+  const user = await userService.getUser(req.params.id);
+  const posts = await postService.getPostsByUserId(user.id);
+
+  // Each post might trigger another query for author
+  for (const post of posts) {
+    post.author = await userService.getUser(post.authorId);
+  }
+
+  res.json(posts);
+});
+
+// GOOD: Eager loading
+app.get('/api/v1/users/:id/posts', async (req, res) => {
+  const posts = await postService.getPostsByUserIdWithAuthor(req.params.id);
+  res.json(posts);
+});
+```
+
+## Troubleshooting & Debugging
+
+### Request Tracing
+
+```typescript
+import { v4 as uuidv4 } from 'uuid';
+
+// Add request ID middleware
+app.use((req, res, next) => {
+  req.id = req.headers['x-request-id'] || uuidv4();
+  res.set('X-Request-ID', req.id);
+  next();
+});
+
+// Log with request ID
+app.use((req, res, next) => {
+  logger.info({
+    requestId: req.id,
+    method: req.method,
+    path: req.path,
+    ip: req.ip,
+  });
+  next();
+});
+```
+
+### Error Handling Middleware
+
+```typescript
+// Centralized error handling
+app.use((err, req, res, next) => {
+  logger.error({
+    requestId: req.id,
+    error: err.message,
+    stack: err.stack,
+  });
+
+  const statusCode = err.statusCode || 500;
+  const message = statusCode === 500 ? 'Internal server error' : err.message;
+
+  res.status(statusCode).json({
+    error: {
+      code: err.code || 'INTERNAL_ERROR',
+      message,
+      requestId: req.id,
+    },
+  });
+});
+```
+
+### API Monitoring
+
+```typescript
+// Response time tracking
+app.use((req, res, next) => {
+  const start = Date.now();
+
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    metrics.recordApiCall({
+      method: req.method,
+      path: req.path,
+      statusCode: res.statusCode,
+      duration,
+    });
+  });
+
+  next();
+});
+```
+
+## Comprehensive Example API
+
+Complete REST API example demonstrating best practices:
+
+```typescript
+// server.ts
+import express from 'express';
+import { z } from 'zod';
+import { v4 as uuidv4 } from 'uuid';
+
+const app = express();
+app.use(express.json());
+
+// Request ID middleware
+app.use((req, res, next) => {
+  req.id = req.headers['x-request-id'] || uuidv4();
+  res.set('X-Request-ID', req.id);
+  next();
+});
+
+// Validation schemas
+const CreateUserSchema = z.object({
+  name: z.string().min(1).max(100),
+  email: z.string().email(),
+});
+
+const UpdateUserSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  email: z.string().email().optional(),
+});
+
+const ListUsersQuerySchema = z.object({
+  limit: z.string().regex(/^\d+$/).transform(Number).pipe(z.number().min(1).max(100)).default('20'),
+  offset: z.string().regex(/^\d+$/).transform(Number).pipe(z.number().min(0)).default('0'),
+});
+
+// In-memory store (replace with database)
+const users = new Map<string, any>();
+
+// GET /api/v1/users
+app.get('/api/v1/users', (req, res) => {
+  const query = ListUsersQuerySchema.parse(req.query);
+  const userArray = Array.from(users.values());
+
+  const paginated = userArray.slice(query.offset, query.offset + query.limit);
+
+  res.json({
+    data: paginated,
+    pagination: {
+      limit: query.limit,
+      offset: query.offset,
+      total: userArray.length,
+      hasMore: query.offset + query.limit < userArray.length,
+    },
+  });
+});
+
+// GET /api/v1/users/:id
+app.get('/api/v1/users/:id', (req, res) => {
+  const user = users.get(req.params.id);
+
+  if (!user) {
+    return res.status(404).json({
+      error: {
+        code: 'USER_NOT_FOUND',
+        message: `User with ID ${req.params.id} not found`,
+        requestId: req.id,
+      },
+    });
+  }
+
+  res.json(user);
+});
+
+// POST /api/v1/users
+app.post('/api/v1/users', (req, res) => {
+  try {
+    const data = CreateUserSchema.parse(req.body);
+
+    // Check for duplicate email
+    const existingUser = Array.from(users.values()).find(u => u.email === data.email);
+    if (existingUser) {
+      return res.status(409).json({
+        error: {
+          code: 'EMAIL_EXISTS',
+          message: 'User with this email already exists',
+          requestId: req.id,
+        },
+      });
+    }
+
+    const user = {
+      id: uuidv4(),
+      ...data,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    users.set(user.id, user);
+
+    res.status(201)
+      .set('Location', `/api/v1/users/${user.id}`)
+      .json(user);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(422).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Validation failed',
+          details: error.errors,
+          requestId: req.id,
+        },
+      });
+    }
+    throw error;
+  }
+});
+
+// PUT /api/v1/users/:id
+app.put('/api/v1/users/:id', (req, res) => {
+  const user = users.get(req.params.id);
+
+  if (!user) {
+    return res.status(404).json({
+      error: {
+        code: 'USER_NOT_FOUND',
+        message: `User with ID ${req.params.id} not found`,
+        requestId: req.id,
+      },
+    });
+  }
+
+  try {
+    const data = UpdateUserSchema.parse(req.body);
+    const updated = {
+      ...user,
+      ...data,
+      updatedAt: new Date().toISOString(),
+    };
+
+    users.set(req.params.id, updated);
+    res.json(updated);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(422).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Validation failed',
+          details: error.errors,
+          requestId: req.id,
+        },
+      });
+    }
+    throw error;
+  }
+});
+
+// DELETE /api/v1/users/:id
+app.delete('/api/v1/users/:id', (req, res) => {
+  const user = users.get(req.params.id);
+
+  if (!user) {
+    return res.status(404).json({
+      error: {
+        code: 'USER_NOT_FOUND',
+        message: `User with ID ${req.params.id} not found`,
+        requestId: req.id,
+      },
+    });
+  }
+
+  users.delete(req.params.id);
+  res.status(204).end();
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).json({
+    error: {
+      code: 'INTERNAL_ERROR',
+      message: 'Internal server error',
+      requestId: req.id,
+    },
+  });
+});
+
+app.listen(3000, () => {
+  console.log('API server running on http://localhost:3000');
+});
+```
+
+**Key Patterns Demonstrated:**
+
+- ✅ Consistency: RESTful conventions, consistent naming
+- ✅ Validation: Zod schemas for input validation
+- ✅ Error Handling: Standardized error format with request IDs
+- ✅ Pagination: Offset-based pagination with metadata
+- ✅ Status Codes: Proper HTTP status codes
+- ✅ Best Practices: Request IDs, proper headers, idempotency
+
 ## Best Practices Checklist
 
 - [ ] Use consistent resource naming (plural nouns)
@@ -307,6 +828,10 @@ components:
 - [ ] Implement CORS properly
 - [ ] Cache responses where appropriate
 - [ ] Monitor API performance and errors
+- [ ] Implement idempotency keys for mutations
+- [ ] Use compression for large responses
+- [ ] Implement webhooks for event-driven architecture
+- [ ] Support GraphQL or gRPC if appropriate
 
 ---
 
@@ -317,6 +842,7 @@ components:
 - `170-javascript.mdc` - JavaScript API patterns
 - `180-go.mdc` - Go API patterns
 - `185-rust.mdc` - Rust API patterns
+- `290-testing.mdc` - API testing strategies
 
 ---
 

@@ -13,6 +13,55 @@ files:
 **Scope:** Guidance for writing robust, portable Bash scripts that are easy to read, test, and operate.
 **Principles:** DRY • KISS • Fail Fast • Zero Warnings.
 
+## Bash Philosophy (Core Principles)
+
+**Core Principles:**
+
+- **"Fail fast, fail clearly"** - Use strict mode, validate early, provide clear error messages
+- **"Quotes are your friend"** - Always quote variables unless you explicitly want word splitting
+- **"Explicit over implicit"** - Use `local`, `readonly`, clear function names, document assumptions
+- **"Portability matters"** - Prefer POSIX-compliant code when possible, document Bash-specific features
+- **"Security by default"** - Sanitize inputs, use `mktemp`, avoid `eval`, validate file paths
+- **"Composition over complexity"** - Small functions, clear separation of concerns, reusable patterns
+- **"Observability is essential"** - Structured logging, proper exit codes, error context
+- **"Test what you write"** - Use shellcheck, test on multiple platforms, write BATS tests
+
+**Applying Bash Principles:**
+
+```bash
+# BAD: Implicit, unsafe, unclear
+#!/bin/bash
+cd $DIR
+rm -rf *
+for file in $(ls *.txt); do
+  process $file
+done
+
+# GOOD: Explicit, safe, clear
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly TARGET_DIR="${1:-}"
+
+if [[ -z "$TARGET_DIR" ]]; then
+  echo "Usage: $0 <directory>" >&2
+  exit 1
+fi
+
+if [[ ! -d "$TARGET_DIR" ]]; then
+  echo "Error: Directory '$TARGET_DIR' does not exist" >&2
+  exit 1
+fi
+
+cd "$TARGET_DIR" || { echo "Error: Failed to cd to '$TARGET_DIR'" >&2; exit 1; }
+
+for file in *.txt; do
+  [[ -f "$file" ]] || continue
+  process "$file"
+done
+```
+
 ---
 
 ## Quick Reference
@@ -87,6 +136,8 @@ Use for: Production scripts with comprehensive error handling via ERR traps.
 
 ## 3) Performance & Patterns
 
+**Golden Rule:** Profile with `time` command, optimize hot paths, prefer builtins over external commands.
+
 ### Process Substitution (Avoid Subshells)
 
 ```bash
@@ -105,6 +156,122 @@ done < <(cat file.txt)
 echo "$count"  # Works! Variable persists
 ```
 
+### Performance Optimization Examples
+
+**String Operations:**
+
+```bash
+# BAD: External command (slow)
+result=$(echo "$var" | sed 's/old/new/g')
+
+# GOOD: Builtin parameter expansion (fast)
+result="${var//old/new}"
+
+# BAD: Multiple external commands
+length=$(echo "$var" | wc -c)
+
+# GOOD: Builtin expansion
+length=${#var}
+
+# BAD: External command for trimming
+trimmed=$(echo "$var" | xargs)
+
+# GOOD: Builtin expansion
+trimmed="${var#"${var%%[![:space:]]*}"}"  # Trim leading
+trimmed="${trimmed%"${trimmed##*[![:space:]]}"}"  # Trim trailing
+```
+
+**Array Operations:**
+
+```bash
+# BAD: String concatenation (slow, error-prone)
+files=""
+for file in *.txt; do
+  files="$files $file"
+done
+
+# GOOD: Arrays (fast, safe)
+files=()
+for file in *.txt; do
+  [[ -f "$file" ]] || continue
+  files+=("$file")
+done
+
+# Process array
+for file in "${files[@]}"; do
+  process "$file"
+done
+```
+
+**File Operations:**
+
+```bash
+# BAD: Multiple file operations
+while read -r line; do
+  echo "$line" >> output.txt
+done < input.txt
+
+# GOOD: Single redirection (faster)
+while read -r line; do
+  echo "$line"
+done < input.txt > output.txt
+
+# BAD: Reading file multiple times
+grep "pattern1" file.txt
+grep "pattern2" file.txt
+
+# GOOD: Single pass
+while read -r line; do
+  [[ "$line" =~ pattern1 ]] && echo "$line"
+  [[ "$line" =~ pattern2 ]] && echo "$line"
+done < file.txt
+```
+
+**Command Substitution:**
+
+```bash
+# BAD: Multiple subshells
+result=$(echo "$(process "$(get_value)")")
+
+# GOOD: Single subshell
+value=$(get_value)
+result=$(process "$value")
+
+# BAD: Command substitution in loop
+for i in {1..100}; do
+  value=$(expensive_command)
+  process "$value"
+done
+
+# GOOD: Cache result if same
+cached_value=$(expensive_command)
+for i in {1..100}; do
+  process "$cached_value"
+done
+```
+
+**Builtin vs External Commands:**
+
+```bash
+# BAD: External command
+if [ "$(echo "$var" | grep -q pattern)" ]; then
+
+# GOOD: Builtin test
+if [[ "$var" =~ pattern ]]; then
+
+# BAD: External command for arithmetic
+result=$(expr "$a" + "$b")
+
+# GOOD: Builtin arithmetic
+result=$((a + b))
+
+# BAD: External command for basename
+name=$(basename "$file")
+
+# GOOD: Builtin parameter expansion
+name="${file##*/}"
+```
+
 ### Other Performance Tips
 
 - **Builtins:** Prefer `[[ ... ]]` over `[ ... ]` (test) for Bash.
@@ -112,6 +279,8 @@ echo "$count"  # Works! Variable persists
 - **Dependencies:** Check for required tools (`command -v tool`) at startup.
 - **Arrays:** Use arrays for lists of items instead of strings (Bash 4+).
 - **Native Operations:** Prefer `${var//old/new}` over `echo "$var" | sed 's/old/new/g'`.
+- **Caching:** Cache expensive command results, avoid repeated calls.
+- **Early Returns:** Exit early to avoid unnecessary processing.
 
 ---
 
@@ -267,6 +436,118 @@ shfmt -w -i 2 -ci -sr -bn .
 }
 ```
 
+### Advanced Testing Patterns
+
+**BATS Test Structure:**
+
+```bash
+#!/usr/bin/env bats
+
+load test_helper
+
+@test "function returns success on valid input" {
+  run my_function "valid_input"
+  [ "$status" -eq 0 ]
+  [ "$output" = "expected_output" ]
+}
+
+@test "function fails on invalid input" {
+  run my_function ""
+  [ "$status" -eq 1 ]
+  [[ "$output" =~ "Error" ]]
+}
+
+@test "function handles edge cases" {
+  run my_function "edge_case_value"
+  [ "$status" -eq 0 ]
+}
+
+@test "function is idempotent" {
+  run my_function "input"
+  first_output="$output"
+
+  run my_function "input"
+  [ "$output" = "$first_output" ]
+}
+```
+
+**Test Helpers:**
+
+```bash
+# test_helper.bash
+setup() {
+  TEST_DIR=$(mktemp -d)
+  cd "$TEST_DIR" || exit 1
+}
+
+teardown() {
+  rm -rf "$TEST_DIR"
+}
+
+# Mock external commands
+mock_command() {
+  local cmd="$1"
+  local output="$2"
+  echo "$output" > "$TEST_DIR/$cmd"
+  chmod +x "$TEST_DIR/$cmd"
+  PATH="$TEST_DIR:$PATH"
+}
+```
+
+**Integration Testing:**
+
+```bash
+#!/usr/bin/env bats
+
+@test "script processes files correctly" {
+  # Setup
+  mkdir -p test_data
+  echo "test content" > test_data/file.txt
+
+  # Execute
+  run ./script.sh test_data
+
+  # Verify
+  [ "$status" -eq 0 ]
+  [ -f test_data/file.processed ]
+  grep -q "processed" test_data/file.processed
+
+  # Cleanup
+  rm -rf test_data
+}
+```
+
+**Performance Testing:**
+
+```bash
+@test "script completes within time limit" {
+  start=$(date +%s)
+  run ./script.sh
+  end=$(date +%s)
+
+  duration=$((end - start))
+  [ "$duration" -lt 5 ]  # Should complete in under 5 seconds
+}
+```
+
+**Error Handling Tests:**
+
+```bash
+@test "script handles missing dependencies" {
+  PATH="/empty:$PATH"  # Remove all commands
+  run ./script.sh
+  [ "$status" -eq 1 ]
+  [[ "$output" =~ "Missing dependency" ]]
+}
+
+@test "script handles permission errors" {
+  chmod 000 test_file
+  run ./script.sh test_file
+  [ "$status" -eq 1 ]
+  chmod 644 test_file
+}
+```
+
 ---
 
 ## 9) Example: Robust Script Template
@@ -366,5 +647,488 @@ fi
   ```
 - **POSIX compliance** - For maximum portability, avoid `[[`, `${var,,}`, associative arrays
 - **Test on target platforms** - Use `dash` or `sh` for POSIX testing
+
+## 12) Troubleshooting & Debugging
+
+### Debug Techniques
+
+**Enable Debug Mode:**
+
+```bash
+# Enable debug output
+set -x  # Print each command before execution
+set -v  # Print each line as read
+set -xv  # Both
+
+# Disable debug
+set +x
+set +v
+```
+
+**Structured Debugging:**
+
+```bash
+# Debug function
+debug() {
+  if [[ "${DEBUG:-0}" == "1" ]]; then
+    echo "[DEBUG] $*" >&2
+  fi
+}
+
+# Usage
+DEBUG=1 ./script.sh
+```
+
+**Error Tracing:**
+
+```bash
+# Enhanced error trap
+trap 'echo "Error at line $LINENO in ${FUNCNAME[0]:-main}: $BASH_COMMAND"' ERR
+
+# Function call stack
+trap 'echo "Call stack: ${FUNCNAME[*]}"' ERR
+```
+
+**Common Issues & Solutions:**
+
+**Issue: Variable not set**
+
+```bash
+# Problem: Unset variable causes script to exit
+set -u
+echo "$UNDEFINED_VAR"  # Exits with error
+
+# Solution: Use default value
+echo "${UNDEFINED_VAR:-default_value}"
+
+# Solution: Check before use
+if [[ -n "${UNDEFINED_VAR:-}" ]]; then
+  echo "$UNDEFINED_VAR"
+fi
+```
+
+**Issue: Command not found**
+
+```bash
+# Problem: Script fails if command missing
+some_command
+
+# Solution: Check first
+if ! command -v some_command >/dev/null 2>&1; then
+  echo "Error: some_command not found" >&2
+  exit 1
+fi
+some_command
+```
+
+**Issue: Permission denied**
+
+```bash
+# Problem: Can't write to file
+echo "data" > /protected/file.txt
+
+# Solution: Check permissions first
+if [[ ! -w "/protected" ]]; then
+  echo "Error: No write permission" >&2
+  exit 1
+fi
+echo "data" > /protected/file.txt
+```
+
+**Issue: Disk space**
+
+```bash
+# Problem: Out of disk space
+dd if=/dev/zero of=large_file bs=1M count=1000
+
+# Solution: Check available space
+available=$(df -BG . | awk 'NR==2 {print $4}' | sed 's/G//')
+if [[ $available -lt 10 ]]; then
+  echo "Error: Insufficient disk space (need 10GB, have ${available}GB)" >&2
+  exit 1
+fi
+```
+
+**Performance Debugging:**
+
+```bash
+# Time command execution
+time expensive_command
+
+# Profile script
+bash -x script.sh 2>&1 | ts '[%Y-%m-%d %H:%M:%.S]'
+
+# Memory usage
+/usr/bin/time -v ./script.sh
+```
+
+## 13) Advanced Patterns
+
+### Retry with Exponential Backoff
+
+```bash
+retry_with_backoff() {
+  local max_attempts="${1:-5}"
+  local delay="${2:-1}"
+  shift 2
+  local attempt=1
+
+  while ! "$@"; do
+    if ((attempt >= max_attempts)); then
+      echo "Failed after $max_attempts attempts" >&2
+      return 1
+    fi
+
+    echo "Attempt $attempt/$max_attempts failed, retrying in ${delay}s..." >&2
+    sleep "$delay"
+    delay=$((delay * 2 > 60 ? 60 : delay * 2))  # Cap at 60s
+    ((attempt++))
+  done
+}
+
+# Usage
+retry_with_backoff 5 2 curl -f https://api.acme.com/health
+```
+
+### Lock File Pattern
+
+```bash
+acquire_lock() {
+  local lock_file="${1:-/tmp/script.lock}"
+  local lock_fd=200
+
+  exec "$lock_fd>$lock_file" || {
+    echo "Failed to open lock file" >&2
+    return 1
+  }
+
+  if ! flock -n "$lock_fd"; then
+    echo "Another instance is running" >&2
+    return 1
+  fi
+
+  echo "Lock acquired"
+  trap "flock -u $lock_fd; rm -f $lock_file" EXIT
+}
+```
+
+### Configuration Management
+
+```bash
+load_config() {
+  local config_file="${1:-config.conf}"
+
+  if [[ ! -f "$config_file" ]]; then
+    echo "Error: Config file not found: $config_file" >&2
+    return 1
+  fi
+
+  # Source config with validation
+  while IFS='=' read -r key value; do
+    # Skip comments and empty lines
+    [[ "$key" =~ ^#.*$ ]] && continue
+    [[ -z "$key" ]] && continue
+
+    # Validate key format
+    if [[ ! "$key" =~ ^[A-Z_][A-Z0-9_]*$ ]]; then
+      echo "Warning: Invalid config key: $key" >&2
+      continue
+    fi
+
+    # Export variable
+    export "$key"="$value"
+  done < "$config_file"
+}
+```
+
+### Signal Handling
+
+```bash
+cleanup() {
+  echo "Cleaning up..." >&2
+  rm -f "$TEMP_FILE"
+  # Release resources, close connections, etc.
+}
+
+trap cleanup EXIT INT TERM
+
+# Handle specific signals
+trap 'echo "Received SIGUSR1"' USR1
+trap 'echo "Received SIGUSR2"' USR2
+```
+
+## 14) Comprehensive Example Script
+
+Complete example demonstrating Bash best practices:
+
+```bash
+#!/usr/bin/env bash
+set -eEuo pipefail
+
+# ================================================================
+# Script: process-users.sh
+# Purpose: Process user data files with validation and error handling
+# Usage: ./process-users.sh [OPTIONS] <input_file>
+# ================================================================
+
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_NAME="$(basename "$0" .sh)"
+readonly VERSION="1.0.0"
+
+# Configuration
+readonly MAX_RETRIES=3
+readonly RETRY_DELAY=2
+readonly LOCK_FILE="/tmp/${SCRIPT_NAME}.lock"
+readonly LOG_FILE="${HOME}/log/${SCRIPT_NAME}_$(date -u +%Y%m%d_%H%M%S).log"
+
+# Colors for output (if terminal supports it)
+if [[ -t 1 ]]; then
+  readonly RED='\033[0;31m'
+  readonly GREEN='\033[0;32m'
+  readonly YELLOW='\033[1;33m'
+  readonly NC='\033[0m'  # No Color
+else
+  readonly RED=''
+  readonly GREEN=''
+  readonly YELLOW=''
+  readonly NC=''
+fi
+
+# Logging
+log() {
+  local level="$1"
+  shift
+  local timestamp
+  timestamp=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+  echo -e "${timestamp} [${level}] $*" | tee -a "$LOG_FILE" >&2
+}
+
+log_info() { log "INFO" "$@"; }
+log_warn() { log "WARN" "$@"; }
+log_error() { log "ERROR" "$@"; }
+log_debug() {
+  [[ "${DEBUG:-0}" == "1" ]] && log "DEBUG" "$@"
+}
+
+# Cleanup
+cleanup() {
+  log_info "Cleaning up..."
+  rm -f "$LOCK_FILE"
+  [[ -n "${TEMP_FILE:-}" ]] && rm -f "$TEMP_FILE"
+}
+
+trap cleanup EXIT INT TERM
+
+# Lock file
+acquire_lock() {
+  exec 200>"$LOCK_FILE" || {
+    log_error "Failed to create lock file"
+    exit 1
+  }
+
+  if ! flock -n 200; then
+    log_error "Another instance is running"
+    exit 1
+  fi
+
+  log_debug "Lock acquired"
+}
+
+# Dependency check
+check_dependencies() {
+  local deps=("jq" "curl")
+  local missing=()
+
+  for dep in "${deps[@]}"; do
+    if ! command -v "$dep" >/dev/null 2>&1; then
+      missing+=("$dep")
+    fi
+  done
+
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    log_error "Missing dependencies: ${missing[*]}"
+    exit 1
+  fi
+}
+
+# Validate input file
+validate_input() {
+  local file="$1"
+
+  if [[ ! -f "$file" ]]; then
+    log_error "Input file not found: $file"
+    return 1
+  fi
+
+  if [[ ! -r "$file" ]]; then
+    log_error "Input file not readable: $file"
+    return 1
+  fi
+
+  if [[ ! -s "$file" ]]; then
+    log_error "Input file is empty: $file"
+    return 1
+  fi
+
+  # Validate JSON format
+  if ! jq empty "$file" 2>/dev/null; then
+    log_error "Invalid JSON format: $file"
+    return 1
+  fi
+
+  return 0
+}
+
+# Process user
+process_user() {
+  local user_data="$1"
+  local user_id
+  user_id=$(jq -r '.id' <<< "$user_data")
+
+  log_info "Processing user: $user_id"
+
+  # Simulate processing
+  sleep 1
+
+  log_info "User processed: $user_id"
+  return 0
+}
+
+# Retry wrapper
+retry() {
+  local max_attempts="$1"
+  local delay="$2"
+  shift 2
+  local attempt=1
+
+  while ! "$@"; do
+    if ((attempt >= max_attempts)); then
+      log_error "Failed after $max_attempts attempts: $*"
+      return 1
+    fi
+
+    log_warn "Attempt $attempt/$max_attempts failed, retrying in ${delay}s..."
+    sleep "$delay"
+    delay=$((delay * 2 > 60 ? 60 : delay * 2))
+    ((attempt++))
+  done
+}
+
+# Usage
+usage() {
+  cat <<EOF
+Usage: $SCRIPT_NAME [OPTIONS] <input_file>
+
+Options:
+  -h, --help      Show this help message
+  -v, --version   Show version
+  -d, --debug     Enable debug output
+  -q, --quiet     Suppress info messages
+
+Arguments:
+  input_file      JSON file containing user data
+
+Examples:
+  $SCRIPT_NAME users.json
+  $SCRIPT_NAME --debug users.json
+EOF
+  exit 0
+}
+
+# Parse arguments
+parse_args() {
+  local input_file=""
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -h|--help)
+        usage
+        ;;
+      -v|--version)
+        echo "$SCRIPT_NAME version $VERSION"
+        exit 0
+        ;;
+      -d|--debug)
+        export DEBUG=1
+        shift
+        ;;
+      -q|--quiet)
+        export QUIET=1
+        shift
+        ;;
+      -*)
+        log_error "Unknown option: $1"
+        usage
+        ;;
+      *)
+        input_file="$1"
+        shift
+        ;;
+    esac
+  done
+
+  if [[ -z "$input_file" ]]; then
+    log_error "Input file required"
+        usage
+  fi
+
+  echo "$input_file"
+}
+
+# Main function
+main() {
+  local input_file
+  input_file=$(parse_args "$@")
+
+  log_info "Starting $SCRIPT_NAME v$VERSION"
+  log_debug "Script directory: $SCRIPT_DIR"
+  log_debug "Input file: $input_file"
+
+  acquire_lock
+  check_dependencies
+
+  if ! validate_input "$input_file"; then
+    exit 1
+  fi
+
+  local processed=0
+  local failed=0
+
+  # Process users
+  while IFS= read -r user_data; do
+    if retry "$MAX_RETRIES" "$RETRY_DELAY" process_user "$user_data"; then
+      ((processed++))
+    else
+      ((failed++))
+      log_error "Failed to process user"
+    fi
+  done < <(jq -c '.[]' "$input_file")
+
+  log_info "Processing complete: $processed succeeded, $failed failed"
+
+  if [[ $failed -gt 0 ]]; then
+    exit 1
+  fi
+}
+
+# Run main if script is executed directly
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  main "$@"
+fi
+```
+
+**Key Patterns Demonstrated:**
+
+- ✅ Strict error handling (`set -eEuo pipefail`)
+- ✅ Lock file for concurrency control
+- ✅ Dependency checking
+- ✅ Input validation
+- ✅ Structured logging with levels
+- ✅ Retry logic with exponential backoff
+- ✅ Cleanup on exit
+- ✅ Argument parsing
+- ✅ Usage documentation
+- ✅ Cross-platform compatibility
+
 ---
 

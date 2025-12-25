@@ -1,7 +1,7 @@
 ---
 title: Microsoft Azure Best Practices
 description: Azure platform engineering patterns, ARM/Bicep templates, Azure DevOps, and cloud architecture best practices
-priority: 285
+priority: 430
 alwaysApply: false
 files:
   include:

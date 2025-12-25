@@ -1,7 +1,7 @@
 ---
 title: Google Cloud Platform (GCP) Best Practices
 description: GCP platform engineering patterns, Cloud Build, Terraform for GCP, and cloud architecture best practices
-priority: 290
+priority: 420
 alwaysApply: false
 files:
   include:

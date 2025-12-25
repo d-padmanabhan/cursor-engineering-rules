@@ -1,7 +1,7 @@
 ---
 title: Rust Programming Best Practices
 description: Modern Rust patterns, ownership, error handling, async/await, and production-ready development practices
-priority: 185
+priority: 230
 alwaysApply: false
 files:
   include:
@@ -11,6 +11,48 @@ files:
 ---
 
 # Rust Programming Best Practices
+
+**Audience**: engineers writing and reviewing Rust code
+**Goal**: Memory-safe, performant, idiomatic Rust following community best practices
+
+## Rust Philosophy (Core Principles)
+
+**Core Principles:**
+
+- **"Memory safety without garbage collection"** - Ownership system prevents memory errors at compile time
+- **"Zero-cost abstractions"** - High-level code compiles to efficient low-level code
+- **"Fearless concurrency"** - Type system prevents data races at compile time
+- **"Explicit over implicit"** - No hidden allocations, no magic, everything is explicit
+- **"Compile-time guarantees"** - If it compiles, it's correct (memory safety, thread safety)
+- **"Performance by default"** - Fast, predictable performance without optimization flags
+- **"Composition over inheritance"** - Traits and generics enable flexible design
+- **"Fail fast, fail clearly"** - Use `Result` and `Option`, avoid panics in production
+
+**Applying Rust Principles:**
+
+```rust
+// BAD: Unsafe, implicit, error-prone
+fn process_data(data: Vec<i32>) -> i32 {
+    let mut sum = 0;
+    for i in 0..data.len() {
+        sum += data[i];  // Potential index out of bounds
+    }
+    sum
+}
+
+// GOOD: Safe, explicit, idiomatic
+fn process_data(data: &[i32]) -> i32 {
+    data.iter().sum()  // Iterator is safe, explicit, efficient
+}
+
+// EXCELLENT: Type-safe, error handling
+fn process_data(data: &[i32]) -> Result<i32, ProcessingError> {
+    if data.is_empty() {
+        return Err(ProcessingError::EmptyInput);
+    }
+    Ok(data.iter().sum())
+}
+```
 
 ## Guiding Principles
 
@@ -470,6 +512,96 @@ mod tests {
 }
 ```
 
+### Advanced Testing Patterns
+
+**Parameterized Tests:**
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_divide() {
+        let test_cases = vec![
+            (10, 2, Ok(5)),
+            (10, 0, Err(DivisionError::DivideByZero)),
+            (-10, 2, Ok(-5)),
+        ];
+
+        for (a, b, expected) in test_cases {
+            assert_eq!(divide(a, b), expected);
+        }
+    }
+}
+```
+
+**Mocking with Traits:**
+
+```rust
+// Define trait for testability
+trait Database {
+    fn get_user(&self, id: UserId) -> Result<User>;
+}
+
+// Real implementation
+struct PostgresDatabase { /* ... */ }
+impl Database for PostgresDatabase { /* ... */ }
+
+// Mock implementation
+struct MockDatabase {
+    users: HashMap<UserId, User>,
+}
+
+impl Database for MockDatabase {
+    fn get_user(&self, id: UserId) -> Result<User> {
+        self.users.get(&id)
+            .cloned()
+            .ok_or(AppError::UserNotFound(id))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_user() {
+        let mut mock_db = MockDatabase {
+            users: HashMap::new(),
+        };
+        let user_id = UserId::new();
+        let user = User::new("John", "john@acme.com");
+        mock_db.users.insert(user_id, user.clone());
+
+        assert_eq!(mock_db.get_user(user_id), Ok(user));
+    }
+}
+```
+
+**Test Fixtures:**
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn create_test_user() -> User {
+        User::new("Test User", "test@acme.com")
+    }
+
+    fn create_test_app_state() -> AppState {
+        // Create test database, etc.
+    }
+
+    #[test]
+    fn test_user_operations() {
+        let user = create_test_user();
+        // Test with user
+    }
+}
+```
+
 ### Async Tests
 ```rust
 #[cfg(test)]
@@ -508,7 +640,155 @@ async fn test_api_health_check() {
 }
 ```
 
+### Benchmark Tests
+
+```rust
+// benches/my_benchmark.rs
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
+
+fn benchmark_sum(c: &mut Criterion) {
+    c.bench_function("sum iterator", |b| {
+        b.iter(|| {
+            let sum: i32 = (1..=1000).sum();
+            black_box(sum)
+        })
+    });
+}
+
+criterion_group!(benches, benchmark_sum);
+criterion_main!(benches);
+```
+
 ---
+
+## Advanced Patterns
+
+### Generics & Traits
+
+```rust
+// Generic function
+fn find_max<T: PartialOrd>(items: &[T]) -> Option<&T> {
+    items.iter().max()
+}
+
+// Generic struct
+struct Container<T> {
+    value: T,
+}
+
+impl<T> Container<T> {
+    fn new(value: T) -> Self {
+        Self { value }
+    }
+}
+
+// Trait bounds
+fn process<T: Clone + Display>(item: T) {
+    let cloned = item.clone();
+    println!("{}", cloned);
+}
+
+// Where clause for complex bounds
+fn complex_function<T, U>()
+where
+    T: Clone + Send + Sync,
+    U: From<T> + Debug,
+{
+    // Implementation
+}
+```
+
+### Advanced Trait Patterns
+
+```rust
+// Trait with associated types
+trait Iterator {
+    type Item;
+    fn next(&mut self) -> Option<Self::Item>;
+}
+
+// Trait with default implementations
+trait Greet {
+    fn greet(&self) {
+        println!("Hello!");
+    }
+
+    fn greet_formal(&self) {
+        println!("Good day!");
+    }
+}
+
+// Trait objects (dynamic dispatch)
+fn process_greeters(greeters: &[Box<dyn Greet>]) {
+    for greeter in greeters {
+        greeter.greet();
+    }
+}
+```
+
+### Macros
+
+```rust
+// Declarative macro
+macro_rules! vec {
+    ($($x:expr),*) => {
+        {
+            let mut temp_vec = Vec::new();
+            $(
+                temp_vec.push($x);
+            )*
+            temp_vec
+        }
+    };
+}
+
+// Usage
+let v = vec![1, 2, 3];
+
+// Procedural macro (derive)
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct User {
+    id: UserId,
+    name: String,
+}
+```
+
+### Advanced Async Patterns
+
+```rust
+use tokio::sync::{mpsc, oneshot};
+
+// Channel communication
+async fn worker(mut rx: mpsc::Receiver<String>) {
+    while let Some(msg) = rx.recv().await {
+        process_message(msg).await;
+    }
+}
+
+// Select! for concurrent operations
+use tokio::select;
+
+async fn race_operations() -> String {
+    select! {
+        result1 = operation1() => format!("Operation 1: {:?}", result1),
+        result2 = operation2() => format!("Operation 2: {:?}", result2),
+    }
+}
+
+// Join handle management
+async fn spawn_and_manage() {
+    let handle = tokio::spawn(async {
+        heavy_computation().await
+    });
+
+    // Do other work...
+
+    match handle.await {
+        Ok(result) => println!("Result: {:?}", result),
+        Err(e) => eprintln!("Task failed: {:?}", e),
+    }
+}
+```
 
 ## Common Patterns
 
@@ -742,6 +1022,99 @@ fn process_users(users: &[User]) {
 }
 ```
 
+### Performance Optimization Examples
+
+**String Building:**
+
+```rust
+// BAD: Multiple allocations
+let mut result = String::new();
+for i in 0..100 {
+    result.push_str(&format!("{}", i));
+}
+
+// GOOD: Pre-allocate capacity
+let mut result = String::with_capacity(100 * 3);  // Estimate capacity
+for i in 0..100 {
+    result.push_str(&i.to_string());
+}
+
+// EXCELLENT: Use iterator
+let result: String = (0..100).map(|i| i.to_string()).collect();
+```
+
+**Vector Pre-allocation:**
+
+```rust
+// BAD: Multiple reallocations
+let mut vec = Vec::new();
+for i in 0..1000 {
+    vec.push(i);
+}
+
+// GOOD: Pre-allocate capacity
+let mut vec = Vec::with_capacity(1000);
+for i in 0..1000 {
+    vec.push(i);
+}
+
+// EXCELLENT: Use iterator
+let vec: Vec<i32> = (0..1000).collect();
+```
+
+**Avoiding Unnecessary Allocations:**
+
+```rust
+// BAD: Unnecessary String allocation
+fn process(text: String) {
+    println!("{}", text);
+}
+
+// GOOD: Use &str
+fn process(text: &str) {
+    println!("{}", text);
+}
+
+// EXCELLENT: Generic over both
+fn process<T: AsRef<str>>(text: T) {
+    println!("{}", text.as_ref());
+}
+```
+
+**Efficient Lookups:**
+
+```rust
+// BAD: Linear search
+fn find_user(users: &[User], id: UserId) -> Option<&User> {
+    users.iter().find(|u| u.id == id)
+}
+
+// GOOD: Use HashMap for O(1) lookup
+use std::collections::HashMap;
+
+fn find_user(users: &HashMap<UserId, User>, id: UserId) -> Option<&User> {
+    users.get(&id)
+}
+```
+
+**Zero-Cost Abstractions:**
+
+```rust
+// Iterator chains compile to efficient loops
+let sum: i32 = (1..=1000)
+    .filter(|x| x % 2 == 0)
+    .map(|x| x * 2)
+    .sum();
+
+// Compiles to roughly:
+// let mut sum = 0;
+// for x in 1..=1000 {
+//     if x % 2 == 0 {
+//         sum += x * 2;
+//     }
+// }
+```
+
 ---
 
 ## Naming Conventions
@@ -754,6 +1127,350 @@ fn process_users(users: &[User]) {
 - **Modules**: snake_case (`user_service`, `auth`)
 
 ---
+
+## Troubleshooting & Debugging
+
+### Common Compiler Errors
+
+**Borrow Checker Errors:**
+
+```rust
+// Error: cannot borrow as mutable more than once
+let mut s = String::from("hello");
+let r1 = &mut s;
+let r2 = &mut s;  // Error!
+
+// Solution: Scope mutable borrows
+let mut s = String::from("hello");
+{
+    let r1 = &mut s;
+    // Use r1
+}
+let r2 = &mut s;  // OK now
+```
+
+**Lifetime Errors:**
+
+```rust
+// Error: missing lifetime specifier
+fn longest(x: &str, y: &str) -> &str {  // Error!
+    if x.len() > y.len() { x } else { y }
+}
+
+// Solution: Add explicit lifetime
+fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
+    if x.len() > y.len() { x } else { y }
+}
+```
+
+**Move Errors:**
+
+```rust
+// Error: value moved
+let s = String::from("hello");
+let s2 = s;
+println!("{}", s);  // Error: s moved to s2
+
+// Solution: Clone or borrow
+let s = String::from("hello");
+let s2 = s.clone();  // Clone
+println!("{}", s);   // OK
+
+// Or borrow
+let s = String::from("hello");
+let s2 = &s;  // Borrow
+println!("{}", s);   // OK
+```
+
+### Debugging Techniques
+
+**Print Debugging:**
+
+```rust
+// Use dbg! macro
+let x = 5;
+let y = dbg!(x * 2) + 1;
+// Prints: [src/main.rs:2] x * 2 = 10
+
+// Use println! with Debug trait
+#[derive(Debug)]
+struct User {
+    id: UserId,
+    name: String,
+}
+
+println!("User: {:?}", user);
+```
+
+**Structured Logging:**
+
+```rust
+use tracing::{info, error, warn, debug};
+
+fn process_user(user: &User) -> Result<()> {
+    info!(user_id = ?user.id, "Processing user");
+
+    match validate_user(user) {
+        Ok(_) => {
+            info!(user_id = ?user.id, "User validated");
+            Ok(())
+        }
+        Err(e) => {
+            error!(user_id = ?user.id, error = ?e, "Validation failed");
+            Err(e)
+        }
+    }
+}
+```
+
+**Performance Profiling:**
+
+```rust
+// Use criterion for benchmarks
+use criterion::{black_box, Criterion};
+
+fn benchmark_function(c: &mut Criterion) {
+    c.bench_function("my_function", |b| {
+        b.iter(|| {
+            my_function(black_box(input))
+        })
+    });
+}
+
+// Use perf or flamegraph for production profiling
+// cargo install flamegraph
+// cargo flamegraph --bin my_app
+```
+
+### Common Issues & Solutions
+
+**Memory Leaks:**
+
+```rust
+// BAD: Circular references with Rc
+use std::rc::Rc;
+use std::cell::RefCell;
+
+struct Node {
+    value: i32,
+    next: Option<Rc<RefCell<Node>>>,
+}
+
+// GOOD: Use Weak references to break cycles
+use std::rc::{Rc, Weak};
+
+struct Node {
+    value: i32,
+    next: Option<Weak<RefCell<Node>>>,
+}
+```
+
+**Deadlocks:**
+
+```rust
+// BAD: Multiple locks acquired in different order
+let lock1 = mutex1.lock().unwrap();
+let lock2 = mutex2.lock().unwrap();
+
+// GOOD: Always acquire locks in same order
+let lock1 = mutex1.lock().unwrap();
+let lock2 = mutex2.lock().unwrap();
+
+// Or use try_lock with timeout
+use std::time::Duration;
+let lock1 = mutex1.lock().unwrap();
+let lock2 = mutex2.try_lock_timeout(Duration::from_secs(1))?;
+```
+
+**Panic Handling:**
+
+```rust
+// BAD: Unwrap everywhere
+let value = option.unwrap();
+
+// GOOD: Handle errors properly
+match option {
+    Some(value) => process(value),
+    None => handle_error(),
+}
+
+// Or use ? operator
+let value = option.ok_or(AppError::MissingValue)?;
+```
+
+## Comprehensive Example Application
+
+Complete REST API example demonstrating Rust best practices:
+
+```rust
+// main.rs
+use axum::{
+    extract::{Path, Query, State},
+    http::StatusCode,
+    response::IntoResponse,
+    routing::{get, post, delete},
+    Json, Router,
+};
+use serde::{Deserialize, Serialize};
+use std::sync::Arc;
+use tokio::sync::RwLock;
+use uuid::Uuid;
+
+#[derive(Clone)]
+struct AppState {
+    db: Arc<RwLock<Vec<User>>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct User {
+    id: Uuid,
+    name: String,
+    email: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct CreateUserRequest {
+    name: String,
+    email: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct ListUsersQuery {
+    limit: Option<usize>,
+    offset: Option<usize>,
+}
+
+#[tokio::main]
+async fn main() {
+    let state = AppState {
+        db: Arc::new(RwLock::new(Vec::new())),
+    };
+
+    let app = Router::new()
+        .route("/health", get(health_check))
+        .route("/users", get(list_users).post(create_user))
+        .route("/users/:id", get(get_user).delete(delete_user))
+        .with_state(state);
+
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080")
+        .await
+        .unwrap();
+
+    println!("Server running on http://0.0.0.0:8080");
+    axum::serve(listener, app).await.unwrap();
+}
+
+async fn health_check() -> impl IntoResponse {
+    (StatusCode::OK, Json(serde_json::json!({
+        "status": "healthy"
+    })))
+}
+
+async fn list_users(
+    State(state): State<AppState>,
+    Query(query): Query<ListUsersQuery>,
+) -> Result<Json<Vec<User>>, AppError> {
+    let db = state.db.read().await;
+    let limit = query.limit.unwrap_or(10);
+    let offset = query.offset.unwrap_or(0);
+
+    let users: Vec<User> = db
+        .iter()
+        .skip(offset)
+        .take(limit)
+        .cloned()
+        .collect();
+
+    Ok(Json(users))
+}
+
+async fn create_user(
+    State(state): State<AppState>,
+    Json(payload): Json<CreateUserRequest>,
+) -> Result<(StatusCode, Json<User>), AppError> {
+    // Validate email
+    if !payload.email.contains('@') {
+        return Err(AppError::InvalidInput("Invalid email".to_string()));
+    }
+
+    let user = User {
+        id: Uuid::new_v4(),
+        name: payload.name,
+        email: payload.email,
+    };
+
+    let mut db = state.db.write().await;
+    db.push(user.clone());
+
+    Ok((StatusCode::CREATED, Json(user)))
+}
+
+async fn get_user(
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<User>, AppError> {
+    let db = state.db.read().await;
+
+    let user = db
+        .iter()
+        .find(|u| u.id == id)
+        .cloned()
+        .ok_or(AppError::UserNotFound(id))?;
+
+    Ok(Json(user))
+}
+
+async fn delete_user(
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+) -> Result<StatusCode, AppError> {
+    let mut db = state.db.write().await;
+
+    let index = db
+        .iter()
+        .position(|u| u.id == id)
+        .ok_or(AppError::UserNotFound(id))?;
+
+    db.remove(index);
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Debug)]
+enum AppError {
+    UserNotFound(Uuid),
+    InvalidInput(String),
+}
+
+impl IntoResponse for AppError {
+    fn into_response(self) -> axum::response::Response {
+        let (status, message) = match self {
+            AppError::UserNotFound(id) => (
+                StatusCode::NOT_FOUND,
+                format!("User not found: {}", id),
+            ),
+            AppError::InvalidInput(msg) => (
+                StatusCode::BAD_REQUEST,
+                msg,
+            ),
+        };
+
+        (status, Json(serde_json::json!({
+            "error": message
+        }))).into_response()
+    }
+}
+```
+
+**Key Patterns Demonstrated:**
+
+- ✅ Ownership: Proper borrowing and ownership
+- ✅ Error Handling: Result types, custom errors
+- ✅ Async: Tokio runtime, async/await
+- ✅ Concurrency: RwLock for shared state
+- ✅ Type Safety: Strong typing throughout
+- ✅ API Design: RESTful endpoints
+- ✅ Validation: Input validation
+- ✅ Best Practices: Idiomatic Rust
 
 ## Related Files
 

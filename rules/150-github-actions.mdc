@@ -2,7 +2,7 @@
 title: GitHub Actions Engineering Ruleset
 description: Secure, fast, maintainable workflows for this repo.
 alwaysApply: false         # keep false so it only targets GHA files
-priority: 120              # higher than your core.mdc (e.g., 100)
+priority: 150              # higher than your core.mdc (e.g., 100)
 files:
   include:
     - ".github/workflows/**/*.yml"
@@ -15,6 +15,69 @@ files:
 
 **Audience**: engineers writing and reviewing GitHub Actions
 **Goal**: secure, fast, maintainable workflows - without over-engineering
+
+## GitHub Actions Philosophy (Core Principles)
+
+**Core Principles:**
+
+- **"Security by default"** - Start with zero permissions, grant only what's needed
+- **"Fail fast, fail clearly"** - Use timeouts, clear error messages, proper exit codes
+- **"Cache aggressively, invalidate wisely"** - Cache dependencies and artifacts, version keys properly
+- **"Composition over duplication"** - Use reusable workflows and composite actions
+- **"Explicit over implicit"** - Document everything, use clear naming, avoid magic
+- **"Performance matters"** - Parallelize where possible, skip unnecessary runs, optimize caching
+- **"Observability is essential"** - Use summaries, annotations, structured logging
+- **"Trust but verify"** - Validate inputs, sanitize outputs, audit dependencies
+
+**Applying GitHub Actions Principles:**
+
+```yaml
+# BAD: Implicit, insecure, slow
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: npm install && npm test
+
+# GOOD: Explicit, secure, optimized
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'package*.json'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+```
 
 > Note: where your original guidance conflicted with how Actions actually works, I kept your text and added a short **Note** immediately under it so the doc remains complete and correct.
 
@@ -1022,6 +1085,8 @@ jobs:
 
 ## Performance Optimization
 
+**Golden Rule:** Measure workflow run times, identify bottlenecks, optimize iteratively.
+
 Where it makes sense:
 
 - Minimize startup cost with efficient caching
@@ -1032,6 +1097,130 @@ Where it makes sense:
 - Use GitHub-hosted runners efficiently or self-hosted for special workloads
 - Use `paths` and `paths-ignore` to skip unnecessary runs
 - Use `concurrency` to squash duplicate CI runs for the same ref
+
+### Performance Optimization Examples
+
+**Parallel Job Execution:**
+
+```yaml
+# BAD: Sequential jobs (slow)
+jobs:
+  lint:
+    steps: [ ... ]
+  test:
+    needs: lint
+    steps: [ ... ]
+  build:
+    needs: test
+    steps: [ ... ]
+
+# GOOD: Parallel independent jobs (fast)
+jobs:
+  lint:
+    steps: [ ... ]
+  test:
+    steps: [ ... ]
+  build:
+    steps: [ ... ]
+
+  deploy:
+    needs: [lint, test, build]  # Only deploy after all pass
+    steps: [ ... ]
+```
+
+**Efficient Caching:**
+
+```yaml
+# BAD: Cache key too specific (low hit rate)
+- uses: actions/cache@v4
+  with:
+    path: ~/.npm
+    key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-${{ github.sha }}
+
+# GOOD: Layered cache keys (high hit rate)
+- uses: actions/cache@v4
+  with:
+    path: ~/.npm
+    key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+    restore-keys: |
+      ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-
+      ${{ runner.os }}-node-
+      ${{ runner.os }}-
+```
+
+**Conditional Step Execution:**
+
+```yaml
+# BAD: Always runs expensive operations
+- name: Build Docker image
+  run: docker build -t app .
+- name: Push to registry
+  run: docker push app
+
+# GOOD: Only build/push when needed
+- name: Build Docker image
+  if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  run: docker build -t app .
+
+- name: Push to registry
+  if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  run: docker push app
+```
+
+**Matrix Optimization:**
+
+```yaml
+# BAD: Tests all combinations sequentially
+strategy:
+  matrix:
+    os: [ubuntu-latest, windows-latest, macos-latest]
+    node: [18, 20, 22]
+  max-parallel: 1  # Sequential
+
+# GOOD: Parallel execution with limits
+strategy:
+  matrix:
+    os: [ubuntu-latest, windows-latest, macos-latest]
+    node: [18, 20, 22]
+  max-parallel: 6  # Run 6 jobs in parallel
+  fail-fast: false  # Don't cancel others on failure
+```
+
+**Artifact Optimization:**
+
+```yaml
+# BAD: Uploads everything including unnecessary files
+- uses: actions/upload-artifact@v4
+  with:
+    path: dist/
+
+# GOOD: Selective upload with compression
+- uses: actions/upload-artifact@v4
+  with:
+    name: build-artifacts
+    path: |
+      dist/
+      !dist/**/*.map  # Exclude source maps
+      !dist/**/*.test.js  # Exclude test files
+    retention-days: 7
+    compression-level: 6  # Balance speed vs size
+```
+
+**Dependency Installation Optimization:**
+
+```yaml
+# BAD: Installs all dependencies including dev
+- name: Install dependencies
+  run: npm install
+
+# GOOD: CI-specific install (faster, smaller)
+- name: Install dependencies
+  run: npm ci --omit=dev  # Skip dev dependencies in CI
+
+# GOOD: Use lockfile for reproducible builds
+- name: Install dependencies
+  run: npm ci  # Uses package-lock.json, faster than npm install
+```
 
 ### Path Filtering Examples
 
@@ -1082,6 +1271,117 @@ Where it makes sense:
 - Use integration tests for cross-service validation
 - Use end-to-end tests for the full path
 - Add unit tests for individual components where applicable
+
+### Workflow Testing Patterns
+
+**Local Testing with Act:**
+
+```bash
+# Test specific workflow
+act push -W .github/workflows/ci.yml
+
+# Test with secrets
+act push -s GITHUB_TOKEN=$GITHUB_TOKEN
+
+# Test specific job
+act -j test
+
+# Dry run (list what would run)
+act -l
+
+# Test with matrix
+act -j test --matrix os:ubuntu-latest,node:20
+```
+
+**Workflow Linting:**
+
+```bash
+# Install actionlint
+brew install actionlint  # macOS
+# or
+go install github.com/rhymond/actionlint/cmd/actionlint@latest
+
+# Lint workflow
+actionlint .github/workflows/*.yml
+
+# CI integration
+- name: Lint workflows
+  uses: reviewdog/action-actionlint@v1
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+**Test Workflow Pattern:**
+
+```yaml
+# .github/workflows/test-workflow.yml
+name: Test Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      workflow_file:
+        description: 'Workflow file to test'
+        required: true
+        type: string
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate workflow syntax
+        run: |
+          yamllint "${{ inputs.workflow_file }}"
+          actionlint "${{ inputs.workflow_file }}"
+
+      - name: Test with act
+        run: |
+          act push -W "${{ inputs.workflow_file }}" --dry-run
+```
+
+**Dry-Run Patterns:**
+
+```yaml
+# Terraform dry-run
+- name: Terraform Plan
+  run: terraform plan -out=tfplan
+  if: github.event_name == 'pull_request'
+
+- name: Terraform Apply
+  run: terraform apply tfplan
+  if: github.ref == 'refs/heads/main'
+
+# Deployment dry-run
+- name: Deploy (Dry Run)
+  if: github.event_name == 'pull_request'
+  run: |
+    ./deploy.sh --dry-run --environment staging
+
+- name: Deploy (Production)
+  if: github.ref == 'refs/heads/main'
+  run: |
+    ./deploy.sh --environment production
+```
+
+**Smoke Tests:**
+
+```yaml
+- name: Deploy to Staging
+  run: ./deploy.sh staging
+
+- name: Smoke Tests
+  run: |
+    # Health check
+    curl -f https://staging.acme.com/health || exit 1
+
+    # API endpoint check
+    curl -f https://staging.acme.com/api/v1/status || exit 1
+
+    # Database connectivity
+    ./scripts/check-db-connection.sh staging || exit 1
+```
 
 ### Local Testing with Act
 
@@ -1330,6 +1630,263 @@ jobs:
 - **Stay updated**: GitHub Actions features evolve rapidly - review quarterly
 
 Remember: The best workflow is one that's understood by your team, maintainable, and delivers value without unnecessary complexity.
+
+## Comprehensive Example Workflow
+
+Complete example demonstrating GitHub Actions best practices:
+
+```yaml
+name: CI/CD Pipeline
+
+# ================================================================
+# Purpose: Complete CI/CD pipeline with testing, building, and deployment
+#
+# Triggers:
+#   - Push to main (full pipeline)
+#   - Pull requests (test and lint only)
+#   - Manual workflow dispatch
+#
+# Required Secrets:
+#   - AWS_ROLE_ARN: OIDC role for AWS access
+#   - DOCKER_USERNAME: Docker Hub username
+#   - DOCKER_TOKEN: Docker Hub access token
+#
+# Dependencies:
+#   - Node.js 20+ for application
+#   - Docker for container builds
+# ================================================================
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'package*.json'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  NODE_VERSION: '20'
+  REGISTRY: docker.io
+  IMAGE_NAME: ${{ github.repository }}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  packages: write
+
+jobs:
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run Prettier check
+        run: npm run format:check
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test -- --coverage
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/lcov.info
+          fail_ci_if_error: false
+
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [lint, test]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: build
+    if: |
+      (github.ref == 'refs/heads/main' ||
+       (github.event_name == 'workflow_dispatch' &&
+        github.event.inputs.environment == 'staging'))
+    environment:
+      name: staging
+      url: https://staging.acme.com
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+          role-session-name: GitHubActions-${{ github.run_id }}
+
+      - name: Deploy to staging
+        run: |
+          ./scripts/deploy.sh staging
+
+      - name: Run smoke tests
+        run: |
+          ./scripts/smoke-tests.sh staging
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: build
+    if: |
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.environment == 'production'
+    environment:
+      name: production
+      url: https://app.acme.com
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+          role-session-name: GitHubActions-${{ github.run_id }}
+
+      - name: Deploy to production
+        run: |
+          ./scripts/deploy.sh production
+
+      - name: Run smoke tests
+        run: |
+          ./scripts/smoke-tests.sh production
+
+  summary:
+    name: Generate Summary
+    runs-on: ubuntu-latest
+    needs: [lint, test, build]
+    if: always()
+    steps:
+      - name: Generate workflow summary
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const summary = `## CI/CD Pipeline Summary
+
+            ### Workflow Information
+            - **Event:** ${{ github.event_name }}
+            - **Branch:** ${{ github.ref_name }}
+            - **Actor:** ${{ github.actor }}
+            - **Commit:** ${{ github.sha }}
+
+            ### Job Results
+            | Job | Status |
+            |-----|--------|
+            | Lint | ${{ needs.lint.result == 'success' && '✅ Passed' || '❌ Failed' }} |
+            | Test | ${{ needs.test.result == 'success' && '✅ Passed' || '❌ Failed' }} |
+            | Build | ${{ needs.build.result == 'success' && '✅ Passed' || '❌ Failed' }} |
+
+            ### Next Steps
+            ${{ needs.build.result == 'success' && github.ref == 'refs/heads/main' && '- Ready for deployment to staging' || '- Fix failing jobs before proceeding' }}
+            `;
+
+            await core.summary.addRaw(summary).write();
+```
+
+**Key Patterns Demonstrated:**
+
+- ✅ Security: Minimal permissions, OIDC for AWS
+- ✅ Performance: Caching, parallel jobs, path filters
+- ✅ Reliability: Timeouts, error handling, smoke tests
+- ✅ Observability: Workflow summaries, structured logging
+- ✅ Reusability: Environment-based deployment
+- ✅ Best practices: Proper concurrency, conditional execution
 
 ---
 

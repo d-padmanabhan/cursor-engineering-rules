@@ -1,7 +1,8 @@
 ---
 title: CLI Application Engineering Ruleset
 description: Patterns and best practices for building command-line interfaces and tools.
-priority: 200
+priority: 250
+
 alwaysApply: false
 files:
   include:

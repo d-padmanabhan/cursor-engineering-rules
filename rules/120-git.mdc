@@ -2,7 +2,7 @@
 title: Git & Commit Standards
 description: Conventional commits, PR hygiene, branch naming, release notes, and foundational GitHub repository scaffolding requirements.
 alwaysApply: true
-priority: 110
+priority: 120
 ---
 
 # Git Fundamentals

@@ -1,7 +1,7 @@
 ---
 title: AWS Engineering Ruleset
 description: Best practices for AWS services, EKS, Platform Engineering, Zero Trust, and cloud infrastructure patterns.
-priority: 280
+priority: 410
 alwaysApply: false
 files:
   include:

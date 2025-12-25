@@ -2,7 +2,7 @@
 title: Development Workflow & Context Management
 description: Plan/Implement/Review workflow with context persistence for complex projects.
 alwaysApply: true
-priority: 50
+priority: 10
 ---
 
 #  GOLDEN RULES (READ FIRST)

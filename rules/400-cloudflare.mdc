@@ -1,7 +1,7 @@
 ---
 title: Cloudflare Ruleset Engineering Guide
 description: End-to-end prompts and patterns for designing, testing, and deploying Cloudflare rulesets (WAF, Rate Limiting, Transform, Workers integration).
-priority: 250
+priority: 400
 alwaysApply: false
 files:
   include:

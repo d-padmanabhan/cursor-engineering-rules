@@ -1,7 +1,7 @@
 ---
 title: Makefile Engineering Ruleset
 description: Standardized makefile patterns for consistent project commands across platforms and languages.
-priority: 190
+priority: 140
 alwaysApply: false
 files:
   include:

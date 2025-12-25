@@ -1,7 +1,7 @@
 ---
 title: Ansible Configuration Management Best Practices
 description: Ansible playbooks, roles, best practices, idempotency, and infrastructure automation patterns
-priority: 145
+priority: 180
 alwaysApply: false
 files:
   include:

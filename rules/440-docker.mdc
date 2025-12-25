@@ -1,7 +1,7 @@
 ---
 title: Docker & Container Best Practices
 description: Production-ready Docker patterns, multi-stage builds, security scanning, and compose orchestration
-priority: 155
+priority: 440
 alwaysApply: false
 files:
   include:

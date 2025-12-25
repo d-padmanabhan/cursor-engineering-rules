@@ -1,7 +1,7 @@
 ---
 title: Python Code Review & Enhancement Guidelines
 description: Opinionated, performance- and security-minded Python rules for generation and review.
-priority: 160
+priority: 190
 alwaysApply: false
 files:
   include:
@@ -16,6 +16,60 @@ files:
 
 Apply features only when they add clarity, correctness, performance, or security. Prefer simple, intentional solutions (DRY, KISS, YAGNI, Fail Fast).
 
+## Pythonic Principles (The Zen of Python)
+
+**Core Philosophy:** Python's design philosophy, captured in `import this`, guides idiomatic Python:
+
+- **"Beautiful is better than ugly"** - Write readable, elegant code
+- **"Simple is better than complex"** - Prefer straightforward solutions
+- **"Complex is better than complicated"** - When complexity is needed, make it clear
+- **"Readability counts"** - Code is read more often than written
+- **"There should be one obvious way to do it"** - Follow Python conventions
+- **"If the implementation is hard to explain, it's a bad idea"** - Clarity over cleverness
+- **"Errors should never pass silently"** - Handle exceptions explicitly
+- **"In the face of ambiguity, refuse the temptation to guess"** - Be explicit, not implicit
+- **"Sparse is better than dense"** - Use whitespace and clear structure
+- **"Flat is better than nested"** - Avoid deep nesting
+- **"Now is better than never"** - Ship working code, iterate
+- **"Although practicality beats purity"** - Real-world needs matter
+
+**Applying Pythonic Principles:**
+
+```python
+# BAD: Unpythonic - dense, nested, unclear
+def process(data):
+    return [x*2 for x in [y for y in data if y>0] if x*2<100]
+
+# GOOD: Pythonic - clear, readable, explicit
+def process(data: list[int]) -> list[int]:
+    """Process positive numbers, doubling values under 100."""
+    positive = [x for x in data if x > 0]
+    doubled = [x * 2 for x in positive]
+    return [x for x in doubled if x < 100]
+
+# BAD: Unpythonic - implicit, error-prone
+def get_value(d, k):
+    if k in d:
+        return d[k]
+    return None
+
+# GOOD: Pythonic - explicit, clear intent
+def get_value(d: dict[str, int], k: str) -> int | None:
+    """Get value from dictionary, returning None if missing."""
+    return d.get(k)  # One obvious way
+
+# BAD: Unpythonic - errors pass silently
+def divide(a, b):
+    return a / b  # Can raise ZeroDivisionError silently
+
+# GOOD: Pythonic - errors handled explicitly
+def divide(a: float, b: float) -> float:
+    """Divide a by b, raising ValueError if b is zero."""
+    if b == 0:
+        raise ValueError("Division by zero")
+    return a / b
+```
+
 ## 0) AI Assistant Guidelines
 
 When providing code assistance, follow these guardrails:
@@ -29,7 +83,7 @@ When providing code assistance, follow these guardrails:
 ## 1) Standards
 
 - **Shebang:** `#!/usr/bin/env -S uv run` (required for new scripts). Use `uv` for modern Python tooling.
-- **Python Version:** ≥ 3.12.
+- **Python Version:** ≥ 3.14.
 - **Formatting:** 4-space indents; soft wrap at 120 chars (adhere to PEP 8, PEP 257, PEP 484).
 - **Linting:** Run `black`, `ruff`, `isort`, and `pylint`. Aim for a score of ≥9.0 on `pylint`.
 - **Security Scanning:** Run `bandit` to detect common security issues in Python code.
@@ -208,6 +262,74 @@ from models import User
 - **`collections`:** Use `Counter`, `deque`, `defaultdict`, `namedtuple` where appropriate.
 - **Tuple Unpacking:** Use `x, y = get_coordinates()` for cleaner code.
 - **`enumerate`:** Use `for idx, value in enumerate(values):` for indexed loops.
+
+### Advanced OOP Features
+
+- **Descriptors:** Control attribute access:
+
+```python
+class PositiveNumber:
+    """Descriptor that ensures positive numbers."""
+    def __init__(self, name: str):
+        self.name = name
+
+    def __get__(self, obj: object, objtype: type | None = None) -> int:
+        if obj is None:
+            return self
+        return obj.__dict__.get(self.name, 0)
+
+    def __set__(self, obj: object, value: int) -> None:
+        if value < 0:
+            raise ValueError(f"{self.name} must be positive")
+        obj.__dict__[self.name] = value
+
+class Product:
+    price = PositiveNumber("price")
+    quantity = PositiveNumber("quantity")
+
+    def __init__(self, price: int, quantity: int):
+        self.price = price  # Validated by descriptor
+        self.quantity = quantity
+
+# Usage
+product = Product(price=100, quantity=5)
+product.price = -10  # Raises ValueError
+```
+
+- **Metaclasses:** Advanced class customization (use sparingly):
+
+```python
+class SingletonMeta(type):
+    """Metaclass that creates singleton instances."""
+    _instances: dict[type, object] = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super().__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+class Database(metaclass=SingletonMeta):
+    def __init__(self):
+        print("Database initialized")
+
+db1 = Database()  # Prints "Database initialized"
+db2 = Database()  # No print - returns same instance
+assert db1 is db2  # True
+```
+
+- **`__slots__`:** Memory optimization for classes with many instances:
+
+```python
+class Point:
+    __slots__ = ('x', 'y')  # Prevents __dict__ creation
+
+    def __init__(self, x: float, y: float):
+        self.x = x
+        self.y = y
+
+# Benefits: Less memory, faster attribute access
+# Trade-off: No dynamic attributes, no weak references
+```
 
 ### Object-Oriented Features
 
@@ -392,6 +514,8 @@ from models import User
 
 ## 7) Performance Optimization
 
+**Golden Rule:** Profile first, optimize second. Measure before optimizing.
+
 - **Profiling:** Use `cProfile`, `line_profiler`, or `memory_profiler` to identify bottlenecks.
 - **Generators:** Use `yield` for large datasets to save memory.
 - **Session Reuse:** Use `requests.Session()` for multiple API calls.
@@ -403,6 +527,346 @@ from models import User
 - **Efficient Lookups:** Use `set` for O(1) lookups, `heapq` for priority queues, `bisect` for sorted lists.
 - **Parallel Computing:** Use `ray` or `dask` for distributed workloads if needed.
 - **Complexity Analysis:** Avoid O(n²) loops - refactor with better data structures.
+
+### Performance Optimization Examples
+
+**String Concatenation:**
+
+```python
+# BAD: O(n²) - creates new string each iteration
+result = ""
+for item in items:
+    result += item
+
+# GOOD: O(n) - uses list and join
+result = "".join(items)
+
+# GOOD: For complex formatting
+parts = [f"{key}={value}" for key, value in data.items()]
+result = "&".join(parts)
+```
+
+**List Comprehensions vs Loops:**
+
+```python
+# BAD: Slower, more verbose
+result = []
+for x in range(1000):
+    if x % 2 == 0:
+        result.append(x * 2)
+
+# GOOD: Faster, more Pythonic
+result = [x * 2 for x in range(1000) if x % 2 == 0]
+
+# For complex logic, generator expressions save memory
+result = (x * 2 for x in range(1000000) if x % 2 == 0)  # Lazy evaluation
+```
+
+**Dictionary Lookups:**
+
+```python
+# BAD: Multiple lookups
+if key in data:
+    value = data[key]
+    process(value)
+
+# GOOD: Single lookup with default
+value = data.get(key)
+if value is not None:
+    process(value)
+
+# GOOD: Using try/except for rare KeyError (faster when key exists)
+try:
+    value = data[key]
+    process(value)
+except KeyError:
+    pass
+```
+
+**Memory-Efficient Iteration:**
+
+```python
+# BAD: Loads all into memory
+with open("large_file.txt") as f:
+    lines = f.readlines()  # Loads entire file
+    for line in lines:
+        process(line)
+
+# GOOD: Iterates line by line
+with open("large_file.txt") as f:
+    for line in f:  # Generator, memory efficient
+        process(line)
+
+# GOOD: Using generators for large datasets
+def process_large_dataset(items):
+    """Process items one at a time."""
+    for item in items:
+        yield transform(item)  # Lazy evaluation
+
+# Process without loading all into memory
+for result in process_large_dataset(huge_list):
+    save(result)
+```
+
+**Caching Expensive Operations:**
+
+```python
+from functools import lru_cache
+
+# GOOD: Cache function results
+@lru_cache(maxsize=128)
+def expensive_computation(n: int) -> int:
+    """Expensive computation cached by input."""
+    # Complex calculation
+    return sum(i * i for i in range(n))
+
+# GOOD: Custom caching with TTL
+from functools import wraps
+import time
+
+def cached_with_ttl(ttl_seconds: int):
+    """Cache decorator with time-to-live."""
+    cache: dict[tuple, tuple[float, any]] = {}
+
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            key = (args, tuple(sorted(kwargs.items())))
+            now = time.time()
+
+            if key in cache:
+                cached_time, cached_value = cache[key]
+                if now - cached_time < ttl_seconds:
+                    return cached_value
+
+            result = func(*args, **kwargs)
+            cache[key] = (now, result)
+            return result
+        return wrapper
+    return decorator
+
+@cached_with_ttl(ttl_seconds=300)
+def fetch_data(url: str) -> dict:
+    return requests.get(url).json()
+```
+
+**Pre-allocation:**
+
+```python
+# BAD: Grows list dynamically
+result = []
+for i in range(1000):
+    result.append(i * 2)
+
+# GOOD: Pre-allocate when size is known
+result = [0] * 1000
+for i in range(1000):
+    result[i] = i * 2
+
+# GOOD: Pre-allocate with list comprehension (fastest)
+result = [i * 2 for i in range(1000)]
+```
+
+**Using Built-in Functions:**
+
+```python
+# BAD: Manual implementation
+total = 0
+for item in items:
+    total += item
+
+# GOOD: Built-in is faster
+total = sum(items)
+
+# BAD: Manual max
+max_val = items[0]
+for item in items[1:]:
+    if item > max_val:
+        max_val = item
+
+# GOOD: Built-in
+max_val = max(items)
+```
+
+## 7a) Concurrency Patterns & Decision Guide
+
+**When to Use Each Concurrency Model:**
+
+### asyncio (I/O-Bound, Async Libraries)
+
+Use `asyncio` when:
+- Working with async libraries (`aiohttp`, `asyncpg`, `aioredis`)
+- Many concurrent I/O operations (API calls, database queries)
+- Network-bound workloads
+- Web servers/frameworks (FastAPI, aiohttp)
+
+```python
+import asyncio
+import aiohttp
+
+async def fetch_urls(urls: list[str]) -> list[dict]:
+    """Fetch multiple URLs concurrently using asyncio."""
+    async with aiohttp.ClientSession() as session:
+        tasks = [fetch_one(session, url) for url in urls]
+        return await asyncio.gather(*tasks)
+
+async def fetch_one(session: aiohttp.ClientSession, url: str) -> dict:
+    async with session.get(url) as response:
+        return await response.json()
+```
+
+### threading (I/O-Bound, Blocking Libraries)
+
+Use `threading` when:
+- Using blocking libraries (`requests`, `psycopg2`, synchronous boto3)
+- I/O-bound operations with blocking calls
+- Need to run blocking code concurrently
+- GUI applications (keep UI responsive)
+
+```python
+import threading
+from queue import Queue
+from typing import Callable
+
+def process_with_threads(items: list[str], worker: Callable[[str], None], num_threads: int = 4) -> None:
+    """Process items using thread pool."""
+    queue: Queue[str] = Queue()
+
+    def worker_thread():
+        while True:
+            item = queue.get()
+            if item is None:  # Sentinel
+                break
+            worker(item)
+            queue.task_done()
+
+    # Start worker threads
+    threads = []
+    for _ in range(num_threads):
+        t = threading.Thread(target=worker_thread)
+        t.start()
+        threads.append(t)
+
+    # Add items to queue
+    for item in items:
+        queue.put(item)
+
+    # Wait for completion
+    queue.join()
+
+    # Stop threads
+    for _ in range(num_threads):
+        queue.put(None)
+    for t in threads:
+        t.join()
+```
+
+### multiprocessing (CPU-Bound)
+
+Use `multiprocessing` when:
+- CPU-intensive computations (image processing, data analysis)
+- Need to bypass GIL (Global Interpreter Lock)
+- Parallel number crunching
+- Independent CPU-bound tasks
+
+```python
+from multiprocessing import Pool, cpu_count
+from functools import partial
+
+def cpu_intensive_task(data: list[int]) -> int:
+    """CPU-bound computation."""
+    return sum(x * x for x in data)
+
+def process_parallel(items: list[list[int]], num_processes: int | None = None) -> list[int]:
+    """Process CPU-bound tasks in parallel."""
+    if num_processes is None:
+        num_processes = cpu_count()
+
+    with Pool(processes=num_processes) as pool:
+        results = pool.map(cpu_intensive_task, items)
+    return results
+```
+
+### Race Condition Detection
+
+**Use `threading` with care - Python's GIL doesn't prevent all race conditions:**
+
+```python
+import threading
+from typing import Counter
+
+# BAD: Race condition with shared state
+counter = {"value": 0}
+
+def increment_unsafe():
+    counter["value"] += 1  # Not atomic! Race condition possible
+
+# GOOD: Use locks for shared mutable state
+counter_safe = {"value": 0}
+lock = threading.Lock()
+
+def increment_safe():
+    with lock:
+        counter_safe["value"] += 1
+
+# GOOD: Use thread-safe data structures when possible
+from collections import Counter
+counter_threadsafe = Counter()  # Thread-safe for most operations
+
+# GOOD: Use queue.Queue for thread-safe communication
+from queue import Queue
+work_queue: Queue[str] = Queue()
+result_queue: Queue[dict] = Queue()
+```
+
+**Testing for Race Conditions:**
+
+```python
+import threading
+import time
+
+def test_race_condition():
+    """Test for race conditions with multiple threads."""
+    shared = {"count": 0}
+    lock = threading.Lock()
+
+    def increment(use_lock: bool):
+        for _ in range(1000):
+            if use_lock:
+                with lock:
+                    shared["count"] += 1
+            else:
+                shared["count"] += 1  # Race condition!
+
+    # Test without lock (should show race condition)
+    threads = [threading.Thread(target=lambda: increment(False)) for _ in range(10)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    print(f"Without lock: {shared['count']}")  # May be < 10000
+
+    # Reset and test with lock
+    shared["count"] = 0
+    threads = [threading.Thread(target=lambda: increment(True)) for _ in range(10)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    print(f"With lock: {shared['count']}")  # Should be exactly 10000
+```
+
+**Best Practices:**
+
+- **Prefer `asyncio`** for I/O-bound async workloads
+- **Use `threading`** only when blocking libraries are required
+- **Use `multiprocessing`** for CPU-bound tasks
+- **Always use locks** when sharing mutable state between threads
+- **Prefer immutable data** or thread-safe collections (`queue.Queue`, `collections.deque` with locks)
+- **Avoid shared mutable state** - use message passing (queues) instead
+- **Profile first** - concurrency adds complexity; measure before optimizing
 
 ## 8) AWS & Boto3 Best Practices
 
@@ -579,7 +1043,313 @@ def validate_region(region: str) -> str:
     return region
 ```
 
+## 8a) Troubleshooting & Debugging
+
+### Debugging Tools
+
+**Python Debugger (pdb):**
+
+```python
+import pdb
+
+def complex_function(data: list[dict]) -> dict:
+    """Debug with pdb breakpoint."""
+    pdb.set_trace()  # Breakpoint - execution pauses here
+    result = process_data(data)
+    return result
+
+# Or use breakpoint() built-in (Python 3.7+)
+def complex_function(data: list[dict]) -> dict:
+    breakpoint()  # Modern way - equivalent to pdb.set_trace()
+    result = process_data(data)
+    return result
+```
+
+**pdb Commands:**
+- `n` (next): Execute next line
+- `s` (step): Step into function calls
+- `c` (continue): Continue execution
+- `l` (list): Show current code context
+- `p <variable>`: Print variable value
+- `pp <variable>`: Pretty-print variable
+- `u` (up): Move up stack frame
+- `d` (down): Move down stack frame
+- `q` (quit): Quit debugger
+
+**IPython Debugger (ipdb):**
+
+```python
+import ipdb
+
+def debug_function():
+    ipdb.set_trace()  # Enhanced pdb with IPython features
+    # Better tab completion, syntax highlighting
+```
+
+**VS Code / PyCharm Debugging:**
+
+- Set breakpoints in IDE
+- Use "Debug" configuration
+- Inspect variables, call stack, watch expressions
+- Step through code interactively
+
+### Profiling & Performance Analysis
+
+**cProfile:**
+
+```python
+import cProfile
+import pstats
+
+def profile_function():
+    """Profile function execution."""
+    profiler = cProfile.Profile()
+    profiler.enable()
+
+    # Code to profile
+    result = expensive_operation()
+
+    profiler.disable()
+    stats = pstats.Stats(profiler)
+    stats.sort_stats('cumulative')
+    stats.print_stats(20)  # Top 20 functions
+
+    return result
+
+# Command-line profiling
+# python -m cProfile -o profile.stats script.py
+# python -m pstats profile.stats
+```
+
+**line_profiler:**
+
+```python
+# Install: pip install line_profiler
+# Run: kernprof -l -v script.py
+
+@profile  # Decorator added by line_profiler
+def slow_function():
+    result = []
+    for i in range(1000):
+        result.append(i * 2)  # Line-by-line timing
+    return result
+```
+
+**memory_profiler:**
+
+```python
+# Install: pip install memory_profiler
+# Run: python -m memory_profiler script.py
+
+from memory_profiler import profile
+
+@profile
+def memory_intensive():
+    data = [i for i in range(1000000)]  # Memory usage per line
+    return sum(data)
+```
+
+### Logging for Debugging
+
+**Structured Debug Logging:**
+
+```python
+import logging
+import sys
+
+# Configure debug logger
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('debug.log'),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
+def debug_function(data: dict):
+    logger.debug(f"Function called with data: {data}")
+    logger.debug(f"Data keys: {list(data.keys())}")
+
+    try:
+        result = process(data)
+        logger.debug(f"Result: {result}")
+        return result
+    except Exception as e:
+        logger.exception("Error in debug_function", exc_info=True)
+        raise
+```
+
+**Conditional Debug Output:**
+
+```python
+import os
+import logging
+
+DEBUG = os.getenv("DEBUG", "0") == "1"
+
+def debug_print(message: str):
+    """Print only when DEBUG is enabled."""
+    if DEBUG:
+        print(f"[DEBUG] {message}")
+
+# Or use logging levels
+logger.setLevel(logging.DEBUG if DEBUG else logging.INFO)
+```
+
+### Common Issues & Solutions
+
+**Import Errors:**
+
+```python
+# BAD: Circular import
+# module_a.py imports module_b.py
+# module_b.py imports module_a.py
+
+# GOOD: Restructure to avoid circular imports
+# - Move shared code to separate module
+# - Use late imports (inside functions)
+# - Use dependency injection
+
+# Late import pattern
+def process_data():
+    from module_b import helper_function  # Import inside function
+    return helper_function()
+```
+
+**Memory Leaks:**
+
+```python
+# BAD: Keeping references to large objects
+cache = {}
+def process_large_data(data):
+    cache["data"] = data  # Keeps data in memory forever
+
+# GOOD: Use weak references or clear cache
+from weakref import WeakValueDictionary
+
+cache = WeakValueDictionary()  # Allows garbage collection
+
+# Or use size limits
+from collections import OrderedDict
+
+class LRUCache:
+    def __init__(self, max_size: int = 100):
+        self.cache: OrderedDict = OrderedDict()
+        self.max_size = max_size
+
+    def get(self, key: str):
+        if key in self.cache:
+            self.cache.move_to_end(key)
+            return self.cache[key]
+        return None
+
+    def set(self, key: str, value: any):
+        if key in self.cache:
+            self.cache.move_to_end(key)
+        elif len(self.cache) >= self.max_size:
+            self.cache.popitem(last=False)  # Remove oldest
+        self.cache[key] = value
+```
+
+**Performance Bottlenecks:**
+
+```python
+# BAD: Inefficient string concatenation
+result = ""
+for item in items:
+    result += item  # Creates new string each time
+
+# GOOD: Use join or list comprehension
+result = "".join(items)
+# Or for complex cases:
+result = "".join(str(item) for item in items)
+
+# BAD: Repeated lookups
+for key in keys:
+    if key in large_dict:  # O(n) lookup each time
+        process(large_dict[key])
+
+# GOOD: Single pass
+for key in keys:
+    value = large_dict.get(key)  # O(1) lookup
+    if value is not None:
+        process(value)
+```
+
+**Exception Debugging:**
+
+```python
+import traceback
+import sys
+
+def debug_exception():
+    try:
+        risky_operation()
+    except Exception as e:
+        # Print full traceback
+        traceback.print_exc()
+
+        # Get traceback as string
+        tb_str = traceback.format_exc()
+        logger.error(f"Exception occurred: {tb_str}")
+
+        # Get exception info tuple
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        logger.error(f"Type: {exc_type}, Value: {exc_value}")
+
+        raise  # Re-raise to preserve stack trace
+```
+
+### Testing for Race Conditions
+
+**Thread Safety Testing:**
+
+```python
+import threading
+import time
+from queue import Queue
+
+def test_thread_safety(func, num_threads: int = 10, iterations: int = 1000):
+    """Test function for thread safety."""
+    results: Queue[dict] = Queue()
+    errors: Queue[Exception] = Queue()
+
+    def worker():
+        try:
+            for _ in range(iterations):
+                result = func()
+                results.put(result)
+        except Exception as e:
+            errors.put(e)
+
+    threads = [threading.Thread(target=worker) for _ in range(num_threads)]
+
+    start = time.time()
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    elapsed = time.time() - start
+
+    # Check for errors
+    error_list = []
+    while not errors.empty():
+        error_list.append(errors.get())
+
+    return {
+        "results_count": results.qsize(),
+        "errors": error_list,
+        "elapsed_time": elapsed,
+        "thread_safe": len(error_list) == 0
+    }
+```
+
 ## 9) Testing & Quality
+
+### Test Structure & Organization
 
 - **pytest:** Write tests for reliability:
 
@@ -588,8 +1358,121 @@ def validate_region(region: str) -> str:
       assert parse_input("123") == 123
   ```
 
-- **Mocking:** Use `unittest.mock.patch` or `pytest-mock` for external dependencies.
-- **Parameterized Tests:** Use `@pytest.mark.parametrize` for multiple inputs.
+- **Mocking:** Use `unittest.mock.patch` or `pytest-mock` for external dependencies:
+
+```python
+from unittest.mock import Mock, patch, MagicMock
+import pytest
+
+# Patching functions
+@patch('module.expensive_function')
+def test_with_mock(mock_func):
+    mock_func.return_value = 42
+    result = process_data()
+    assert result == 42
+    mock_func.assert_called_once()
+
+# Patching objects
+def test_with_mock_object():
+    mock_client = Mock()
+    mock_client.get.return_value = {"status": "ok"}
+    result = use_client(mock_client)
+    assert result["status"] == "ok"
+
+# Using pytest-mock (cleaner)
+def test_with_pytest_mock(mocker):
+    mock_func = mocker.patch('module.expensive_function')
+    mock_func.return_value = 42
+    result = process_data()
+    assert result == 42
+```
+
+- **Parameterized Tests:** Use `@pytest.mark.parametrize` for multiple inputs:
+
+```python
+@pytest.mark.parametrize("input,expected", [
+    ("123", 123),
+    ("-456", -456),
+    ("0", 0),
+])
+def test_parse_input(input: str, expected: int):
+    assert parse_input(input) == expected
+
+# Multiple parameters
+@pytest.mark.parametrize("a,b,expected", [
+    (1, 2, 3),
+    (0, 0, 0),
+    (-1, 1, 0),
+])
+def test_add(a: int, b: int, expected: int):
+    assert add(a, b) == expected
+```
+
+- **Fixtures:** Share test setup and teardown:
+
+```python
+import pytest
+import tempfile
+import os
+
+@pytest.fixture
+def temp_file():
+    """Create temporary file for testing."""
+    with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+        f.write("test data")
+        temp_path = f.name
+
+    yield temp_path
+
+    # Cleanup
+    os.unlink(temp_path)
+
+@pytest.fixture
+def sample_data():
+    """Provide sample data for tests."""
+    return {"users": [{"id": 1, "name": "Alice"}]}
+
+def test_process_file(temp_file, sample_data):
+    result = process_file(temp_file)
+    assert result == sample_data
+```
+
+- **Test Classes:** Organize related tests:
+
+```python
+class TestUserService:
+    """Test suite for UserService."""
+
+    @pytest.fixture
+    def service(self):
+        return UserService()
+
+    def test_create_user(self, service):
+        user = service.create_user("Alice")
+        assert user.name == "Alice"
+
+    def test_get_user_not_found(self, service):
+        with pytest.raises(UserNotFoundError):
+            service.get_user("nonexistent")
+```
+
+- **Async Testing:** Test async functions:
+
+```python
+import pytest
+
+@pytest.mark.asyncio
+async def test_async_function():
+    result = await fetch_data("https://api.example.com")
+    assert result["status"] == "ok"
+
+@pytest.mark.asyncio
+async def test_async_with_fixture():
+    async with aiohttp.ClientSession() as session:
+        result = await fetch_with_session(session)
+        assert result is not None
+```
+
 - **Test-Driven Development (TDD):** Write tests before implementation where appropriate.
 - **Type Checking:** Run `ty check .` (fast, recommended) or `mypy --strict` (stable) to catch type errors.
 - **tox:** Use for testing automation across Python versions and environments:
@@ -683,6 +1566,96 @@ def validate_region(region: str) -> str:
 ## 11a) Design Patterns
 
 Design patterns provide reusable solutions to common problems. Use them where they add clarity and maintainability - avoid forcing patterns where simple code suffices.
+
+### Decorator Pattern (Advanced)
+
+**Function Decorators:**
+
+```python
+from functools import wraps
+from typing import Callable, TypeVar, ParamSpec
+
+P = ParamSpec('P')
+T = TypeVar('T')
+
+def retry(max_attempts: int = 3):
+    """Decorator that retries function on failure."""
+    def decorator(func: Callable[P, T]) -> Callable[P, T]:
+        @wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+            last_exception = None
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    last_exception = e
+                    if attempt < max_attempts:
+                        logger.warning(f"Attempt {attempt} failed: {e}, retrying...")
+                    else:
+                        logger.error(f"All {max_attempts} attempts failed")
+            raise last_exception
+        return wrapper
+    return decorator
+
+@retry(max_attempts=5)
+def fetch_data(url: str) -> dict:
+    response = requests.get(url)
+    response.raise_for_status()
+    return response.json()
+```
+
+**Class Decorators:**
+
+```python
+def add_logging(cls):
+    """Class decorator that adds logging to all methods."""
+    for name, method in vars(cls).items():
+        if callable(method) and not name.startswith('_'):
+            setattr(cls, name, log_method(method))
+    return cls
+
+def log_method(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        logger.info(f"Calling {func.__name__} with args={args}, kwargs={kwargs}")
+        result = func(self, *args, **kwargs)
+        logger.info(f"{func.__name__} returned {result}")
+        return result
+    return wrapper
+
+@add_logging
+class DataProcessor:
+    def process(self, data: list[int]) -> int:
+        return sum(data)
+```
+
+**Property Decorators:**
+
+```python
+class CachedProperty:
+    """Descriptor that caches property value."""
+    def __init__(self, func: Callable[[object], T]):
+        self.func = func
+        self.attrname = None
+        self.__doc__ = func.__doc__
+
+    def __set_name__(self, owner: type, name: str):
+        self.attrname = f"_{name}"
+
+    def __get__(self, obj: object, objtype: type | None = None) -> T:
+        if obj is None:
+            return self
+        if not hasattr(obj, self.attrname):
+            setattr(obj, self.attrname, self.func(obj))
+        return getattr(obj, self.attrname)
+
+class ExpensiveComputation:
+    @CachedProperty
+    def result(self) -> int:
+        """Expensive computation cached after first access."""
+        print("Computing...")
+        return sum(i * i for i in range(1000000))
+```
 
 ### Factory Method Pattern
 
@@ -824,7 +1797,7 @@ version = "1.0.0"
 description = "Common utility functions for AWS and validation"
 readme = "README.md"
 authors = [{name = "Your Name", email = "you@acme.com"}]
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 dependencies = [
     "boto3>=1.28.0",
     "pydantic>=2.0.0",
@@ -889,13 +1862,13 @@ pip install -e ".[dev]"
 - **Docker:** Use multi-stage builds with `uv`:
 
   ```dockerfile
-  FROM ghcr.io/astral-sh/uv:python3.12 AS builder
+  FROM ghcr.io/astral-sh/uv:python3.14 AS builder
   WORKDIR /app
   COPY pyproject.toml uv.lock ./
   RUN uv sync --frozen --no-dev
   COPY . .
 
-  FROM python:3.12-slim
+  FROM python:3.14-slim
   WORKDIR /app
   COPY --from=builder /app/.venv /app/.venv
   COPY --from=builder /app /app

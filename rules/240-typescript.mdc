@@ -1,7 +1,7 @@
 ---
 title: TypeScript Best Practices & Patterns
 description: Modern TypeScript patterns, type safety, advanced types, and production-ready configuration
-priority: 165
+priority: 240
 alwaysApply: false
 files:
   include:
@@ -19,6 +19,62 @@ files:
 2. **Explicit Over Implicit**: Prefer explicit types for clarity and maintainability
 3. **Progressive Enhancement**: Start with basic types, add complexity as needed
 4. **Developer Experience**: Fast builds, excellent editor support, clear error messages
+
+## TypeScript Philosophy (Core Principles)
+
+**Core Principles:**
+
+- **"Type safety is a feature, not a burden"** - Leverage types to catch errors at compile time
+- **"Make invalid states unrepresentable"** - Use discriminated unions, branded types, and strict null checks
+- **"Types should flow naturally"** - Let TypeScript infer types where possible; be explicit where it adds clarity
+- **"Prefer composition over inheritance"** - Use interfaces, type aliases, and utility types
+- **"Avoid `any` at all costs"** - Use `unknown` for truly unknown types, then narrow with type guards
+- **"Types document your code"** - Well-typed code is self-documenting
+- **"Progressive typing"** - Start strict, relax only when necessary and justified
+- **"Type inference is powerful"** - Trust TypeScript's inference; add types where it helps
+
+**Applying TypeScript Principles:**
+
+```typescript
+// BAD: Any loses all type safety
+function process(data: any): any {
+  return data.value;
+}
+
+// GOOD: Generic preserves type safety
+function process<T extends { value: unknown }>(data: T): T['value'] {
+  return data.value;
+}
+
+// BAD: Invalid states representable
+type User = {
+  status: 'active' | 'inactive' | 'suspended';
+  suspendedReason?: string;  // Can be set even when status !== 'suspended'
+};
+
+// GOOD: Invalid states unrepresentable
+type ActiveUser = { status: 'active' };
+type InactiveUser = { status: 'inactive' };
+type SuspendedUser = { status: 'suspended'; reason: string };
+type User = ActiveUser | InactiveUser | SuspendedUser;
+
+// BAD: Type assertion without validation
+const user = data as User;
+
+// GOOD: Type guard with validation
+function isUser(data: unknown): data is User {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'id' in data &&
+    'name' in data
+  );
+}
+
+if (isUser(data)) {
+  console.log(data.name);  // Type-safe
+}
+```
 
 ---
 
@@ -815,6 +871,277 @@ type Role = typeof ROLES[number];
 // type Role = "admin" | "user" | "guest"
 ```
 
+## Testing with TypeScript
+
+### Type-Safe Testing
+
+```typescript
+import { describe, test, expect, beforeEach, jest } from '@jest/globals';
+
+// GOOD: Type-safe test setup
+interface TestContext {
+  user: User;
+  service: UserService;
+}
+
+describe('UserService', () => {
+  let context: TestContext;
+
+  beforeEach(() => {
+    context = {
+      user: { id: '123', name: 'John', email: 'john@acme.com' },
+      service: new UserService(),
+    };
+  });
+
+  test('creates user', () => {
+    const result = context.service.createUser(context.user);
+    expect(result.id).toBe('123');
+    expect(result.name).toBe('John');
+  });
+});
+```
+
+### Mocking with Types
+
+```typescript
+// GOOD: Typed mocks
+interface MockRepository {
+  findById: jest.Mock<Promise<User | null>, [string]>;
+  create: jest.Mock<Promise<User>, [Omit<User, 'id'>]>;
+}
+
+const mockRepository: MockRepository = {
+  findById: jest.fn(),
+  create: jest.fn(),
+};
+
+test('finds user by id', async () => {
+  mockRepository.findById.mockResolvedValueOnce({
+    id: '123',
+    name: 'John',
+    email: 'john@acme.com',
+  });
+
+  const user = await mockRepository.findById('123');
+  expect(user?.name).toBe('John');
+});
+```
+
+### Type Guards in Tests
+
+```typescript
+// GOOD: Type-safe assertions
+function assertIsUser(value: unknown): asserts value is User {
+  if (!isUser(value)) {
+    throw new Error('Value is not a User');
+  }
+}
+
+test('validates user data', () => {
+  const data = { id: '123', name: 'John', email: 'john@acme.com' };
+  assertIsUser(data);
+  // TypeScript now knows data is User
+  expect(data.name).toBe('John');
+});
+```
+
+## Performance Optimization
+
+### Type-Level Optimizations
+
+```typescript
+// GOOD: Use readonly to prevent accidental mutations
+interface Config {
+  readonly apiUrl: string;
+  readonly timeout: number;
+}
+
+// GOOD: Use const assertions for immutable data
+const CONFIG = {
+  apiUrl: 'https://api.acme.com',
+  timeout: 5000,
+} as const;
+
+// GOOD: Use mapped types for transformations
+type ReadonlyConfig = Readonly<Config>;
+type PartialConfig = Partial<Config>;
+```
+
+### Runtime Performance
+
+```typescript
+// GOOD: Type-safe memoization
+function memoize<Args extends unknown[], Return>(
+  fn: (...args: Args) => Return
+): (...args: Args) => Return {
+  const cache = new Map<string, Return>();
+
+  return (...args: Args): Return => {
+    const key = JSON.stringify(args);
+    if (cache.has(key)) {
+      return cache.get(key)!;
+    }
+    const result = fn(...args);
+    cache.set(key, result);
+    return result;
+  };
+}
+
+// Usage
+const expensiveFunction = memoize((n: number): number => {
+  // Expensive computation
+  return n * n;
+});
+```
+
+## Troubleshooting & Debugging
+
+### Type Errors
+
+**Common Type Errors:**
+
+```typescript
+// Error: Type 'string' is not assignable to type 'number'
+// Fix: Use proper type or type assertion with validation
+function process(id: number) { }
+process('123' as unknown as number);  // BAD
+process(Number.parseInt('123', 10));  // GOOD
+
+// Error: Object is possibly 'undefined'
+// Fix: Use optional chaining or nullish coalescing
+const name = user?.profile?.name ?? 'Unknown';
+
+// Error: Property does not exist on type
+// Fix: Use type guard or assertion function
+if ('property' in obj) {
+  console.log(obj.property);
+}
+```
+
+### Debugging Type Issues
+
+```typescript
+// GOOD: Use type utilities to inspect types
+type Debug<T> = {
+  [K in keyof T]: T[K];
+};
+
+// GOOD: Use satisfies for type checking without widening
+const config = {
+  apiUrl: 'https://api.acme.com',
+  timeout: 5000,
+} satisfies Config;
+
+// GOOD: Use type assertions with validation
+function assertIsConfig(value: unknown): asserts value is Config {
+  if (
+    typeof value !== 'object' ||
+    value === null ||
+    !('apiUrl' in value) ||
+    !('timeout' in value)
+  ) {
+    throw new Error('Invalid config');
+  }
+}
+```
+
+### Performance Debugging
+
+```typescript
+// GOOD: Type-safe performance measurement
+function measureTime<T extends (...args: unknown[]) => unknown>(
+  fn: T,
+  label: string
+): T {
+  return ((...args: Parameters<T>) => {
+    const start = performance.now();
+    const result = fn(...args);
+    const end = performance.now();
+    console.log(`${label} took ${end - start}ms`);
+    return result;
+  }) as T;
+}
+
+// Usage
+const timedFunction = measureTime(expensiveFunction, 'expensiveFunction');
+```
+
+## Advanced Patterns
+
+### Builder Pattern
+
+```typescript
+class QueryBuilder<T> {
+  private conditions: Array<(item: T) => boolean> = [];
+
+  where(predicate: (item: T) => boolean): this {
+    this.conditions.push(predicate);
+    return this;
+  }
+
+  execute(items: T[]): T[] {
+    return items.filter(item =>
+      this.conditions.every(condition => condition(item))
+    );
+  }
+}
+
+// Usage
+const users = new QueryBuilder<User>()
+  .where(u => u.age > 18)
+  .where(u => u.active)
+  .execute(allUsers);
+```
+
+### Factory Pattern
+
+```typescript
+type UserType = 'admin' | 'user' | 'guest';
+
+interface UserFactory {
+  createUser(type: UserType, data: Omit<User, 'type'>): User;
+}
+
+class ConcreteUserFactory implements UserFactory {
+  createUser(type: UserType, data: Omit<User, 'type'>): User {
+    switch (type) {
+      case 'admin':
+        return { ...data, type, permissions: ['read', 'write', 'delete'] };
+      case 'user':
+        return { ...data, type, permissions: ['read', 'write'] };
+      case 'guest':
+        return { ...data, type, permissions: ['read'] };
+    }
+  }
+}
+```
+
+### Observer Pattern
+
+```typescript
+type EventHandler<T> = (event: T) => void;
+
+class EventEmitter<T> {
+  private handlers = new Set<EventHandler<T>>();
+
+  subscribe(handler: EventHandler<T>): () => void {
+    this.handlers.add(handler);
+    return () => this.handlers.delete(handler);
+  }
+
+  emit(event: T): void {
+    this.handlers.forEach(handler => handler(event));
+  }
+}
+
+// Usage
+const emitter = new EventEmitter<{ type: string; data: unknown }>();
+const unsubscribe = emitter.subscribe(event => {
+  console.log(`Event: ${event.type}`, event.data);
+});
+```
+
 ---
 
 ## Naming Conventions
@@ -827,6 +1154,231 @@ type Role = typeof ROLES[number];
 - **Domain Names**: Always use `acme.com` for examples (never `example.com`)
 
 ---
+
+## Comprehensive Example Application
+
+Complete example demonstrating TypeScript best practices:
+
+```typescript
+// types.ts
+export type UserId = string & { readonly brand: unique symbol };
+export type Email = string & { readonly brand: unique symbol };
+
+export interface User {
+  id: UserId;
+  name: string;
+  email: Email;
+  createdAt: Date;
+}
+
+export type CreateUserInput = Omit<User, 'id' | 'createdAt'>;
+export type UpdateUserInput = Partial<Pick<User, 'name' | 'email'>>;
+
+export type Result<T, E = Error> =
+  | { ok: true; value: T }
+  | { ok: false; error: E };
+
+// errors.ts
+export class AppError extends Error {
+  constructor(
+    message: string,
+    public readonly code: string,
+    public readonly statusCode: number = 500
+  ) {
+    super(message);
+    this.name = this.constructor.name;
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+export class NotFoundError extends AppError {
+  constructor(resource: string) {
+    super(`${resource} not found`, 'NOT_FOUND', 404);
+  }
+}
+
+export class ValidationError extends AppError {
+  constructor(message: string) {
+    super(message, 'VALIDATION_ERROR', 400);
+  }
+}
+
+// validators.ts
+export function createUserId(id: string): UserId {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-/.test(id)) {
+    throw new ValidationError('Invalid user ID format');
+  }
+  return id as UserId;
+}
+
+export function createEmail(email: string): Email {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new ValidationError('Invalid email format');
+  }
+  return email as Email;
+}
+
+// repository.ts
+export interface UserRepository {
+  findById(id: UserId): Promise<User | null>;
+  create(data: CreateUserInput): Promise<User>;
+  update(id: UserId, data: UpdateUserInput): Promise<User>;
+  delete(id: UserId): Promise<void>;
+}
+
+export class InMemoryUserRepository implements UserRepository {
+  private users = new Map<UserId, User>();
+
+  async findById(id: UserId): Promise<User | null> {
+    return this.users.get(id) ?? null;
+  }
+
+  async create(data: CreateUserInput): Promise<User> {
+    const id = createUserId(crypto.randomUUID());
+    const email = createEmail(data.email);
+    const user: User = {
+      id,
+      name: data.name,
+      email,
+      createdAt: new Date(),
+    };
+    this.users.set(id, user);
+    return user;
+  }
+
+  async update(id: UserId, data: UpdateUserInput): Promise<User> {
+    const user = await this.findById(id);
+    if (!user) {
+      throw new NotFoundError('User');
+    }
+    const updated: User = {
+      ...user,
+      ...data,
+      email: data.email ? createEmail(data.email) : user.email,
+    };
+    this.users.set(id, updated);
+    return updated;
+  }
+
+  async delete(id: UserId): Promise<void> {
+    if (!this.users.has(id)) {
+      throw new NotFoundError('User');
+    }
+    this.users.delete(id);
+  }
+}
+
+// service.ts
+export class UserService {
+  constructor(private repository: UserRepository) {}
+
+  async getUser(id: UserId): Promise<Result<User, AppError>> {
+    try {
+      const user = await this.repository.findById(id);
+      if (!user) {
+        return { ok: false, error: new NotFoundError('User') };
+      }
+      return { ok: true, value: user };
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof AppError ? error : new AppError('Unknown error', 'UNKNOWN'),
+      };
+    }
+  }
+
+  async createUser(data: CreateUserInput): Promise<Result<User, AppError>> {
+    try {
+      const user = await this.repository.create(data);
+      return { ok: true, value: user };
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof AppError ? error : new AppError('Failed to create user', 'CREATE_ERROR'),
+      };
+    }
+  }
+}
+
+// api.ts
+import express, { Request, Response } from 'express';
+
+export function createUserRouter(service: UserService) {
+  const router = express.Router();
+
+  router.get('/users/:id', async (req: Request, res: Response) => {
+    try {
+      const id = createUserId(req.params.id);
+      const result = await service.getUser(id);
+
+      if (!result.ok) {
+        return res.status(result.error.statusCode).json({
+          error: result.error.message,
+          code: result.error.code,
+        });
+      }
+
+      return res.json(result.value);
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        return res.status(400).json({ error: error.message });
+      }
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  router.post('/users', async (req: Request, res: Response) => {
+    try {
+      const result = await service.createUser(req.body);
+
+      if (!result.ok) {
+        return res.status(result.error.statusCode).json({
+          error: result.error.message,
+          code: result.error.code,
+        });
+      }
+
+      return res.status(201).json(result.value);
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        return res.status(400).json({ error: error.message });
+      }
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  return router;
+}
+
+// app.ts
+import express from 'express';
+import { UserService } from './service';
+import { InMemoryUserRepository } from './repository';
+import { createUserRouter } from './api';
+
+const app = express();
+app.use(express.json());
+
+const repository = new InMemoryUserRepository();
+const service = new UserService(repository);
+app.use(createUserRouter(service));
+
+app.listen(3000, () => {
+  console.log('Server running on http://localhost:3000');
+});
+```
+
+**Key Patterns Demonstrated:**
+
+- ✅ Branded types for type safety
+- ✅ Discriminated unions (Result type)
+- ✅ Custom error classes
+- ✅ Repository pattern with interfaces
+- ✅ Service layer with error handling
+- ✅ Type-safe API routes
+- ✅ Validation with branded types
+- ✅ Dependency injection
+- ✅ Proper error handling
 
 ## Related Files
 

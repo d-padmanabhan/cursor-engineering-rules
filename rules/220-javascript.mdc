@@ -1,7 +1,8 @@
 ---
 title: JavaScript Engineering Ruleset
 description: Secure-by-default, type-checked (JSDoc + @ts-check), performant, and testable JavaScript guidelines for generation and review.
-priority: 170
+priority: 220
+
 alwaysApply: false
 files:
   include:
@@ -21,6 +22,59 @@ files:
 
 **Audience**: engineers writing and reviewing JavaScript/Node.js code
 **Goal**: secure-by-default, bug-resistant, performant, readable, well-documented, and testable JavaScript - without over-engineering
+
+## JavaScript Principles (Core Philosophy)
+
+**Core Principles:**
+
+- **"JavaScript is forgiving, but that doesn't mean you should be"** - Use strict mode, validate inputs, handle errors explicitly
+- **"Functions are first-class citizens"** - Leverage higher-order functions, closures, and functional patterns
+- **"Prototypes over classes"** - Understand prototypal inheritance; use classes when they add clarity
+- **"Async by default"** - Embrace asynchronous patterns; avoid blocking the event loop
+- **"Composition over inheritance"** - Prefer small, composable functions over deep hierarchies
+- **"Explicit over implicit"** - Use `===` not `==`, handle null/undefined explicitly, avoid type coercion
+- **"Fail fast"** - Validate early, throw meaningful errors, don't silently fail
+- **"Readability counts"** - Code is read more often than written; prefer clear over clever
+
+**Applying JavaScript Principles:**
+
+```js
+// BAD: Implicit, forgiving, silent failures
+function process(data) {
+  return data.value * 2;  // What if data is null? What if value is undefined?
+}
+
+// GOOD: Explicit, validated, fail-fast
+/**
+ * @param {{ value: number }} data
+ * @returns {number}
+ * @throws {TypeError}
+ */
+function process(data) {
+  if (!data || typeof data.value !== 'number') {
+    throw new TypeError('data.value must be a number');
+  }
+  return data.value * 2;
+}
+
+// BAD: Blocking the event loop
+function processLargeArray(arr) {
+  arr.forEach(item => expensiveSyncOperation(item));  // Blocks everything
+}
+
+// GOOD: Async, non-blocking
+async function processLargeArray(arr) {
+  for (const item of arr) {
+    await expensiveAsyncOperation(item);  // Yields to event loop
+  }
+}
+
+// BAD: Implicit type coercion
+if (value == 0) { }  // true for: 0, '0', false, '', []
+
+// GOOD: Explicit comparison
+if (value === 0) { }  // true only for: 0
+```
 
 ---
 
@@ -147,6 +201,8 @@ element.innerHTML = userInput;              //  BAD (XSS)
 
 ## 7) Performance
 
+**Golden Rule:** Profile first, optimize second. Use Chrome DevTools Performance tab or Node.js `--prof` to identify bottlenecks.
+
 * Use **Set/Map** for frequent lookups; avoid `O(n²)` scans
 * Batch independent async calls with **`Promise.all`**; for partial failure, **`allSettled` + retry**
 * Debounce/throttle noisy UI events
@@ -162,6 +218,176 @@ for (const x of arr) if (!uniq.includes(x)) uniq.push(x);
 
 //  GOOD: O(n)
 const uniq = [...new Set(arr)];
+```
+
+### Performance Optimization Examples
+
+**String Concatenation:**
+
+```js
+// BAD: Creates new strings each iteration (O(n²))
+let result = '';
+for (const item of items) {
+  result += item;  // New string allocation each time
+}
+
+// GOOD: Use array join (O(n))
+const parts = [];
+for (const item of items) {
+  parts.push(item);
+}
+const result = parts.join('');
+
+// GOOD: Template literals for small concatenations
+const result = `${prefix}-${suffix}-${id}`;
+```
+
+**Array Operations:**
+
+```js
+// BAD: Multiple iterations
+const doubled = [];
+const filtered = [];
+for (const x of arr) {
+  if (x > 0) {
+    doubled.push(x * 2);
+    filtered.push(x);
+  }
+}
+
+// GOOD: Single pass with chaining
+const doubled = arr
+  .filter(x => x > 0)
+  .map(x => x * 2);
+
+// GOOD: For large arrays, use for...of (more memory efficient)
+const doubled = [];
+for (const x of arr) {
+  if (x > 0) doubled.push(x * 2);
+}
+```
+
+**Object Property Access:**
+
+```js
+// BAD: Repeated property access
+function processUser(user) {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    display: `${user.name} (${user.email})`
+  };
+}
+
+// GOOD: Destructure once
+function processUser(user) {
+  const { id, name, email } = user;
+  return {
+    id,
+    name,
+    email,
+    display: `${name} (${email})`
+  };
+}
+```
+
+**Memoization:**
+
+```js
+// BAD: Recomputes expensive operation
+function expensiveOperation(input) {
+  return complexCalculation(input);  // Called every time
+}
+
+// GOOD: Memoize results
+const cache = new Map();
+function expensiveOperation(input) {
+  if (cache.has(input)) {
+    return cache.get(input);
+  }
+  const result = complexCalculation(input);
+  cache.set(input, result);
+  return result;
+}
+
+// GOOD: Using WeakMap for object keys (allows GC)
+const cache = new WeakMap();
+function expensiveOperation(obj) {
+  if (cache.has(obj)) {
+    return cache.get(obj);
+  }
+  const result = complexCalculation(obj);
+  cache.set(obj, result);
+  return result;
+}
+```
+
+**Debouncing and Throttling:**
+
+```js
+// Debounce: Execute after delay, cancel if called again
+function debounce(fn, delay) {
+  let timeoutId;
+  return function(...args) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
+// Throttle: Execute at most once per interval
+function throttle(fn, interval) {
+  let lastCall = 0;
+  return function(...args) {
+    const now = Date.now();
+    if (now - lastCall >= interval) {
+      lastCall = now;
+      return fn.apply(this, args);
+    }
+  };
+}
+
+// Usage
+const debouncedSearch = debounce((query) => {
+  searchAPI(query);
+}, 300);
+
+const throttledScroll = throttle(() => {
+  updateScrollPosition();
+}, 100);
+```
+
+**Lazy Evaluation:**
+
+```js
+// BAD: Eager evaluation (processes all items)
+function processAll(items) {
+  return items
+    .map(expensiveTransform)
+    .filter(isValid)
+    .slice(0, 10);  // Only need 10, but processed all
+}
+
+// GOOD: Lazy evaluation with generators
+function* processLazy(items) {
+  for (const item of items) {
+    const transformed = expensiveTransform(item);
+    if (isValid(transformed)) {
+      yield transformed;
+    }
+  }
+}
+
+function processAll(items) {
+  const generator = processLazy(items);
+  const results = [];
+  for (let i = 0; i < 10; i++) {
+    const { value, done } = generator.next();
+    if (done) break;
+    results.push(value);
+  }
+  return results;
+}
 ```
 
 ---
@@ -258,6 +484,154 @@ test('adds tax', () => {
 
 test('throws on invalid items', () => {
   expect(() => total('nope', 0.1)).toThrow(TypeError);
+});
+```
+
+### Advanced Testing Patterns
+
+**Test Organization:**
+
+```js
+// GOOD: Group related tests
+describe('PriceService', () => {
+  describe('total()', () => {
+    test('calculates total with tax', () => {
+      expect(total([{ id: 'A', price: 10 }], 0.1)).toBe(11);
+    });
+
+    test('handles empty array', () => {
+      expect(total([], 0.1)).toBe(0);
+    });
+
+    test('throws on invalid tax rate', () => {
+      expect(() => total([], -1)).toThrow(RangeError);
+    });
+  });
+});
+```
+
+**Mocking:**
+
+```js
+import { jest } from '@jest/globals';
+
+// Mock module
+jest.mock('./api.js', () => ({
+  fetchUser: jest.fn(),
+}));
+
+// Mock function
+const mockFetch = jest.fn();
+global.fetch = mockFetch;
+
+test('fetches user data', async () => {
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    json: async () => ({ id: '123', name: 'John' }),
+  });
+
+  const user = await fetchUser('123');
+  expect(user.name).toBe('John');
+  expect(mockFetch).toHaveBeenCalledWith('/api/users/123');
+});
+
+// Mock with implementation
+const mockLogger = {
+  info: jest.fn(),
+  error: jest.fn(),
+};
+
+test('logs errors', () => {
+  processWithLogging(mockLogger);
+  expect(mockLogger.error).toHaveBeenCalled();
+});
+```
+
+**Async Testing:**
+
+```js
+// GOOD: Using async/await
+test('handles async operations', async () => {
+  const result = await fetchData();
+  expect(result).toBeDefined();
+});
+
+// GOOD: Testing promises
+test('rejects on error', async () => {
+  await expect(fetchData('invalid')).rejects.toThrow(Error);
+});
+
+// GOOD: Testing with timers
+jest.useFakeTimers();
+test('debounces correctly', () => {
+  const fn = jest.fn();
+  const debounced = debounce(fn, 100);
+
+  debounced();
+  debounced();
+  debounced();
+
+  jest.advanceTimersByTime(100);
+  expect(fn).toHaveBeenCalledTimes(1);
+});
+```
+
+**Snapshot Testing:**
+
+```js
+// GOOD: For UI components or complex objects
+test('renders user card', () => {
+  const user = { id: '123', name: 'John', email: 'john@acme.com' };
+  const component = renderUserCard(user);
+  expect(component).toMatchSnapshot();
+});
+
+// GOOD: Inline snapshots
+test('formats date correctly', () => {
+  const formatted = formatDate(new Date('2024-01-01'));
+  expect(formatted).toMatchInlineSnapshot(`"January 1, 2024"`);
+});
+```
+
+**Test Coverage:**
+
+```js
+// GOOD: Test edge cases
+describe('Edge Cases', () => {
+  test('handles null input', () => {
+    expect(process(null)).toBe(null);
+  });
+
+  test('handles empty string', () => {
+    expect(process('')).toBe('');
+  });
+
+  test('handles very large numbers', () => {
+    expect(process(Number.MAX_SAFE_INTEGER)).toBeDefined();
+  });
+
+  test('handles special characters', () => {
+    expect(process('!@#$%')).toBeDefined();
+  });
+});
+```
+
+**Integration Tests:**
+
+```js
+// GOOD: Test with real dependencies
+import { createServer } from './server.js';
+import { createClient } from './client.js';
+
+test('server responds to requests', async () => {
+  const server = await createServer();
+  const client = createClient(server.url);
+
+  const response = await client.get('/api/users');
+  expect(response.status).toBe(200);
+  expect(Array.isArray(response.data)).toBe(true);
+
+  await server.close();
 });
 ```
 
@@ -531,6 +905,7 @@ if (!API_KEY) throw new Error('API_KEY required');
 ## 18) Troubleshooting Guide
 
 ### Debug Logging
+
 ```bash
 # Node.js debugging
 node --inspect app.js
@@ -540,30 +915,218 @@ NODE_ENV=production node app
 # Performance profiling
 node --prof app.js
 node --prof-process isolate-*.log
+
+# Chrome DevTools debugging
+# 1. Start with --inspect
+# 2. Open chrome://inspect
+# 3. Click "inspect" under your Node.js process
 ```
 
-### Common Errors
+**Structured Debug Logging:**
+
+```js
+// GOOD: Structured logging with levels
+const logger = {
+  debug: (msg, meta = {}) => {
+    if (process.env.DEBUG === '1') {
+      console.log(JSON.stringify({
+        level: 'debug',
+        ts: new Date().toISOString(),
+        msg,
+        ...meta
+      }));
+    }
+  },
+  info: (msg, meta = {}) => {
+    console.log(JSON.stringify({
+      level: 'info',
+      ts: new Date().toISOString(),
+      msg,
+      ...meta
+    }));
+  },
+  error: (msg, err, meta = {}) => {
+    console.error(JSON.stringify({
+      level: 'error',
+      ts: new Date().toISOString(),
+      msg,
+      error: err?.message,
+      stack: err?.stack,
+      ...meta
+    }));
+  }
+};
+
+// Usage
+logger.debug('Processing user', { userId: '123', step: 'validation' });
+logger.error('Failed to process', err, { userId: '123' });
+```
+
+**Performance Profiling:**
+
+```js
+// GOOD: Measure execution time
+function measureTime(fn, label) {
+  return function(...args) {
+    const start = performance.now();
+    const result = fn.apply(this, args);
+    const end = performance.now();
+    console.log(`${label} took ${end - start}ms`);
+    return result;
+  };
+}
+
+// GOOD: Memory profiling
+function logMemory(label) {
+  if (global.gc) {
+    global.gc();
+  }
+  const usage = process.memoryUsage();
+  console.log(`${label}:`, {
+    heapUsed: `${Math.round(usage.heapUsed / 1024 / 1024)}MB`,
+    heapTotal: `${Math.round(usage.heapTotal / 1024 / 1024)}MB`,
+    rss: `${Math.round(usage.rss / 1024 / 1024)}MB`
+  });
+}
+```
+
+### Common Errors & Solutions
 
 **UnhandledPromiseRejectionWarning:**
+
 ```js
-//  Cause: Missing .catch()
+// BAD: Missing .catch()
 fetchData();
 
-//  Fix
-fetchData().catch(err => console.error(err));
+// GOOD: Handle errors
+fetchData().catch(err => {
+  logger.error('Failed to fetch data', err);
+});
+
+// GOOD: Use async/await with try/catch
+async function process() {
+  try {
+    const data = await fetchData();
+    return data;
+  } catch (err) {
+    logger.error('Failed to process', err);
+    throw err;  // Re-throw if needed
+  }
+}
 ```
 
 **Maximum call stack size exceeded:**
+
 ```js
-//  Cause: Infinite recursion
+// BAD: Infinite recursion
 function factorial(n) {
   return n * factorial(n - 1);  // No base case!
 }
 
-//  Fix: Add base case
+// GOOD: Add base case
 function factorial(n) {
   if (n <= 1) return 1;
   return n * factorial(n - 1);
+}
+
+// GOOD: Use iterative approach for large numbers
+function factorialIterative(n) {
+  let result = 1;
+  for (let i = 2; i <= n; i++) {
+    result *= i;
+  }
+  return result;
+}
+```
+
+**Memory Leaks:**
+
+```js
+// BAD: Keeping references to large objects
+const cache = {};
+function process(data) {
+  cache[data.id] = data;  // Never cleaned up
+}
+
+// GOOD: Use WeakMap (allows GC)
+const cache = new WeakMap();
+function process(data) {
+  cache.set(data, processed);  // GC can clean up
+}
+
+// GOOD: Limit cache size
+class LRUCache {
+  constructor(maxSize = 100) {
+    this.cache = new Map();
+    this.maxSize = maxSize;
+  }
+
+  get(key) {
+    if (this.cache.has(key)) {
+      const value = this.cache.get(key);
+      this.cache.delete(key);
+      this.cache.set(key, value);  // Move to end
+      return value;
+    }
+  }
+
+  set(key, value) {
+    if (this.cache.size >= this.maxSize) {
+      const firstKey = this.cache.keys().next().value;
+      this.cache.delete(firstKey);  // Remove oldest
+    }
+    this.cache.set(key, value);
+  }
+}
+```
+
+**Event Listener Leaks:**
+
+```js
+// BAD: Not cleaning up
+button.addEventListener('click', handleClick);
+// Component removed, listener still exists
+
+// GOOD: Use AbortController
+const controller = new AbortController();
+button.addEventListener('click', handleClick, {
+  signal: controller.signal
+});
+
+// Cleanup
+controller.abort();
+
+// GOOD: Remove listener explicitly
+function setup() {
+  button.addEventListener('click', handleClick);
+  return () => {
+    button.removeEventListener('click', handleClick);
+  };
+}
+
+const cleanup = setup();
+// Later: cleanup();
+```
+
+**Undefined Behavior:**
+
+```js
+// BAD: Accessing properties on undefined
+function process(user) {
+  return user.profile.name;  // Crashes if user or profile is undefined
+}
+
+// GOOD: Optional chaining
+function process(user) {
+  return user?.profile?.name ?? 'Unknown';
+}
+
+// GOOD: Explicit checks
+function process(user) {
+  if (!user || !user.profile) {
+    return 'Unknown';
+  }
+  return user.profile.name;
 }
 ```
 
@@ -753,6 +1316,219 @@ async function ping(url) { return fetch(url); }
 Stay in `.js` with **JSDoc + `// @ts-check`** and a `tsconfig.json` that enables `"allowJs": true, "checkJs": true, "noEmit": true`. If you need inline TS syntax, rename to `.ts` and adopt a TS toolchain.
 
 ---
+
+## 26) Comprehensive Example Application
+
+Complete example demonstrating JavaScript best practices:
+
+```js
+// @ts-check
+/**
+ * @module userService
+ * User management service with validation, error handling, and logging.
+ */
+
+/** @typedef {{ id: string, name: string, email: string, createdAt: Date }} User */
+/** @typedef {{ name: string, email: string }} CreateUserInput */
+
+const logger = {
+  info: (msg, meta = {}) => console.log(JSON.stringify({
+    level: 'info',
+    ts: new Date().toISOString(),
+    msg,
+    ...meta
+  })),
+  error: (msg, err, meta = {}) => console.error(JSON.stringify({
+    level: 'error',
+    ts: new Date().toISOString(),
+    msg,
+    error: err?.message,
+    stack: err?.stack,
+    ...meta
+  }))
+};
+
+class ValidationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
+class NotFoundError extends Error {
+  constructor(resource) {
+    super(`${resource} not found`);
+    this.name = 'NotFoundError';
+  }
+}
+
+class UserRepository {
+  constructor() {
+    this.users = new Map();
+  }
+
+  /**
+   * @param {string} id
+   * @returns {Promise<User | null>}
+   */
+  async findById(id) {
+    return this.users.get(id) ?? null;
+  }
+
+  /**
+   * @param {CreateUserInput} data
+   * @returns {Promise<User>}
+   */
+  async create(data) {
+    if (!data.name || !data.email) {
+      throw new ValidationError('Name and email are required');
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+      throw new ValidationError('Invalid email format');
+    }
+
+    const user = {
+      id: crypto.randomUUID(),
+      name: data.name,
+      email: data.email,
+      createdAt: new Date()
+    };
+
+    this.users.set(user.id, user);
+    logger.info('User created', { userId: user.id });
+    return user;
+  }
+
+  /**
+   * @param {string} id
+   * @param {Partial<CreateUserInput>} data
+   * @returns {Promise<User>}
+   */
+  async update(id, data) {
+    const user = await this.findById(id);
+    if (!user) {
+      throw new NotFoundError('User');
+    }
+
+    const updated = { ...user, ...data };
+    this.users.set(id, updated);
+    logger.info('User updated', { userId: id });
+    return updated;
+  }
+
+  /**
+   * @param {string} id
+   * @returns {Promise<void>}
+   */
+  async delete(id) {
+    if (!this.users.has(id)) {
+      throw new NotFoundError('User');
+    }
+    this.users.delete(id);
+    logger.info('User deleted', { userId: id });
+  }
+}
+
+class UserService {
+  constructor(repository) {
+    this.repository = repository;
+  }
+
+  /**
+   * @param {string} id
+   * @returns {Promise<User>}
+   */
+  async getUser(id) {
+    logger.info('Getting user', { userId: id });
+    const user = await this.repository.findById(id);
+    if (!user) {
+      throw new NotFoundError('User');
+    }
+    return user;
+  }
+
+  /**
+   * @param {CreateUserInput} data
+   * @returns {Promise<User>}
+   */
+  async createUser(data) {
+    logger.info('Creating user', { email: data.email });
+    try {
+      return await this.repository.create(data);
+    } catch (error) {
+      logger.error('Failed to create user', error, { email: data.email });
+      throw error;
+    }
+  }
+}
+
+// API Handler
+/**
+ * @param {UserService} service
+ * @returns {import('express').Router}
+ */
+function createUserRouter(service) {
+  const router = (await import('express')).default.Router();
+
+  router.get('/users/:id', async (req, res) => {
+    try {
+      const user = await service.getUser(req.params.id);
+      res.json(user);
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        return res.status(404).json({ error: error.message });
+      }
+      logger.error('API error', error, { path: req.path });
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  router.post('/users', async (req, res) => {
+    try {
+      const user = await service.createUser(req.body);
+      res.status(201).json(user);
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        return res.status(400).json({ error: error.message });
+      }
+      logger.error('API error', error, { path: req.path });
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  return router;
+}
+
+// Application setup
+async function createApp() {
+  const express = (await import('express')).default;
+  const app = express();
+
+  app.use(express.json());
+
+  const repository = new UserRepository();
+  const service = new UserService(repository);
+  app.use(createUserRouter(service));
+
+  return app;
+}
+
+// Export for testing
+export { UserService, UserRepository, ValidationError, NotFoundError, createApp };
+```
+
+**Key Patterns Demonstrated:**
+
+- ✅ JSDoc type annotations with `// @ts-check`
+- ✅ Error handling with custom error classes
+- ✅ Structured logging
+- ✅ Input validation
+- ✅ Repository pattern
+- ✅ Service layer separation
+- ✅ Async/await patterns
+- ✅ Type-safe API handlers
+- ✅ Proper error responses
 
 **Node.js Version**: 18+ (LTS)
 **ES Version**: ES2022

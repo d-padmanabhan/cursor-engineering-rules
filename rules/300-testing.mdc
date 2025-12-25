@@ -20,6 +20,46 @@ files:
 
 # Testing Strategies & Best Practices
 
+**Audience**: engineers writing and reviewing tests across languages and frameworks
+**Goal**: Create reliable, maintainable test suites that provide fast feedback and high confidence
+
+## Testing Philosophy (Core Principles)
+
+**Core Principles:**
+
+- **"Test pyramid, not test ice cream cone"** - More unit tests, fewer integration tests, minimal E2E tests
+- **"Fast feedback loop"** - Tests should run quickly and fail fast with clear error messages
+- **"Tests are documentation"** - Tests describe how code should behave, make them readable
+- **"Isolation is essential"** - Tests should be independent, repeatable, and not depend on each other
+- **"Quality over quantity"** - 80% coverage is good, but meaningful tests matter more than coverage percentage
+- **"Test behavior, not implementation"** - Test what the code does, not how it does it
+- **"Fail fast, fail clearly"** - Tests should fail with actionable error messages
+- **"Maintainability matters"** - Tests should be easy to update when requirements change
+
+**Applying Testing Principles:**
+
+```typescript
+// BAD: Testing implementation, unclear, slow
+it('test1', () => {
+  const result = service.process();
+  expect(result).toBeTruthy();
+});
+
+// GOOD: Testing behavior, clear, fast
+it('should calculate total price with 10% discount', () => {
+  // Arrange
+  const cart = new ShoppingCart();
+  cart.addItem({ id: '1', price: 100 });
+  cart.addItem({ id: '2', price: 50 });
+
+  // Act
+  const total = cart.calculateTotal(0.1);
+
+  // Assert
+  expect(total).toBe(135); // (100 + 50) * 0.9
+});
+```
+
 ## Guiding Principles
 
 1. **Test Pyramid**: More unit tests, fewer integration tests, minimal E2E tests
@@ -956,6 +996,212 @@ jobs:
 
 ---
 
+## Advanced Testing Patterns
+
+### Property-Based Testing
+
+```python
+# Hypothesis for Python
+from hypothesis import given, strategies as st
+
+@given(st.integers(min_value=1, max_value=1000))
+def test_discount_always_positive(amount):
+    """Discount should always be positive."""
+    discount = calculate_discount(amount, 0.1)
+    assert discount >= 0
+
+@given(st.lists(st.integers(), min_size=1))
+def test_sum_is_commutative(numbers):
+    """Sum should be the same regardless of order."""
+    forward = sum(numbers)
+    backward = sum(reversed(numbers))
+    assert forward == backward
+```
+
+### Snapshot Testing
+
+```typescript
+// Jest snapshot testing
+it('should render user profile correctly', () => {
+  const user = { name: 'John', email: 'john@acme.com' };
+  const component = render(<UserProfile user={user} />);
+
+  expect(component).toMatchSnapshot();
+});
+
+// Update snapshots: jest -u
+```
+
+### Mutation Testing
+
+```bash
+# Stryker for JavaScript/TypeScript
+npm install --save-dev @stryker-mutator/core
+npx stryker run
+
+# Mutates code and checks if tests catch the mutations
+# High mutation score = good test quality
+```
+
+### Contract Testing
+
+```typescript
+// Pact for contract testing
+import { Pact } from '@pact-foundation/pact';
+
+const provider = new Pact({
+  consumer: 'Frontend',
+  provider: 'UserService',
+});
+
+describe('User Service Contract', () => {
+  beforeAll(() => provider.setup());
+
+  it('should return user by ID', async () => {
+    await provider.addInteraction({
+      state: 'user exists',
+      uponReceiving: 'a request for user',
+      withRequest: {
+        method: 'GET',
+        path: '/api/users/123',
+      },
+      willRespondWith: {
+        status: 200,
+        body: {
+          id: '123',
+          name: 'John',
+          email: 'john@acme.com',
+        },
+      },
+    });
+
+    // Test consumer code
+    const user = await userService.getUser('123');
+    expect(user.name).toBe('John');
+  });
+
+  afterAll(() => provider.finalize());
+});
+```
+
+## Performance Testing
+
+### Load Testing
+
+```typescript
+// k6 load testing
+import http from 'k6/http';
+import { check, sleep } from 'k6';
+
+export const options = {
+  stages: [
+    { duration: '30s', target: 20 },  // Ramp up
+    { duration: '1m', target: 20 },   // Stay at 20 users
+    { duration: '30s', target: 0 },   // Ramp down
+  ],
+};
+
+export default function () {
+  const response = http.get('https://api.acme.com/v1/users');
+  check(response, {
+    'status is 200': (r) => r.status === 200,
+    'response time < 500ms': (r) => r.timings.duration < 500,
+  });
+  sleep(1);
+}
+```
+
+### Stress Testing
+
+```python
+# Locust for Python
+from locust import HttpUser, task, between
+
+class UserBehavior(HttpUser):
+    wait_time = between(1, 3)
+
+    @task
+    def get_users(self):
+        self.client.get("/api/v1/users")
+
+    @task(3)
+    def create_user(self):
+        self.client.post("/api/v1/users", json={
+            "name": "Test User",
+            "email": "test@acme.com"
+        })
+```
+
+## Troubleshooting & Debugging Tests
+
+### Common Test Issues
+
+**Flaky Tests:**
+
+```typescript
+// BAD: Time-dependent test
+it('should process order', async () => {
+  const order = await createOrder();
+  await processOrder(order.id);
+
+  // Race condition - might fail intermittently
+  const result = await getOrder(order.id);
+  expect(result.status).toBe('processed');
+});
+
+// GOOD: Poll until condition met
+it('should process order', async () => {
+  const order = await createOrder();
+  await processOrder(order.id);
+
+  // Poll with timeout
+  const result = await pollUntil(
+    () => getOrder(order.id),
+    (order) => order.status === 'processed',
+    { timeout: 5000, interval: 100 }
+  );
+
+  expect(result.status).toBe('processed');
+});
+```
+
+**Slow Tests:**
+
+```typescript
+// BAD: Real network calls
+it('should fetch user data', async () => {
+  const user = await fetch('https://api.github.com/users/octocat');
+  // Slow, depends on external service
+});
+
+// GOOD: Mock external dependencies
+it('should fetch user data', async () => {
+  global.fetch = jest.fn().mockResolvedValue({
+    json: async () => ({ name: 'Octocat' }),
+  });
+
+  const user = await fetchUser('octocat');
+  expect(user.name).toBe('Octocat');
+});
+```
+
+**Test Data Management:**
+
+```typescript
+// GOOD: Test fixtures
+const createTestUser = (overrides = {}) => ({
+  id: '123',
+  name: 'Test User',
+  email: 'test@acme.com',
+  ...overrides,
+});
+
+it('should update user', () => {
+  const user = createTestUser({ name: 'Updated Name' });
+  // Use fixture
+});
+```
+
 ## Best Practices
 
 ### Test Naming Conventions
@@ -1029,12 +1275,177 @@ describe('UserService', () => {
 
 ---
 
+## Comprehensive Test Suite Example
+
+Complete test suite demonstrating best practices:
+
+```typescript
+// user-service.test.ts
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { UserService } from './user-service';
+import { EmailService } from './email-service';
+
+describe('UserService', () => {
+  let userService: UserService;
+  let emailService: jest.Mocked<EmailService>;
+
+  beforeEach(() => {
+    emailService = {
+      sendWelcome: jest.fn().mockResolvedValue(true),
+      sendPasswordReset: jest.fn().mockResolvedValue(true),
+    } as jest.Mocked<EmailService>;
+
+    userService = new UserService(emailService);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('createUser', () => {
+    it('should create user with valid data', async () => {
+      // Arrange
+      const userData = {
+        name: 'John Doe',
+        email: 'john@acme.com',
+        password: 'SecurePassword123!',
+      };
+
+      // Act
+      const user = await userService.createUser(userData);
+
+      // Assert
+      expect(user).toMatchObject({
+        name: userData.name,
+        email: userData.email,
+      });
+      expect(user.id).toBeDefined();
+      expect(user.createdAt).toBeInstanceOf(Date);
+      expect(user.password).not.toBe(userData.password);
+      expect(emailService.sendWelcome).toHaveBeenCalledWith(userData.email);
+    });
+
+    it.each([
+      ['invalid-email', 'Invalid email format'],
+      ['', 'Email is required'],
+      ['a'.repeat(300) + '@acme.com', 'Email too long'],
+    ])('should throw ValidationError for invalid email: %s', async (email, expectedError) => {
+      const userData = {
+        name: 'John',
+        email,
+        password: 'SecurePassword123!',
+      };
+
+      await expect(userService.createUser(userData)).rejects.toThrow(expectedError);
+      expect(emailService.sendWelcome).not.toHaveBeenCalled();
+    });
+
+    it('should handle email service failure gracefully', async () => {
+      emailService.sendWelcome.mockRejectedValue(new Error('SMTP error'));
+
+      const userData = {
+        name: 'John',
+        email: 'john@acme.com',
+        password: 'SecurePassword123!',
+      };
+
+      // User should still be created even if email fails
+      const user = await userService.createUser(userData);
+      expect(user).toBeDefined();
+      expect(user.email).toBe(userData.email);
+    });
+  });
+
+  describe('getUser', () => {
+    it('should return user by ID', async () => {
+      const created = await userService.createUser({
+        name: 'Jane',
+        email: 'jane@acme.com',
+        password: 'password',
+      });
+
+      const retrieved = await userService.getUser(created.id);
+
+      expect(retrieved).toMatchObject({
+        id: created.id,
+        name: 'Jane',
+        email: 'jane@acme.com',
+      });
+    });
+
+    it('should throw NotFoundError for nonexistent user', async () => {
+      await expect(userService.getUser('nonexistent-id')).rejects.toThrow('User not found');
+    });
+  });
+
+  describe('updateUser', () => {
+    it('should update user fields', async () => {
+      const user = await userService.createUser({
+        name: 'John',
+        email: 'john@acme.com',
+        password: 'password',
+      });
+
+      const updated = await userService.updateUser(user.id, {
+        name: 'John Updated',
+      });
+
+      expect(updated.name).toBe('John Updated');
+      expect(updated.email).toBe('john@acme.com');
+      expect(updated.updatedAt.getTime()).toBeGreaterThan(user.createdAt.getTime());
+    });
+
+    it('should validate email on update', async () => {
+      const user = await userService.createUser({
+        name: 'John',
+        email: 'john@acme.com',
+        password: 'password',
+      });
+
+      await expect(
+        userService.updateUser(user.id, { email: 'invalid' })
+      ).rejects.toThrow('Invalid email format');
+    });
+  });
+
+  describe('deleteUser', () => {
+    it('should delete user by ID', async () => {
+      const user = await userService.createUser({
+        name: 'John',
+        email: 'john@acme.com',
+        password: 'password',
+      });
+
+      await userService.deleteUser(user.id);
+
+      await expect(userService.getUser(user.id)).rejects.toThrow('User not found');
+    });
+
+    it('should throw NotFoundError for nonexistent user', async () => {
+      await expect(userService.deleteUser('nonexistent-id')).rejects.toThrow('User not found');
+    });
+  });
+});
+```
+
+**Key Patterns Demonstrated:**
+
+- ✅ Test Organization: Logical grouping with describe blocks
+- ✅ Setup/Teardown: beforeEach/afterEach for isolation
+- ✅ AAA Pattern: Arrange, Act, Assert
+- ✅ Parameterized Tests: it.each for multiple cases
+- ✅ Mocking: Mock external dependencies
+- ✅ Error Cases: Test error paths
+- ✅ Edge Cases: Test boundary conditions
+- ✅ Clear Names: Descriptive test names
+
 ## Related Files
 
 - `160-python.mdc` - Python-specific testing with pytest
 - `170-javascript.mdc` - JavaScript testing with Jest/Vitest
 - `180-go.mdc` - Go testing patterns
 - `120-gha.mdc` - CI/CD integration for tests
+- `250-api-design.mdc` - API testing strategies
 
 ---
 

@@ -1,0 +1,982 @@
+---
+title: PostgreSQL Engineering Ruleset
+description: Database naming conventions, schema patterns, and PostgreSQL best practices.
+priority: 470
+alwaysApply: false
+files:
+  include:
+    - "**/migrations/**/*.sql"
+    - "**/schema/**/*.sql"
+    - "**/db/**/*.sql"
+    - "**/*.sql"
+---
+
+# PostgreSQL Engineering Ruleset
+
+**Audience**: engineers designing and reviewing PostgreSQL database schemas and migrations
+**Goal:** Consistent database schema design with clear naming conventions and maintainable patterns
+
+## PostgreSQL Philosophy (Core Principles)
+
+**Core Principles:**
+
+- **"Consistency is king"** - Follow naming conventions consistently across all tables and columns
+- **"Explicit over implicit"** - Use explicit constraints, types, and defaults
+- **"Performance by design"** - Index foreign keys and frequently queried columns
+- **"Security by default"** - Use parameterized queries, RLS, least privilege
+- **"Migrations are code"** - Version control migrations, make them reversible
+- **"Documentation matters"** - Comments explain why, not just what
+- **"Test your migrations"** - Test migrations in staging before production
+- **"Backup before changes"** - Always backup before destructive operations
+
+**Applying PostgreSQL Principles:**
+
+```sql
+-- BAD: Inconsistent naming, no constraints, no indexes
+CREATE TABLE User (
+    userId SERIAL PRIMARY KEY,
+    Email VARCHAR(255),
+    firstName VARCHAR(100),
+    lastName VARCHAR(100)
+);
+
+-- GOOD: Consistent naming, constraints, indexes
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+
+    CONSTRAINT users_email_unique UNIQUE (email),
+    CONSTRAINT users_email_format CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$')
+);
+
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_created_at ON users(created_at);
+```
+
+## Naming Conventions
+
+### Tables
+
+**Tables use plural snake_case:**
+
+```sql
+--  GOOD: Plural snake_case
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE user_books (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    book_id BIGINT NOT NULL REFERENCES books(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, book_id)
+);
+
+--  BAD: Singular or camelCase
+CREATE TABLE User ( ... );
+CREATE TABLE userBooks ( ... );
+```
+
+### Columns
+
+**Columns use singular snake_case:**
+
+```sql
+--  GOOD: Singular snake_case
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    email_address VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+--  BAD: Plural or camelCase
+CREATE TABLE users (
+    firstName VARCHAR(100),
+    EmailAddress VARCHAR(255)
+);
+```
+
+### Primary Keys
+
+**Primary keys are always named `id`:**
+
+```sql
+--  GOOD: Standard id column
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    ...
+);
+
+--  BAD: Custom primary key names
+CREATE TABLE users (
+    user_id BIGSERIAL PRIMARY KEY,
+    user_uuid UUID PRIMARY KEY
+);
+```
+
+### Foreign Keys
+
+**Foreign keys reference the table name in singular form plus `_id`:**
+
+```sql
+--  GOOD: user_id references users table
+CREATE TABLE orders (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    product_id BIGINT NOT NULL REFERENCES products(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+--  GOOD: Self-referencing foreign key
+CREATE TABLE categories (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    parent_id BIGINT REFERENCES categories(id)
+);
+
+--  BAD: Inconsistent naming
+CREATE TABLE orders (
+    id BIGSERIAL PRIMARY KEY,
+    customer_id BIGINT REFERENCES users(id),  -- Should be user_id
+    item_id BIGINT REFERENCES products(id)     -- Should be product_id
+);
+```
+
+### Indexes
+
+**Indexes use descriptive names:**
+
+```sql
+--  GOOD: Descriptive index names
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_orders_user_id ON orders(user_id);
+CREATE INDEX idx_orders_created_at ON orders(created_at);
+CREATE UNIQUE INDEX idx_users_email_unique ON users(email);
+
+--  BAD: Generic or unclear names
+CREATE INDEX idx1 ON users(email);
+CREATE INDEX idx_users_1 ON users(user_id);
+```
+
+### Constraints
+
+**Constraints use descriptive names:**
+
+```sql
+--  GOOD: Named constraints
+ALTER TABLE users
+    ADD CONSTRAINT users_email_unique UNIQUE (email),
+    ADD CONSTRAINT users_email_format CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$');
+
+--  BAD: Unnamed constraints (PostgreSQL will generate random names)
+ALTER TABLE users ADD UNIQUE (email);
+```
+
+## Schema Patterns
+
+### Timestamps
+
+**Always include `created_at` and `updated_at`:**
+
+```sql
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+);
+
+-- Trigger to auto-update updated_at
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_users_updated_at
+    BEFORE UPDATE ON users
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+```
+
+### Soft Deletes
+
+**Use `deleted_at` for soft deletes:**
+
+```sql
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    deleted_at TIMESTAMP WITH TIME ZONE NULL
+);
+
+-- Index for active records
+CREATE INDEX idx_users_deleted_at ON users(deleted_at) WHERE deleted_at IS NULL;
+
+-- Query active records
+SELECT * FROM users WHERE deleted_at IS NULL;
+```
+
+### Enums
+
+**Use PostgreSQL enums for fixed value sets:**
+
+```sql
+--  GOOD: Use ENUM type
+CREATE TYPE user_status AS ENUM ('active', 'inactive', 'suspended');
+CREATE TYPE order_status AS ENUM ('pending', 'processing', 'shipped', 'delivered', 'cancelled');
+
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    status user_status DEFAULT 'active' NOT NULL
+);
+
+CREATE TABLE orders (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    status order_status DEFAULT 'pending' NOT NULL
+);
+
+--  BAD: String with CHECK constraint (less efficient)
+CREATE TABLE users (
+    status VARCHAR(20) CHECK (status IN ('active', 'inactive', 'suspended'))
+);
+```
+
+## Migration Best Practices
+
+### Migration Files
+
+**Use timestamped migration files:**
+
+```sql
+-- migrations/20250115120000_create_users_table.sql
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+);
+
+-- migrations/20250115120001_add_user_status.sql
+CREATE TYPE user_status AS ENUM ('active', 'inactive', 'suspended');
+ALTER TABLE users ADD COLUMN status user_status DEFAULT 'active' NOT NULL;
+```
+
+### Reversible Migrations
+
+**Always provide both up and down migrations:**
+
+```sql
+-- Up migration
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE
+);
+
+-- Down migration
+DROP TABLE IF EXISTS users;
+```
+
+### Data Migrations
+
+**Separate schema and data migrations:**
+
+```sql
+-- Schema migration
+ALTER TABLE users ADD COLUMN status user_status;
+
+-- Data migration (separate file)
+UPDATE users SET status = 'active' WHERE status IS NULL;
+ALTER TABLE users ALTER COLUMN status SET NOT NULL;
+```
+
+## Performance Considerations
+
+### Indexes
+
+**Index foreign keys and frequently queried columns:**
+
+```sql
+-- Foreign keys should be indexed
+CREATE INDEX idx_orders_user_id ON orders(user_id);
+CREATE INDEX idx_orders_product_id ON orders(product_id);
+
+-- Frequently queried columns
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_orders_created_at ON orders(created_at);
+
+-- Composite indexes for common query patterns
+CREATE INDEX idx_orders_user_created ON orders(user_id, created_at DESC);
+```
+
+### Partial Indexes
+
+**Use partial indexes for filtered queries:**
+
+```sql
+-- Index only active users
+CREATE INDEX idx_users_active ON users(email) WHERE deleted_at IS NULL;
+
+-- Index only pending orders
+CREATE INDEX idx_orders_pending ON orders(created_at) WHERE status = 'pending';
+```
+
+### Performance Optimization Examples
+
+**Query Optimization:**
+
+```sql
+-- BAD: Full table scan
+SELECT * FROM orders WHERE user_id = 123 AND status = 'pending';
+
+-- GOOD: Composite index covers both conditions
+CREATE INDEX idx_orders_user_status ON orders(user_id, status);
+SELECT * FROM orders WHERE user_id = 123 AND status = 'pending';
+
+-- EXCELLENT: Partial index for common query
+CREATE INDEX idx_orders_user_pending ON orders(user_id) WHERE status = 'pending';
+SELECT * FROM orders WHERE user_id = 123 AND status = 'pending';
+```
+
+**Covering Indexes:**
+
+```sql
+-- Covering index includes all columns needed for query
+CREATE INDEX idx_orders_user_covering ON orders(user_id, created_at, total, status);
+
+-- Query can be satisfied from index alone
+SELECT user_id, created_at, total, status
+FROM orders
+WHERE user_id = 123;
+```
+
+**Partitioning:**
+
+```sql
+-- Partition large tables by date
+CREATE TABLE orders (
+    id BIGSERIAL,
+    user_id BIGINT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    total DECIMAL(10,2) NOT NULL
+) PARTITION BY RANGE (created_at);
+
+-- Create partitions
+CREATE TABLE orders_2024_q1 PARTITION OF orders
+    FOR VALUES FROM ('2024-01-01') TO ('2024-04-01');
+
+CREATE TABLE orders_2024_q2 PARTITION OF orders
+    FOR VALUES FROM ('2024-04-01') TO ('2024-07-01');
+```
+
+**Materialized Views:**
+
+```sql
+-- Materialized view for expensive aggregations
+CREATE MATERIALIZED VIEW user_order_stats AS
+SELECT
+    user_id,
+    COUNT(*) as total_orders,
+    SUM(total) as total_spent,
+    AVG(total) as avg_order_value
+FROM orders
+GROUP BY user_id;
+
+-- Refresh periodically
+REFRESH MATERIALIZED VIEW CONCURRENTLY user_order_stats;
+
+-- Index materialized view
+CREATE UNIQUE INDEX idx_user_order_stats_user_id ON user_order_stats(user_id);
+```
+
+## Advanced Schema Patterns
+
+### Table Inheritance
+
+```sql
+-- Use table inheritance for shared columns
+CREATE TABLE base_events (
+    id BIGSERIAL PRIMARY KEY,
+    event_type VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+);
+
+CREATE TABLE user_events (
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    event_data JSONB
+) INHERITS (base_events);
+
+CREATE TABLE system_events (
+    component VARCHAR(100) NOT NULL,
+    severity VARCHAR(20) NOT NULL
+) INHERITS (base_events);
+```
+
+### Check Constraints
+
+```sql
+-- Use check constraints for data validation
+CREATE TABLE orders (
+    id BIGSERIAL PRIMARY KEY,
+    total DECIMAL(10,2) NOT NULL,
+    discount_percent INTEGER NOT NULL,
+    status order_status NOT NULL,
+
+    CONSTRAINT orders_total_positive CHECK (total >= 0),
+    CONSTRAINT orders_discount_range CHECK (discount_percent >= 0 AND discount_percent <= 100),
+    CONSTRAINT orders_status_valid CHECK (status IN ('pending', 'processing', 'shipped', 'delivered', 'cancelled'))
+);
+```
+
+### Generated Columns
+
+```sql
+-- Use generated columns for computed values
+CREATE TABLE products (
+    id BIGSERIAL PRIMARY KEY,
+    price DECIMAL(10,2) NOT NULL,
+    tax_rate DECIMAL(5,2) NOT NULL,
+    price_with_tax DECIMAL(10,2) GENERATED ALWAYS AS (price * (1 + tax_rate)) STORED
+);
+```
+
+## Security Best Practices
+
+### Parameterized Queries
+
+**Always use parameterized queries:**
+
+```python
+#  GOOD: Parameterized query
+cursor.execute(
+    "SELECT * FROM users WHERE email = %s",
+    (email,)
+)
+
+#  BAD: String concatenation (SQL injection risk)
+cursor.execute(f"SELECT * FROM users WHERE email = '{email}'")
+```
+
+### Row-Level Security
+
+**Use RLS for multi-tenant applications:**
+
+```sql
+-- Enable RLS
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Users can only see their own orders
+CREATE POLICY orders_user_policy ON orders
+    FOR ALL
+    USING (user_id = current_setting('app.user_id')::bigint);
+
+-- Policy: Users can insert their own orders
+CREATE POLICY orders_user_insert ON orders
+    FOR INSERT
+    WITH CHECK (user_id = current_setting('app.user_id')::bigint);
+```
+
+### Connection Pooling
+
+**Use connection pooling:**
+
+```python
+# Using psycopg2 pool
+from psycopg2 import pool
+
+connection_pool = pool.SimpleConnectionPool(
+    1, 20,
+    host="localhost",
+    database="mydb",
+    user="user",
+    password="password"
+)
+
+# Using SQLAlchemy
+from sqlalchemy import create_engine
+
+engine = create_engine(
+    "postgresql://user:password@localhost/mydb",
+    pool_size=20,
+    max_overflow=10,
+    pool_pre_ping=True
+)
+```
+
+### Prepared Statements
+
+```sql
+-- Use prepared statements for repeated queries
+PREPARE get_user_by_email(VARCHAR) AS
+    SELECT * FROM users WHERE email = $1;
+
+EXECUTE get_user_by_email('user@acme.com');
+```
+
+## Testing Database Code
+
+### Unit Testing Migrations
+
+```python
+# Test migrations with pytest
+import pytest
+from sqlalchemy import create_engine, text
+from alembic import command
+from alembic.config import Config
+
+@pytest.fixture
+def db_engine():
+    """Create test database engine."""
+    engine = create_engine("postgresql://test:test@localhost/testdb")
+    yield engine
+    engine.dispose()
+
+def test_migration_up_and_down(db_engine):
+    """Test migration can be applied and reverted."""
+    alembic_cfg = Config("alembic.ini")
+
+    # Apply migration
+    command.upgrade(alembic_cfg, "head")
+
+    # Verify table exists
+    with db_engine.connect() as conn:
+        result = conn.execute(text("SELECT COUNT(*) FROM users"))
+        assert result.scalar() == 0
+
+    # Revert migration
+    command.downgrade(alembic_cfg, "base")
+
+    # Verify table removed
+    with db_engine.connect() as conn:
+        with pytest.raises(Exception):  # Table should not exist
+            conn.execute(text("SELECT COUNT(*) FROM users"))
+```
+
+### Integration Testing
+
+```python
+# Test database operations
+@pytest.fixture
+def db_session(db_engine):
+    """Create database session."""
+    from sqlalchemy.orm import sessionmaker
+    Session = sessionmaker(bind=db_engine)
+    session = Session()
+    yield session
+    session.rollback()
+    session.close()
+
+def test_create_user(db_session):
+    """Test user creation."""
+    user = User(email="test@acme.com", first_name="Test", last_name="User")
+    db_session.add(user)
+    db_session.commit()
+
+    assert user.id is not None
+    assert user.created_at is not None
+```
+
+## Performance Monitoring
+
+### Query Statistics
+
+```sql
+-- Enable query statistics
+ALTER SYSTEM SET track_io_timing = on;
+ALTER SYSTEM SET track_functions = all;
+SELECT pg_reload_conf();
+
+-- View slow queries
+SELECT
+    query,
+    calls,
+    total_exec_time,
+    mean_exec_time,
+    max_exec_time
+FROM pg_stat_statements
+ORDER BY mean_exec_time DESC
+LIMIT 10;
+```
+
+### Table Statistics
+
+```sql
+-- Update statistics
+ANALYZE users;
+
+-- View table statistics
+SELECT
+    schemaname,
+    tablename,
+    n_live_tup,
+    n_dead_tup,
+    last_vacuum,
+    last_autovacuum,
+    last_analyze,
+    last_autoanalyze
+FROM pg_stat_user_tables
+WHERE schemaname = 'public';
+```
+
+### Vacuum and Analyze
+
+```sql
+-- Manual vacuum
+VACUUM ANALYZE users;
+
+-- Vacuum with verbose output
+VACUUM VERBOSE ANALYZE users;
+
+-- Check vacuum status
+SELECT
+    schemaname,
+    tablename,
+    last_vacuum,
+    last_autovacuum,
+    vacuum_count,
+    autovacuum_count
+FROM pg_stat_user_tables;
+```
+
+## Reference Implementations
+
+Study these projects for examples:
+
+- **[GitLab Database Schema](https://gitlab.com/gitlab-org/gitlab)** - Large-scale PostgreSQL patterns
+- **[Discourse](https://github.com/discourse/discourse)** - Rails + PostgreSQL conventions
+- **[Mastodon](https://github.com/mastodon/mastodon/blob/main/db/schema.rb)** - Complex social media schema
+
+## Advanced Patterns
+
+### Full-Text Search
+
+```sql
+-- Create full-text search index
+CREATE TABLE articles (
+    id BIGSERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    search_vector tsvector
+);
+
+-- Generate search vector
+CREATE INDEX idx_articles_search ON articles USING GIN(search_vector);
+
+CREATE OR REPLACE FUNCTION update_search_vector() RETURNS TRIGGER AS $$
+BEGIN
+    NEW.search_vector :=
+        setweight(to_tsvector('english', COALESCE(NEW.title, '')), 'A') ||
+        setweight(to_tsvector('english', COALESCE(NEW.content, '')), 'B');
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER articles_search_vector_update
+    BEFORE INSERT OR UPDATE ON articles
+    FOR EACH ROW EXECUTE FUNCTION update_search_vector();
+
+-- Search query
+SELECT id, title, ts_rank(search_vector, query) as rank
+FROM articles, to_tsquery('english', 'search & terms') query
+WHERE search_vector @@ query
+ORDER BY rank DESC;
+```
+
+### JSONB Columns
+
+```sql
+-- Use JSONB for flexible schema
+CREATE TABLE products (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    attributes JSONB NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+);
+
+-- Index JSONB fields
+CREATE INDEX idx_products_attributes_gin ON products USING GIN(attributes);
+CREATE INDEX idx_products_attributes_category ON products((attributes->>'category'));
+
+-- Query JSONB
+SELECT * FROM products
+WHERE attributes->>'category' = 'electronics'
+  AND (attributes->>'price')::numeric > 100;
+```
+
+### Common Table Expressions (CTEs)
+
+```sql
+-- Use CTEs for complex queries
+WITH recent_orders AS (
+    SELECT user_id, SUM(total) as total_spent
+    FROM orders
+    WHERE created_at > NOW() - INTERVAL '30 days'
+    GROUP BY user_id
+),
+high_value_users AS (
+    SELECT user_id
+    FROM recent_orders
+    WHERE total_spent > 1000
+)
+SELECT u.*, r.total_spent
+FROM users u
+JOIN high_value_users h ON u.id = h.user_id
+JOIN recent_orders r ON u.id = r.user_id;
+```
+
+## Troubleshooting & Debugging
+
+### Query Performance Analysis
+
+```sql
+-- Enable query timing
+\timing
+
+-- Explain query plan
+EXPLAIN ANALYZE
+SELECT * FROM orders
+WHERE user_id = 123
+  AND created_at > NOW() - INTERVAL '30 days';
+
+-- Check index usage
+SELECT
+    schemaname,
+    tablename,
+    indexname,
+    idx_scan,
+    idx_tup_read,
+    idx_tup_fetch
+FROM pg_stat_user_indexes
+WHERE schemaname = 'public'
+ORDER BY idx_scan DESC;
+```
+
+### Common Issues
+
+**Slow Queries:**
+
+```sql
+-- Check for missing indexes
+SELECT
+    schemaname,
+    tablename,
+    seq_scan,
+    seq_tup_read,
+    idx_scan,
+    seq_tup_read / NULLIF(seq_scan, 0) as avg_seq_read
+FROM pg_stat_user_tables
+WHERE seq_scan > 0
+ORDER BY seq_tup_read DESC;
+
+-- Find unused indexes
+SELECT
+    schemaname,
+    tablename,
+    indexname,
+    idx_scan
+FROM pg_stat_user_indexes
+WHERE idx_scan = 0
+ORDER BY schemaname, tablename;
+```
+
+**Lock Contention:**
+
+```sql
+-- Check for locks
+SELECT
+    locktype,
+    relation::regclass,
+    mode,
+    granted,
+    pid
+FROM pg_locks
+WHERE NOT granted;
+
+-- Kill blocking queries
+SELECT pg_terminate_backend(pid)
+FROM pg_stat_activity
+WHERE pid IN (
+    SELECT pid FROM pg_locks WHERE NOT granted
+);
+```
+
+**Connection Issues:**
+
+```sql
+-- Check active connections
+SELECT
+    datname,
+    usename,
+    application_name,
+    state,
+    query_start,
+    state_change
+FROM pg_stat_activity
+WHERE datname = 'mydb';
+
+-- Check connection limits
+SHOW max_connections;
+```
+
+## Comprehensive Example Schema
+
+Complete schema example demonstrating best practices:
+
+```sql
+-- migrations/20250115120000_create_complete_schema.sql
+
+-- Enums
+CREATE TYPE user_status AS ENUM ('active', 'inactive', 'suspended');
+CREATE TYPE order_status AS ENUM ('pending', 'processing', 'shipped', 'delivered', 'cancelled');
+
+-- Users table
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    status user_status DEFAULT 'active' NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    deleted_at TIMESTAMP WITH TIME ZONE NULL,
+
+    CONSTRAINT users_email_unique UNIQUE (email),
+    CONSTRAINT users_email_format CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$')
+);
+
+-- Products table
+CREATE TABLE products (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    price DECIMAL(10,2) NOT NULL,
+    attributes JSONB NOT NULL DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+
+    CONSTRAINT products_price_positive CHECK (price > 0)
+);
+
+-- Orders table
+CREATE TABLE orders (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    status order_status DEFAULT 'pending' NOT NULL,
+    total DECIMAL(10,2) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+
+    CONSTRAINT orders_total_positive CHECK (total >= 0)
+);
+
+-- Order items table
+CREATE TABLE order_items (
+    id BIGSERIAL PRIMARY KEY,
+    order_id BIGINT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
+    quantity INTEGER NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+
+    CONSTRAINT order_items_quantity_positive CHECK (quantity > 0),
+    CONSTRAINT order_items_price_positive CHECK (price > 0),
+    CONSTRAINT order_items_order_product_unique UNIQUE (order_id, product_id)
+);
+
+-- Indexes
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_deleted_at ON users(deleted_at) WHERE deleted_at IS NULL;
+CREATE INDEX idx_users_status ON users(status) WHERE deleted_at IS NULL;
+
+CREATE INDEX idx_products_name ON products(name);
+CREATE INDEX idx_products_attributes_gin ON products USING GIN(attributes);
+
+CREATE INDEX idx_orders_user_id ON orders(user_id);
+CREATE INDEX idx_orders_status ON orders(status);
+CREATE INDEX idx_orders_created_at ON orders(created_at DESC);
+CREATE INDEX idx_orders_user_created ON orders(user_id, created_at DESC);
+
+CREATE INDEX idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX idx_order_items_product_id ON order_items(product_id);
+
+-- Triggers
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_users_updated_at
+    BEFORE UPDATE ON users
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_products_updated_at
+    BEFORE UPDATE ON products
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_orders_updated_at
+    BEFORE UPDATE ON orders
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Comments
+COMMENT ON TABLE users IS 'User accounts in the system';
+COMMENT ON COLUMN users.email IS 'Unique email address for login';
+COMMENT ON COLUMN users.status IS 'Current status of the user account';
+COMMENT ON COLUMN users.deleted_at IS 'Timestamp of soft delete, NULL if active';
+
+COMMENT ON TABLE orders IS 'Customer orders';
+COMMENT ON COLUMN orders.total IS 'Total order amount in currency units';
+COMMENT ON COLUMN orders.status IS 'Current status of the order';
+```
+
+**Key Patterns Demonstrated:**
+
+- ✅ Naming Conventions: Plural tables, singular columns, consistent patterns
+- ✅ Constraints: Named constraints, check constraints, foreign keys
+- ✅ Indexes: Foreign keys indexed, frequently queried columns indexed
+- ✅ Timestamps: created_at, updated_at with triggers
+- ✅ Soft Deletes: deleted_at with partial indexes
+- ✅ Enums: Type-safe status fields
+- ✅ Documentation: Comments explain purpose
+
+## Review Checklist
+
+When reviewing PostgreSQL code, check:
+
+- [ ] Tables use plural snake_case
+- [ ] Columns use singular snake_case
+- [ ] Primary keys named `id`
+- [ ] Foreign keys follow `table_name_id` pattern
+- [ ] Indexes have descriptive names
+- [ ] Constraints are named
+- [ ] `created_at` and `updated_at` present
+- [ ] Foreign keys are indexed
+- [ ] Parameterized queries used (no SQL injection)
+- [ ] Migrations are reversible
+- [ ] Enums used for fixed value sets
+- [ ] Partial indexes used where appropriate
+- [ ] Comments explain purpose
+- [ ] Triggers documented
+---
+

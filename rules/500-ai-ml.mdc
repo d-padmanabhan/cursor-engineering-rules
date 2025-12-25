@@ -1,7 +1,7 @@
 ---
 title: AI/ML & LLM Integration Best Practices
 description: LLM API integration, cloud AI services (Vertex AI, Bedrock, Azure OpenAI), AI agents, prompt engineering, and RAG patterns
-priority: 295
+priority: 500
 alwaysApply: false
 files:
   include:
@@ -15,6 +15,75 @@ files:
 ---
 
 # AI/ML & LLM Integration Best Practices
+
+**Audience**: engineers building AI/ML applications, LLM integrations, and AI agents
+**Goal**: Reliable, safe, cost-effective AI applications with proper observability and evaluation
+
+## AI/ML Philosophy (Core Principles)
+
+**Core Principles:**
+
+- **"Cost-aware by default"** - Monitor token usage, choose appropriate models, implement caching
+- **"Reliability over speed"** - Retries, fallbacks, timeouts, graceful degradation
+- **"Safety first"** - Content filtering, prompt injection prevention, guardrails, output validation
+- **"Observability is essential"** - Log prompts, responses, latency, costs, errors
+- **"Evaluate continuously"** - Test outputs, measure quality metrics, A/B test prompts
+- **"Explicit over implicit"** - Clear prompts, explicit instructions, documented assumptions
+- **"Fail gracefully"** - Fallback strategies, error handling, user-friendly messages
+- **"Version everything"** - Version prompts, models, evaluation datasets
+
+**Applying AI/ML Principles:**
+
+```python
+# BAD: No error handling, no cost tracking, no safety checks
+def generate_text(prompt: str) -> str:
+    response = openai.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return response.choices[0].message.content
+
+# GOOD: Error handling, cost tracking, safety checks
+def generate_text(
+    prompt: str,
+    model: str = "gpt-3.5-turbo",
+    max_tokens: int = 1000,
+) -> tuple[str, dict]:
+    """Generate text with error handling and cost tracking."""
+    # Safety check
+    if not is_safe_content(prompt):
+        raise ValueError("Unsafe content detected")
+
+    try:
+        response = openai.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=max_tokens,
+        )
+
+        content = response.choices[0].message.content
+
+        # Track costs
+        metrics = {
+            "input_tokens": response.usage.prompt_tokens,
+            "output_tokens": response.usage.completion_tokens,
+            "total_tokens": response.usage.total_tokens,
+            "model": model,
+        }
+
+        # Safety check output
+        if not is_safe_content(content):
+            raise ValueError("Unsafe output generated")
+
+        return content, metrics
+    except openai.RateLimitError:
+        # Implement retry with backoff
+        time.sleep(5)
+        return generate_text(prompt, model, max_tokens)
+    except Exception as e:
+        logger.error(f"Generation failed: {e}")
+        raise
+```
 
 ## Guiding Principles
 
@@ -749,6 +818,99 @@ async function safeCompletion(userInput: string) {
 
 ---
 
+## Performance Optimization
+
+### Caching Strategies
+
+```python
+from functools import lru_cache
+import hashlib
+import json
+
+# Cache based on prompt hash
+def hash_prompt(prompt: str, model: str) -> str:
+    """Create hash for prompt + model."""
+    content = f"{prompt}:{model}"
+    return hashlib.md5(content.encode()).hexdigest()
+
+# Simple in-memory cache
+prompt_cache = {}
+
+def generate_with_cache(
+    prompt: str,
+    model: str = "gpt-3.5-turbo",
+    use_cache: bool = True,
+) -> str:
+    """Generate with caching."""
+
+    if use_cache:
+        cache_key = hash_prompt(prompt, model)
+        if cache_key in prompt_cache:
+            logger.info("Cache hit")
+            return prompt_cache[cache_key]
+
+    response = generate_text(prompt, model)
+
+    if use_cache:
+        prompt_cache[cache_key] = response
+
+    return response
+```
+
+### Batch Processing
+
+```python
+async def batch_generate(
+    prompts: List[str],
+    model: str = "gpt-3.5-turbo",
+    batch_size: int = 10,
+) -> List[str]:
+    """Generate responses in batches."""
+
+    results = []
+
+    for i in range(0, len(prompts), batch_size):
+        batch = prompts[i:i + batch_size]
+
+        # Process batch concurrently
+        tasks = [
+            generate_text_async(prompt, model)
+            for prompt in batch
+        ]
+
+        batch_results = await asyncio.gather(*tasks)
+        results.extend(batch_results)
+
+        # Rate limiting
+        await asyncio.sleep(1)
+
+    return results
+```
+
+### Streaming Optimization
+
+```python
+async def stream_with_buffering(
+    prompt: str,
+    buffer_size: int = 10,
+) -> AsyncIterator[str]:
+    """Stream response with buffering for better UX."""
+
+    buffer = []
+
+    async for chunk in stream_completion(prompt):
+        buffer.append(chunk)
+
+        if len(buffer) >= buffer_size:
+            # Yield buffered content
+            yield "".join(buffer)
+            buffer = []
+
+    # Yield remaining content
+    if buffer:
+        yield "".join(buffer)
+```
+
 ## Cost Optimization
 
 ### Model Selection Strategy
@@ -860,7 +1022,452 @@ Rating (1-10):"""
     return metrics
 ```
 
+### Advanced Evaluation Patterns
+
+**Automated Test Suite:**
+
+```python
+import pytest
+from typing import List, Dict
+
+class LLMEvaluator:
+    def __init__(self, test_cases: List[Dict]):
+        self.test_cases = test_cases
+
+    def run_evaluation(self) -> Dict[str, float]:
+        """Run full evaluation suite."""
+        results = {
+            "total": len(self.test_cases),
+            "passed": 0,
+            "failed": 0,
+            "avg_relevance": 0.0,
+            "avg_accuracy": 0.0,
+        }
+
+        relevance_scores = []
+        accuracy_scores = []
+
+        for test_case in self.test_cases:
+            response = generate_text(test_case["prompt"])
+            evaluation = evaluate_response(
+                test_case["prompt"],
+                response,
+                test_case.get("expected_output")
+            )
+
+            relevance_scores.append(evaluation["relevance"])
+            if "accuracy" in evaluation:
+                accuracy_scores.append(evaluation["accuracy"])
+
+            if evaluation["relevance"] >= test_case.get("min_relevance", 7):
+                results["passed"] += 1
+            else:
+                results["failed"] += 1
+
+        results["avg_relevance"] = sum(relevance_scores) / len(relevance_scores)
+        if accuracy_scores:
+            results["avg_accuracy"] = sum(accuracy_scores) / len(accuracy_scores)
+
+        return results
+
+# Usage
+test_cases = [
+    {
+        "prompt": "What is Python?",
+        "expected_output": "Python is a programming language",
+        "min_relevance": 8,
+    },
+    # More test cases...
+]
+
+evaluator = LLMEvaluator(test_cases)
+results = evaluator.run_evaluation()
+print(f"Pass rate: {results['passed'] / results['total'] * 100}%")
+```
+
+**A/B Testing Prompts:**
+
+```python
+def ab_test_prompts(
+    prompt_variant_a: str,
+    prompt_variant_b: str,
+    test_inputs: List[str],
+) -> Dict[str, float]:
+    """Compare two prompt variants."""
+
+    results_a = []
+    results_b = []
+
+    for test_input in test_inputs:
+        # Test variant A
+        response_a = generate_text(f"{prompt_variant_a}\n\n{test_input}")
+        eval_a = evaluate_response(f"{prompt_variant_a}\n\n{test_input}", response_a)
+        results_a.append(eval_a["relevance"])
+
+        # Test variant B
+        response_b = generate_text(f"{prompt_variant_b}\n\n{test_input}")
+        eval_b = evaluate_response(f"{prompt_variant_b}\n\n{test_input}", response_b)
+        results_b.append(eval_b["relevance"])
+
+    avg_a = sum(results_a) / len(results_a)
+    avg_b = sum(results_b) / len(results_b)
+
+    return {
+        "variant_a_avg": avg_a,
+        "variant_b_avg": avg_b,
+        "winner": "A" if avg_a > avg_b else "B",
+        "improvement": abs(avg_a - avg_b),
+    }
+```
+
+**Regression Testing:**
+
+```python
+def regression_test(
+    prompt: str,
+    expected_behavior: str,
+    test_cases: List[str],
+) -> bool:
+    """Test that model behavior hasn't regressed."""
+
+    for test_case in test_cases:
+        response = generate_text(f"{prompt}\n\n{test_case}")
+
+        # Check if response matches expected behavior
+        if not matches_expected_behavior(response, expected_behavior):
+            logger.warning(f"Regression detected for: {test_case}")
+            return False
+
+    return True
+```
+
 ---
+
+## Troubleshooting & Debugging
+
+### Common Issues & Solutions
+
+**Rate Limiting:**
+
+```python
+import time
+from tenacity import retry, stop_after_attempt, wait_exponential
+
+@retry(
+    stop=stop_after_attempt(5),
+    wait=wait_exponential(multiplier=1, min=4, max=10)
+)
+def generate_with_retry(prompt: str) -> str:
+    """Generate with exponential backoff retry."""
+    try:
+        return generate_text(prompt)
+    except RateLimitError as e:
+        logger.warning(f"Rate limited: {e}")
+        raise
+```
+
+**Timeout Issues:**
+
+```python
+import asyncio
+from asyncio import TimeoutError
+
+async def generate_with_timeout(
+    prompt: str,
+    timeout: float = 30.0,
+) -> str:
+    """Generate with timeout."""
+    try:
+        return await asyncio.wait_for(
+            generate_text_async(prompt),
+            timeout=timeout
+        )
+    except TimeoutError:
+        logger.error(f"Generation timed out after {timeout}s")
+        raise
+```
+
+**Token Limit Errors:**
+
+```python
+def generate_with_token_management(
+    prompt: str,
+    max_tokens: int = 1000,
+) -> str:
+    """Generate with token limit management."""
+
+    # Estimate input tokens
+    input_tokens = count_tokens(prompt)
+
+    # Adjust max_tokens if needed
+    available_tokens = max_tokens - input_tokens - 100  # Safety margin
+
+    if available_tokens < 100:
+        raise ValueError("Prompt too long for model context")
+
+    return generate_text(prompt, max_tokens=available_tokens)
+```
+
+**Quality Degradation:**
+
+```python
+def detect_quality_issues(response: str) -> List[str]:
+    """Detect potential quality issues."""
+    issues = []
+
+    # Check for repetition
+    words = response.split()
+    if len(set(words)) / len(words) < 0.5:
+        issues.append("High repetition detected")
+
+    # Check for incomplete sentences
+    if not response.endswith(('.', '!', '?')):
+        issues.append("Response may be incomplete")
+
+    # Check for very short responses
+    if len(response.split()) < 10:
+        issues.append("Response may be too short")
+
+    return issues
+```
+
+### Debugging Prompts
+
+```python
+def debug_prompt_execution(
+    prompt: str,
+    model: str = "gpt-3.5-turbo",
+) -> Dict[str, any]:
+    """Debug prompt execution with detailed metrics."""
+
+    start_time = time.time()
+
+    try:
+        response = generate_text(prompt, model)
+
+        end_time = time.time()
+        latency = end_time - start_time
+
+        return {
+            "success": True,
+            "prompt": prompt,
+            "response": response,
+            "latency_seconds": latency,
+            "input_tokens": count_tokens(prompt),
+            "output_tokens": count_tokens(response),
+            "model": model,
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "prompt": prompt,
+            "error": str(e),
+            "error_type": type(e).__name__,
+        }
+```
+
+## Comprehensive Example Application
+
+Complete AI agent example demonstrating best practices:
+
+```python
+"""
+Production-ready AI agent with error handling, caching, and observability.
+"""
+import asyncio
+import logging
+import time
+from typing import Dict, List, Optional
+from dataclasses import dataclass
+from enum import Enum
+
+import anthropic
+from tenacity import retry, stop_after_attempt, wait_exponential
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+class AgentError(Exception):
+    """Base exception for agent errors."""
+    pass
+
+
+class RateLimitError(AgentError):
+    """Rate limit exceeded."""
+    pass
+
+
+class SafetyError(AgentError):
+    """Safety check failed."""
+    pass
+
+
+@dataclass
+class AgentConfig:
+    """Agent configuration."""
+    model: str = "claude-3-5-sonnet-20241022"
+    max_tokens: int = 1000
+    temperature: float = 0.7
+    timeout: float = 30.0
+    max_retries: int = 3
+    enable_cache: bool = True
+    enable_safety: bool = True
+
+
+class AIAgent:
+    """Production-ready AI agent."""
+
+    def __init__(self, config: AgentConfig):
+        self.config = config
+        self.client = anthropic.Anthropic(
+            api_key=os.environ.get("ANTHROPIC_API_KEY"),
+            timeout=config.timeout,
+            max_retries=config.max_retries,
+        )
+        self.cache: Dict[str, str] = {}
+        self.metrics = {
+            "total_requests": 0,
+            "cache_hits": 0,
+            "errors": 0,
+            "total_tokens": 0,
+        }
+
+    def _hash_prompt(self, prompt: str) -> str:
+        """Create hash for prompt."""
+        import hashlib
+        return hashlib.md5(prompt.encode()).hexdigest()
+
+    def _is_safe(self, content: str) -> bool:
+        """Check if content is safe."""
+        # Implement safety checks
+        unsafe_keywords = ["hack", "exploit", "bypass"]
+        return not any(keyword in content.lower() for keyword in unsafe_keywords)
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10)
+    )
+    async def _generate(
+        self,
+        prompt: str,
+        system_prompt: str = "You are a helpful assistant.",
+    ) -> str:
+        """Generate response with retry logic."""
+        try:
+            response = self.client.messages.create(
+                model=self.config.model,
+                max_tokens=self.config.max_tokens,
+                temperature=self.config.temperature,
+                system=system_prompt,
+                messages=[{"role": "user", "content": prompt}],
+            )
+
+            content = response.content[0].text
+
+            # Update metrics
+            self.metrics["total_requests"] += 1
+            self.metrics["total_tokens"] += response.usage.total_tokens
+
+            return content
+        except anthropic.RateLimitError as e:
+            logger.warning(f"Rate limited: {e}")
+            raise RateLimitError(f"Rate limit exceeded: {e}")
+        except Exception as e:
+            logger.error(f"Generation failed: {e}")
+            self.metrics["errors"] += 1
+            raise AgentError(f"Generation failed: {e}")
+
+    async def generate(
+        self,
+        prompt: str,
+        system_prompt: str = "You are a helpful assistant.",
+        use_cache: Optional[bool] = None,
+    ) -> str:
+        """Generate response with caching and safety checks."""
+
+        # Safety check input
+        if self.config.enable_safety and not self._is_safe(prompt):
+            raise SafetyError("Unsafe input detected")
+
+        # Check cache
+        use_cache = use_cache if use_cache is not None else self.config.enable_cache
+        if use_cache:
+            cache_key = self._hash_prompt(f"{system_prompt}\n\n{prompt}")
+            if cache_key in self.cache:
+                logger.info("Cache hit")
+                self.metrics["cache_hits"] += 1
+                return self.cache[cache_key]
+
+        # Generate response
+        start_time = time.time()
+        response = await self._generate(prompt, system_prompt)
+        latency = time.time() - start_time
+
+        # Safety check output
+        if self.config.enable_safety and not self._is_safe(response):
+            raise SafetyError("Unsafe output generated")
+
+        # Cache response
+        if use_cache:
+            cache_key = self._hash_prompt(f"{system_prompt}\n\n{prompt}")
+            self.cache[cache_key] = response
+
+        logger.info(f"Generated response in {latency:.2f}s")
+        return response
+
+    def get_metrics(self) -> Dict:
+        """Get agent metrics."""
+        return {
+            **self.metrics,
+            "cache_hit_rate": (
+                self.metrics["cache_hits"] / self.metrics["total_requests"]
+                if self.metrics["total_requests"] > 0
+                else 0
+            ),
+        }
+
+
+# Usage example
+async def main():
+    config = AgentConfig(
+        model="claude-3-5-sonnet-20241022",
+        max_tokens=1000,
+        enable_cache=True,
+        enable_safety=True,
+    )
+
+    agent = AIAgent(config)
+
+    try:
+        response = await agent.generate(
+            prompt="Explain quantum computing in simple terms.",
+            system_prompt="You are a science educator.",
+        )
+        print(f"Response: {response}")
+
+        # Print metrics
+        metrics = agent.get_metrics()
+        print(f"Metrics: {metrics}")
+    except SafetyError as e:
+        print(f"Safety error: {e}")
+    except AgentError as e:
+        print(f"Agent error: {e}")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+**Key Patterns Demonstrated:**
+
+- ✅ Error Handling: Retry logic, custom exceptions
+- ✅ Caching: Prompt caching for cost reduction
+- ✅ Safety: Input/output safety checks
+- ✅ Observability: Metrics tracking, logging
+- ✅ Configuration: Flexible configuration
+- ✅ Performance: Async operations, timeout handling
+- ✅ Best Practices: Production-ready patterns
 
 ## Best Practices Checklist
 

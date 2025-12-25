@@ -1,7 +1,7 @@
 ---
 title: MCP Server Engineering Ruleset
 description: Patterns and best practices for building Model Context Protocol (MCP) servers and tools.
-priority: 230
+priority: 510
 alwaysApply: false
 files:
   include:

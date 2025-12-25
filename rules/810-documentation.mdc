@@ -1,7 +1,7 @@
 ---
 title: Documentation Engineering Ruleset
 description: Patterns for creating effective documentation including documentation websites and markdown best practices.
-priority: 220
+priority: 810
 alwaysApply: false
 files:
   include:

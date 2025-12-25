@@ -2,7 +2,7 @@
 title: Agent Workflow & Audit Requirements
 description: Enforce no-remote-writes, mandatory verification, checkpoints/backups, and an auditable run report for AI agents.
 alwaysApply: true
-priority: 60
+priority: 20
 ---
 
 # Agent Workflow & Audit Requirements

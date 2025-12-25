@@ -16,6 +16,67 @@ files:
 
 # Coding Ruleset
 
+**Audience**: engineers writing and reviewing code across all languages and frameworks
+**Goal**: Establish consistent, high-quality coding standards that prioritize simplicity, security, and maintainability
+
+## Core Engineering Philosophy
+
+**Core Principles:**
+
+- **"Simplicity is the ultimate sophistication"** - Simple code is maintainable, testable, and debuggable
+- **"Fix what's broken, not what works"** - Minimal changes preserve stability and reduce risk
+- **"Value over vanity"** - Every change must add clear value; avoid over-engineering
+- **"Production-ready by default"** - Error handling, security, observability from day one
+- **"Code is communication"** - Write code that teaches and documents intent
+- **"Security is not optional"** - Security considerations are part of every decision
+- **"Measure, don't guess"** - Performance improvements must be evidence-based
+- **"Collaboration over criticism"** - Constructive feedback that helps the team grow
+
+**Applying Core Principles:**
+
+```python
+# BAD: Complex, insecure, no error handling
+def process_user_data(user_id, data):
+    user = db.query("SELECT * FROM users WHERE id = " + str(user_id))
+    result = complex_processing(data)
+    db.execute("UPDATE users SET data = '" + result + "' WHERE id = " + str(user_id))
+    return result
+
+# GOOD: Simple, secure, production-ready
+def process_user_data(user_id: int, data: dict[str, Any]) -> dict[str, Any]:
+    """
+    Process user data with validation and error handling.
+
+    Args:
+        user_id: Valid user ID
+        data: User data dictionary
+
+    Returns:
+        Processed data dictionary
+
+    Raises:
+        UserNotFoundError: If user doesn't exist
+        ValidationError: If data is invalid
+    """
+    # Validate input
+    if not isinstance(user_id, int) or user_id <= 0:
+        raise ValueError(f"Invalid user_id: {user_id}")
+
+    # Secure database query
+    user = db.get_user_by_id(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
+
+    # Process with error handling
+    try:
+        result = process_data_safely(data)
+        db.update_user_data(user_id, result)
+        logger.info("Processed user data", extra={"user_id": user_id})
+        return result
+    except ProcessingError as e:
+        logger.error("Failed to process user data", extra={"user_id": user_id, "error": str(e)})
+        raise
+```
 
 **Role:** Senior Principal Engineer with expertise in Bash, Python, Go, JavaScript, AWS, DevOps, Terraform, Linux, Networking, Cryptography, Computer Science, AI, and modern software development.
 
@@ -64,6 +125,115 @@ When providing feedback, organize by impact:
 3.  **Explain the "why"** - what benefit does the change provide?
 4.  **Suggest incremental refactoring** over big-bang rewrites.
 5.  **Preserve existing code** - no placeholders like `// ... (existing code)` or incomplete sections.
+
+### Advanced Review Patterns
+
+**Security-First Review:**
+
+```python
+# BAD: Security vulnerabilities
+def authenticate(username, password):
+    query = f"SELECT * FROM users WHERE username = '{username}' AND password = '{password}'"
+    result = db.execute(query)
+    if result:
+        return {"token": generate_token(username)}
+    return None
+
+# GOOD: Secure authentication
+def authenticate(username: str, password: str) -> dict[str, str] | None:
+    """
+    Authenticate user with secure password verification.
+
+    Security considerations:
+    - Parameterized queries prevent SQL injection
+    - Password hashing prevents plaintext storage
+    - Rate limiting prevents brute force attacks
+    - Secure token generation
+    """
+    # Rate limiting
+    if rate_limiter.is_rate_limited(username):
+        logger.warning("Rate limit exceeded", extra={"username": username})
+        raise RateLimitError("Too many authentication attempts")
+
+    # Parameterized query
+    user = db.get_user_by_username(username)
+    if not user:
+        # Same delay for invalid user to prevent enumeration
+        time.sleep(0.5)
+        return None
+
+    # Secure password verification
+    if not verify_password(password, user.password_hash):
+        logger.warning("Invalid password attempt", extra={"username": username})
+        return None
+
+    # Generate secure token
+    token = generate_secure_token(user.id)
+    logger.info("User authenticated", extra={"user_id": user.id})
+
+    return {"token": token, "user_id": user.id}
+```
+
+**Performance-Focused Review:**
+
+```python
+# BAD: N+1 queries, inefficient
+def get_user_orders(user_id):
+    user = db.get_user(user_id)
+    orders = db.get_orders(user_id)
+    for order in orders:
+        order.items = db.get_order_items(order.id)  # N+1 query problem
+        for item in order.items:
+            item.product = db.get_product(item.product_id)  # Another N+1
+    return orders
+
+# GOOD: Efficient with eager loading
+def get_user_orders(user_id: int) -> list[Order]:
+    """
+    Get user orders with efficient database queries.
+
+    Performance: Single query with joins instead of N+1 queries.
+    Expected impact: Reduce query time from O(n) to O(1) for n items.
+    """
+    # Single query with joins
+    orders = db.get_orders_with_items_and_products(user_id)
+    return orders
+```
+
+**Architecture Review:**
+
+```python
+# BAD: Tight coupling, hard to test
+class OrderProcessor:
+    def process(self, order_id):
+        db = Database()  # Hard dependency
+        email = EmailService()  # Hard dependency
+        order = db.get_order(order_id)
+        # Process order...
+        email.send_confirmation(order.user_email)
+
+# GOOD: Dependency injection, testable
+class OrderProcessor:
+    def __init__(
+        self,
+        order_repository: OrderRepository,
+        email_service: EmailService,
+        logger: Logger
+    ):
+        self.order_repository = order_repository
+        self.email_service = email_service
+        self.logger = logger
+
+    def process(self, order_id: int) -> None:
+        """Process order with injected dependencies."""
+        order = self.order_repository.get(order_id)
+        if not order:
+            raise OrderNotFoundError(f"Order {order_id} not found")
+
+        # Process order...
+        self.email_service.send_confirmation(order.user_email)
+        self.logger.info("Order processed", extra={"order_id": order_id})
+```
 
 ### What to Evaluate
 
@@ -126,6 +296,147 @@ Prioritize high-impact changes that don't require major refactoring.
 3.  **Provide complete, runnable code** - No TODOs, placeholders, or incomplete sections.
 4.  **Include practical examples** - Usage examples or basic test cases.
 5.  **Document appropriately** - Inline comments for complex logic only; clear function/class docs.
+
+### Advanced Generation Patterns
+
+**Error Handling Pattern:**
+
+```python
+# GOOD: Comprehensive error handling
+from typing import Optional
+import logging
+
+logger = logging.getLogger(__name__)
+
+class UserService:
+    """Service for user operations with comprehensive error handling."""
+
+    def __init__(self, user_repository: UserRepository):
+        self.user_repository = user_repository
+
+    def get_user(self, user_id: int) -> User:
+        """
+        Get user by ID with proper error handling.
+
+        Args:
+            user_id: User ID to retrieve
+
+        Returns:
+            User object
+
+        Raises:
+            ValueError: If user_id is invalid
+            UserNotFoundError: If user doesn't exist
+            DatabaseError: If database operation fails
+        """
+        # Input validation
+        if not isinstance(user_id, int) or user_id <= 0:
+            raise ValueError(f"Invalid user_id: {user_id}")
+
+        try:
+            user = self.user_repository.get_by_id(user_id)
+            if not user:
+                raise UserNotFoundError(f"User {user_id} not found")
+            return user
+        except DatabaseConnectionError as e:
+            logger.error("Database connection failed", extra={"user_id": user_id, "error": str(e)})
+            raise DatabaseError("Failed to retrieve user") from e
+        except Exception as e:
+            logger.error("Unexpected error retrieving user", extra={"user_id": user_id, "error": str(e)})
+            raise
+```
+
+**Testing Pattern:**
+
+```python
+# GOOD: Testable code with dependency injection
+import pytest
+from unittest.mock import Mock, patch
+
+class TestUserService:
+    """Tests for UserService."""
+
+    @pytest.fixture
+    def mock_repository(self):
+        """Mock user repository."""
+        return Mock(spec=UserRepository)
+
+    @pytest.fixture
+    def user_service(self, mock_repository):
+        """User service with mocked repository."""
+        return UserService(mock_repository)
+
+    def test_get_user_success(self, user_service, mock_repository):
+        """Test successful user retrieval."""
+        # Arrange
+        expected_user = User(id=1, email="test@acme.com")
+        mock_repository.get_by_id.return_value = expected_user
+
+        # Act
+        result = user_service.get_user(1)
+
+        # Assert
+        assert result == expected_user
+        mock_repository.get_by_id.assert_called_once_with(1)
+
+    def test_get_user_not_found(self, user_service, mock_repository):
+        """Test user not found error."""
+        # Arrange
+        mock_repository.get_by_id.return_value = None
+
+        # Act & Assert
+        with pytest.raises(UserNotFoundError):
+            user_service.get_user(999)
+```
+
+**Observability Pattern:**
+
+```python
+# GOOD: Comprehensive logging and metrics
+import logging
+import time
+from functools import wraps
+from typing import Callable, TypeVar
+
+logger = logging.getLogger(__name__)
+T = TypeVar('T')
+
+def log_execution_time(func: Callable[..., T]) -> Callable[..., T]:
+    """Decorator to log function execution time."""
+    @wraps(func)
+    def wrapper(*args, **kwargs) -> T:
+        start_time = time.time()
+        try:
+            result = func(*args, **kwargs)
+            duration = time.time() - start_time
+            logger.info(
+                f"{func.__name__} completed",
+                extra={
+                    "function": func.__name__,
+                    "duration_seconds": duration,
+                }
+            )
+            return result
+        except Exception as e:
+            duration = time.time() - start_time
+            logger.error(
+                f"{func.__name__} failed",
+                extra={
+                    "function": func.__name__,
+                    "duration_seconds": duration,
+                    "error": str(e),
+                },
+                exc_info=True
+            )
+            raise
+    return wrapper
+
+@log_execution_time
+def process_order(order_id: int) -> Order:
+    """Process order with execution time logging."""
+    # Implementation...
+    pass
+```
 
 ### What to Include
 
@@ -282,17 +593,152 @@ To refine the solution, clarify:
 - Quote variables: `"${var}"` not `$var`.
 - Check command existence with `command -v`.
 
+**Example:**
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly LOG_FILE="${SCRIPT_DIR}/script.log"
+
+log() {
+    local level="$1"
+    shift
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] [${level}] $*" | tee -a "${LOG_FILE}"
+}
+
+main() {
+    log "INFO" "Starting script"
+
+    if ! command -v required_command &> /dev/null; then
+        log "ERROR" "required_command not found"
+        exit 1
+    fi
+
+    # Script logic...
+
+    log "INFO" "Script completed successfully"
+}
+
+main "$@"
+```
+
 **Python (target 3.14+ unless constrained):**
 - Use type hints and PEP 8.
 - Prefer `functools.cache`/`lru_cache`, `dataclasses`, and modern `typing` (`Self`, `Literal`, `Annotated`) where they improve clarity.
 - Use context managers for resources (`with` statements).
 - Prefer stdlib over adding dependencies.
 
+**Example:**
+```python
+from dataclasses import dataclass
+from functools import cache
+from typing import Literal, Annotated
+from contextlib import contextmanager
+import logging
+
+logger = logging.getLogger(__name__)
+
+Status = Literal["active", "inactive", "suspended"]
+UserID = Annotated[int, "User identifier"]
+
+@dataclass
+class User:
+    """User data model."""
+    id: UserID
+    email: str
+    status: Status = "active"
+
+    def __post_init__(self) -> None:
+        """Validate user data after initialization."""
+        if not self.email or "@" not in self.email:
+            raise ValueError(f"Invalid email: {self.email}")
+
+@cache
+def get_user_by_id(user_id: UserID) -> User | None:
+    """Get user by ID with caching."""
+    # Implementation...
+    pass
+
+@contextmanager
+def database_connection():
+    """Context manager for database connections."""
+    conn = create_connection()
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+# Usage
+with database_connection() as db:
+    user = get_user_by_id(123)
+```
+
 **Go:**
 - Handle all errors explicitly.
 - Use `defer` for cleanup.
 - Follow Effective Go; keep interfaces small.
 - Run `govulncheck` in CI.
+
+**Example:**
+```go
+package user
+
+import (
+    "context"
+    "fmt"
+    "time"
+)
+
+// User represents a user in the system.
+type User struct {
+    ID        int       `json:"id"`
+    Email     string    `json:"email"`
+    CreatedAt time.Time `json:"created_at"`
+}
+
+// Repository defines the interface for user storage.
+type Repository interface {
+    GetByID(ctx context.Context, id int) (*User, error)
+    Create(ctx context.Context, user *User) error
+}
+
+// Service handles user business logic.
+type Service struct {
+    repo Repository
+}
+
+// NewService creates a new user service.
+func NewService(repo Repository) *Service {
+    return &Service{repo: repo}
+}
+
+// GetUser retrieves a user by ID.
+func (s *Service) GetUser(ctx context.Context, id int) (*User, error) {
+    if id <= 0 {
+        return nil, fmt.Errorf("invalid user ID: %d", id)
+    }
+
+    user, err := s.repo.GetByID(ctx, id)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get user: %w", err)
+    }
+
+    return user, nil
+}
+
+// Example with defer for cleanup
+func processFile(filename string) error {
+    file, err := os.Open(filename)
+    if err != nil {
+        return fmt.Errorf("failed to open file: %w", err)
+    }
+    defer file.Close() // Always closes, even on error
+
+    // Process file...
+    return nil
+}
+```
 
 **Docker:**
 - Use multi-stage builds to reduce image size.
@@ -346,6 +792,400 @@ To refine the solution, clarify:
 - Log errors (not just codes); follow **Logging Policy**.
 - Test edge cases: null/empty/max values.
 - Consider concurrency and thread safety.
+
+## Troubleshooting & Common Issues
+
+### Code Review Issues
+
+**Issue: Reviewer provides vague feedback**
+
+```diff
+# BAD: Vague feedback
+- "This could be better"
+- "Consider refactoring"
+
+# GOOD: Specific, actionable feedback
+- "This function has high cyclomatic complexity (15). Consider breaking into smaller functions:
+  - extract_validation_logic()
+  - process_data()
+  - format_response()
+  Expected impact: Improved testability and maintainability."
+```
+
+**Issue: Review focuses on style over substance**
+
+```diff
+# BAD: Style-only feedback
+- "Use tabs instead of spaces"
+- "Variable name should be camelCase"
+
+# GOOD: Substance-first feedback
+- "Critical: SQL injection vulnerability in line 42. Use parameterized queries.
+- Recommended: Extract database logic into repository pattern for testability.
+- Optional: Consider using snake_case for consistency with codebase."
+```
+
+### Code Generation Issues
+
+**Issue: Generated code lacks error handling**
+
+```python
+# BAD: No error handling
+def fetch_user_data(user_id):
+    response = requests.get(f"https://api.acme.com/users/{user_id}")
+    return response.json()
+
+# GOOD: Comprehensive error handling
+def fetch_user_data(user_id: int) -> dict[str, Any]:
+    """
+    Fetch user data from API with error handling.
+
+    Raises:
+        ValueError: If user_id is invalid
+        APIError: If API request fails
+        TimeoutError: If request times out
+    """
+    if not isinstance(user_id, int) or user_id <= 0:
+        raise ValueError(f"Invalid user_id: {user_id}")
+
+    try:
+        response = requests.get(
+            f"https://api.acme.com/users/{user_id}",
+            timeout=10,
+            headers={"Authorization": f"Bearer {get_api_token()}"}
+        )
+        response.raise_for_status()
+        return response.json()
+    except requests.Timeout:
+        logger.error("API request timed out", extra={"user_id": user_id})
+        raise TimeoutError("API request timed out")
+    except requests.HTTPError as e:
+        logger.error("API request failed", extra={"user_id": user_id, "status": e.response.status_code})
+        raise APIError(f"API request failed: {e}") from e
+```
+
+**Issue: Generated code is over-engineered**
+
+```python
+# BAD: Over-engineered
+class AbstractUserFactory(ABC):
+    @abstractmethod
+    def create_user(self): pass
+
+class UserFactory(AbstractUserFactory):
+    def create_user(self):
+        return UserBuilder().build()
+
+# GOOD: Simple and sufficient
+def create_user(email: str, name: str) -> User:
+    """Create a new user."""
+    return User(email=email, name=name)
+```
+
+## Comprehensive Example: Code Review
+
+Complete code review example demonstrating best practices:
+
+```python
+# Original code (with issues)
+def process_order(order_id):
+    order = db.query(f"SELECT * FROM orders WHERE id = {order_id}")
+    if order:
+        total = 0
+        for item in order.items:
+            total += item.price * item.quantity
+        order.total = total
+        db.execute(f"UPDATE orders SET total = {total} WHERE id = {order_id}")
+        send_email(order.user_email, f"Order {order_id} processed")
+    return order
+
+# Review feedback:
+
+## Critical Issues
+
+1. **SQL Injection Vulnerability** (Line 2, 7)
+   ```python
+   # BAD: String interpolation in SQL
+   db.query(f"SELECT * FROM orders WHERE id = {order_id}")
+
+   # GOOD: Parameterized query
+   order = db.query("SELECT * FROM orders WHERE id = ?", (order_id,))
+   ```
+
+2. **No Input Validation** (Line 1)
+   ```python
+   # GOOD: Validate input
+   if not isinstance(order_id, int) or order_id <= 0:
+       raise ValueError(f"Invalid order_id: {order_id}")
+   ```
+
+3. **No Error Handling** (Throughout)
+   ```python
+   # GOOD: Handle errors
+   try:
+       order = db.get_order(order_id)
+   except DatabaseError as e:
+       logger.error("Failed to retrieve order", extra={"order_id": order_id})
+       raise
+   ```
+
+## Recommended Improvements
+
+1. **Extract Business Logic** (Line 3-5)
+   ```python
+   # GOOD: Extract calculation
+   def calculate_order_total(items: list[OrderItem]) -> Decimal:
+       return sum(item.price * item.quantity for item in items)
+   ```
+
+2. **Use Repository Pattern** (Line 2, 7)
+   ```python
+   # GOOD: Repository abstraction
+   order = order_repository.get_by_id(order_id)
+   order_repository.update(order)
+   ```
+
+3. **Async Email Sending** (Line 8)
+   ```python
+   # GOOD: Don't block on email
+   asyncio.create_task(email_service.send_confirmation(order.user_email))
+   ```
+
+## Refactored Code
+
+```python
+from decimal import Decimal
+from typing import Optional
+import logging
+
+logger = logging.getLogger(__name__)
+
+def calculate_order_total(items: list[OrderItem]) -> Decimal:
+    """Calculate total order amount."""
+    return sum(item.price * item.quantity for item in items)
+
+async def process_order(
+    order_id: int,
+    order_repository: OrderRepository,
+    email_service: EmailService
+) -> Optional[Order]:
+    """
+    Process order with validation and error handling.
+
+    Args:
+        order_id: Valid order ID
+        order_repository: Order data access layer
+        email_service: Email service for notifications
+
+    Returns:
+        Processed order or None if not found
+
+    Raises:
+        ValueError: If order_id is invalid
+        DatabaseError: If database operation fails
+    """
+    # Input validation
+    if not isinstance(order_id, int) or order_id <= 0:
+        raise ValueError(f"Invalid order_id: {order_id}")
+
+    try:
+        # Retrieve order
+        order = order_repository.get_by_id(order_id)
+        if not order:
+            logger.warning("Order not found", extra={"order_id": order_id})
+            return None
+
+        # Calculate total
+        order.total = calculate_order_total(order.items)
+
+        # Update order
+        order_repository.update(order)
+        logger.info("Order processed", extra={"order_id": order_id, "total": order.total})
+
+        # Send email asynchronously
+        asyncio.create_task(
+            email_service.send_confirmation(order.user_email, order_id)
+        )
+
+        return order
+    except DatabaseError as e:
+        logger.error("Database error processing order", extra={"order_id": order_id, "error": str(e)})
+        raise
+    except Exception as e:
+        logger.error("Unexpected error processing order", extra={"order_id": order_id, "error": str(e)})
+        raise
+```
+```
+
+## Comprehensive Example: Code Generation
+
+Complete code generation example demonstrating best practices:
+
+```python
+"""
+User authentication service with comprehensive error handling,
+logging, and security best practices.
+"""
+import hashlib
+import secrets
+import time
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from typing import Optional
+import logging
+
+logger = logging.getLogger(__name__)
+
+@dataclass
+class User:
+    """User data model."""
+    id: int
+    email: str
+    password_hash: str
+    created_at: datetime
+
+    def verify_password(self, password: str) -> bool:
+        """Verify password against hash."""
+        return verify_password_hash(password, self.password_hash)
+
+class AuthenticationError(Exception):
+    """Base exception for authentication errors."""
+    pass
+
+class InvalidCredentialsError(AuthenticationError):
+    """Invalid username or password."""
+    pass
+
+class RateLimitError(AuthenticationError):
+    """Too many authentication attempts."""
+    pass
+
+class UserService:
+    """Service for user authentication."""
+
+    def __init__(
+        self,
+        user_repository: UserRepository,
+        rate_limiter: RateLimiter,
+        token_generator: TokenGenerator
+    ):
+        self.user_repository = user_repository
+        self.rate_limiter = rate_limiter
+        self.token_generator = token_generator
+
+    def authenticate(
+        self,
+        email: str,
+        password: str,
+        ip_address: str
+    ) -> dict[str, str]:
+        """
+        Authenticate user with email and password.
+
+        Args:
+            email: User email address
+            password: User password
+            ip_address: Client IP address for rate limiting
+
+        Returns:
+            Dictionary with access_token and user_id
+
+        Raises:
+            ValueError: If email or password is invalid
+            InvalidCredentialsError: If credentials are incorrect
+            RateLimitError: If rate limit exceeded
+        """
+        start_time = time.time()
+
+        # Input validation
+        if not email or "@" not in email:
+            raise ValueError("Invalid email format")
+        if not password or len(password) < 8:
+            raise ValueError("Password must be at least 8 characters")
+
+        # Rate limiting
+        if self.rate_limiter.is_rate_limited(email, ip_address):
+            logger.warning(
+                "Rate limit exceeded",
+                extra={"email": email, "ip_address": ip_address}
+            )
+            raise RateLimitError("Too many authentication attempts")
+
+        try:
+            # Retrieve user
+            user = self.user_repository.get_by_email(email)
+            if not user:
+                # Same delay for invalid user to prevent enumeration
+                time.sleep(0.5)
+                logger.warning("Authentication failed: user not found", extra={"email": email})
+                raise InvalidCredentialsError("Invalid email or password")
+
+            # Verify password
+            if not user.verify_password(password):
+                logger.warning("Authentication failed: invalid password", extra={"email": email})
+                raise InvalidCredentialsError("Invalid email or password")
+
+            # Generate token
+            token = self.token_generator.generate(user.id)
+
+            duration = time.time() - start_time
+            logger.info(
+                "User authenticated successfully",
+                extra={
+                    "user_id": user.id,
+                    "email": email,
+                    "duration_seconds": duration
+                }
+            )
+
+            return {
+                "access_token": token,
+                "user_id": user.id,
+                "expires_in": 3600
+            }
+        except InvalidCredentialsError:
+            raise
+        except Exception as e:
+            logger.error(
+                "Unexpected error during authentication",
+                extra={"email": email, "error": str(e)},
+                exc_info=True
+            )
+            raise AuthenticationError("Authentication failed") from e
+
+# Usage example
+if __name__ == "__main__":
+    # Initialize dependencies
+    user_repo = UserRepository()
+    rate_limiter = RateLimiter(max_attempts=5, window_seconds=300)
+    token_gen = TokenGenerator(secret_key=os.getenv("SECRET_KEY"))
+
+    # Create service
+    auth_service = UserService(user_repo, rate_limiter, token_gen)
+
+    # Authenticate user
+    try:
+        result = auth_service.authenticate(
+            email="user@acme.com",
+            password="secure_password",
+            ip_address="192.168.1.1"
+        )
+        print(f"Authentication successful: {result['access_token']}")
+    except InvalidCredentialsError as e:
+        print(f"Authentication failed: {e}")
+    except RateLimitError as e:
+        print(f"Rate limit exceeded: {e}")
+```
+
+**Key Patterns Demonstrated:**
+
+- ✅ Security: Input validation, rate limiting, secure password handling
+- ✅ Error Handling: Specific exceptions, proper error propagation
+- ✅ Logging: Structured logging with context
+- ✅ Type Safety: Type hints throughout
+- ✅ Documentation: Clear docstrings
+- ✅ Testability: Dependency injection
+- ✅ Production-Ready: Comprehensive error handling
 
 ***
 

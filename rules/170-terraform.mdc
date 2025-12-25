@@ -1,7 +1,7 @@
 ---
 title: Terraform Engineering Ruleset
 description: Secure, efficient, modular Terraform with strong validation, docs, and CI hygiene.
-priority: 140
+priority: 170
 alwaysApply: false
 files:
   include:
@@ -18,6 +18,59 @@ files:
 
 **Audience**: engineers writing and reviewing Terraform infrastructure as code
 **Goal**: secure-by-default, efficient, modular, and highly maintainable Terraform - without over-engineering
+
+## Terraform Philosophy (Core Principles)
+
+**Core Principles:**
+
+- **"Infrastructure as Code, not Infrastructure as Config"** - Terraform is code; treat it with same rigor as application code
+- **"State is the source of truth"** - Protect state, version it, back it up, lock it
+- **"Idempotency is non-negotiable"** - Same input should produce same output, safe to run multiple times
+- **"Modules over copy-paste"** - Reusable, composable modules reduce errors and maintenance
+- **"Validate early, fail fast"** - Use validations, preconditions, postconditions to catch errors early
+- **"Security by default"** - Least privilege IAM, encryption everywhere, no secrets in code
+- **"Explicit over implicit"** - Clear dependencies, explicit providers, documented assumptions
+- **"Plan before apply"** - Always review plan output, use saved plans in CI/CD
+
+**Applying Terraform Principles:**
+
+```hcl
+# BAD: Implicit, insecure, fragile
+resource "aws_instance" "web" {
+  ami           = "ami-12345"
+  instance_type = "t2.micro"
+}
+
+# GOOD: Explicit, secure, validated
+variable "environment" {
+  type        = string
+  description = "Deployment environment"
+  validation {
+    condition     = contains(["dev", "staging", "prod"], var.environment)
+    error_message = "Environment must be dev, staging, or prod."
+  }
+}
+
+resource "aws_instance" "web" {
+  ami           = data.aws_ami.ubuntu.id
+  instance_type = var.instance_type
+
+  vpc_security_group_ids = [aws_security_group.web.id]
+  subnet_id              = aws_subnet.public["az-a"].id
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.app}-${var.environment}-web"
+    }
+  )
+
+  lifecycle {
+    create_before_destroy = true
+    prevent_destroy       = var.environment == "prod"
+  }
+}
+```
 
 ---
 
@@ -177,6 +230,100 @@ resource "aws_subnet" "private" {
 - Use **for-expressions**, **dynamic** blocks, and functions judiciously (clarity first)
 - Use **`try()`** and **`coalesce()`** for safe defaults; avoid over-nesting
 - **Provider pinning** in `required_providers` (not inline in provider blocks)
+
+### Advanced Patterns
+
+**For-Expressions:**
+
+```hcl
+# Transform list to map
+locals {
+  subnet_map = {
+    for idx, subnet in var.subnets : "subnet-${idx}" => subnet
+  }
+}
+
+# Filter and transform
+locals {
+  public_subnets = {
+    for k, v in aws_subnet.this : k => v.id
+    if v.map_public_ip_on_launch == true
+  }
+}
+
+# Complex transformations
+locals {
+  security_group_rules = flatten([
+    for sg_id, sg_config in var.security_groups : [
+      for rule in sg_config.rules : {
+        security_group_id = sg_id
+        type              = rule.type
+        from_port         = rule.from_port
+        to_port           = rule.to_port
+        protocol          = rule.protocol
+        cidr_blocks       = rule.cidr_blocks
+      }
+    ]
+  ])
+}
+```
+
+**Dynamic Blocks:**
+
+```hcl
+resource "aws_security_group" "web" {
+  name        = "${var.app}-web-sg"
+  description = "Security group for web servers"
+  vpc_id      = aws_vpc.this.id
+
+  dynamic "ingress" {
+    for_each = var.allowed_ports
+    content {
+      from_port   = ingress.value
+      to_port     = ingress.value
+      protocol    = "tcp"
+      cidr_blocks = [var.allowed_cidr]
+    }
+  }
+
+  dynamic "egress" {
+    for_each = var.egress_rules
+    content {
+      from_port   = egress.value.from_port
+      to_port     = egress.value.to_port
+      protocol    = egress.value.protocol
+      cidr_blocks = egress.value.cidr_blocks
+    }
+  }
+}
+```
+
+**Function Composition:**
+
+```hcl
+# Safe defaults with try/coalesce
+locals {
+  instance_type = try(
+    var.instance_type,
+    coalesce(
+      var.environment == "prod" ? "m5.large" : null,
+      var.environment == "staging" ? "t3.medium" : null,
+      "t3.micro"
+    )
+  )
+}
+
+# String manipulation
+locals {
+  normalized_name = lower(replace(var.name, " ", "-"))
+  tags = merge(
+    var.common_tags,
+    {
+      Name = "${var.prefix}-${local.normalized_name}"
+    }
+  )
+}
+```
 
 ```hcl
 terraform {
@@ -534,6 +681,72 @@ variable "environment" {
 
 ---
 
+## Performance Optimization
+
+### State Management Optimization
+
+```hcl
+# BAD: Large monolithic state (slow operations)
+# All resources in one state file
+
+# GOOD: Separate states by change frequency
+# networking/ (rarely changes)
+# compute/ (moderate changes)
+# applications/ (frequent changes)
+```
+
+### Data Source Optimization
+
+```hcl
+# BAD: Repeated data source calls
+resource "aws_instance" "web1" {
+  ami = data.aws_ami.ubuntu.id
+}
+resource "aws_instance" "web2" {
+  ami = data.aws_ami.ubuntu.id  # Same data source called again
+}
+
+# GOOD: Cache data source result
+locals {
+  ami_id = data.aws_ami.ubuntu.id
+}
+
+resource "aws_instance" "web1" {
+  ami = local.ami_id
+}
+resource "aws_instance" "web2" {
+  ami = local.ami_id
+}
+```
+
+### Parallelization
+
+```bash
+# BAD: Sequential operations
+terraform apply -target=module.vpc
+terraform apply -target=module.compute
+terraform apply -target=module.app
+
+# GOOD: Parallel operations (Terraform handles automatically)
+terraform apply  # All independent resources run in parallel
+```
+
+### Plan Optimization
+
+```bash
+# Save plan for consistency
+terraform plan -out=tfplan
+
+# Review plan
+terraform show tfplan
+
+# Apply saved plan (faster, consistent)
+terraform apply tfplan
+
+# Plan specific resources
+terraform plan -target=module.vpc
+```
+
 ## Troubleshooting Guide
 
 ### Debug Logging
@@ -545,6 +758,70 @@ terraform apply
 
 # Log levels: TRACE, DEBUG, INFO, WARN, ERROR
 export TF_LOG=TRACE  # Most verbose
+
+# Filter by module
+export TF_LOG=DEBUG
+export TF_LOG_PATH=terraform-debug.log
+terraform apply -target=module.vpc
+```
+
+### Common Error Patterns
+
+**Provider Version Conflicts:**
+
+```bash
+# Error: Provider version constraint conflict
+# Solution: Update provider versions
+terraform init -upgrade
+
+# Or pin specific version
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
+  }
+}
+```
+
+**State Lock Issues:**
+
+```bash
+# Error: Error acquiring the state lock
+# Solution: Check for stuck locks
+aws dynamodb scan --table-name terraform-locks
+
+# Force unlock (use with caution)
+terraform force-unlock <LOCK_ID>
+
+# Check lock details
+terraform force-unlock -force <LOCK_ID>
+```
+
+**Resource Already Exists:**
+
+```bash
+# Error: resource already exists
+# Solution: Import existing resource
+terraform import aws_vpc.this vpc-0abc1234
+
+# Or use import blocks (Terraform 1.5+)
+import {
+  to = aws_vpc.this
+  id = "vpc-0abc1234"
+}
+```
+
+**Module Source Issues:**
+
+```bash
+# Error: Failed to download module
+# Solution: Check module source
+terraform get -update
+
+# Verify module path
+terraform providers
 ```
 
 ### State Issues
@@ -820,6 +1097,586 @@ resource "aws_instance" "app" {
 - **Explain:** "Explain how this `for_each` works and how keys affect resource addressing."
 
 ---
+
+## Comprehensive Example Module
+
+Complete example demonstrating Terraform best practices:
+
+```hcl
+# versions.tf
+terraform {
+  required_version = ">= 1.12.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
+  }
+}
+
+# providers.tf
+provider "aws" {
+  region = var.region
+
+  default_tags {
+    tags = merge(
+      var.common_tags,
+      {
+        ManagedBy = "terraform"
+      }
+    )
+  }
+}
+
+# variables.tf
+variable "app" {
+  description = "Application name"
+  type        = string
+  validation {
+    condition     = can(regex("^[a-z0-9-]+$", var.app))
+    error_message = "App name must be lowercase alphanumeric with hyphens."
+  }
+}
+
+variable "environment" {
+  description = "Deployment environment"
+  type        = string
+  validation {
+    condition     = contains(["dev", "staging", "prod"], var.environment)
+    error_message = "Environment must be dev, staging, or prod."
+  }
+}
+
+variable "region" {
+  description = "AWS region"
+  type        = string
+  default     = "us-east-1"
+}
+
+variable "vpc_cidr" {
+  description = "CIDR block for VPC"
+  type        = string
+  validation {
+    condition     = can(cidrhost(var.vpc_cidr, 0))
+    error_message = "VPC CIDR must be a valid CIDR block."
+  }
+}
+
+variable "private_subnets" {
+  description = "Map of availability zones to CIDR blocks for private subnets"
+  type        = map(string)
+  validation {
+    condition     = length(var.private_subnets) >= 2
+    error_message = "At least 2 private subnets required for high availability."
+  }
+}
+
+variable "common_tags" {
+  description = "Common tags for all resources"
+  type        = map(string)
+  default     = {}
+}
+
+# locals.tf
+locals {
+  name_prefix = "${var.app}-${var.environment}"
+
+  # Environment-specific configuration
+  instance_types = {
+    dev     = "t3.micro"
+    staging = "t3.small"
+    prod    = "m5.large"
+  }
+
+  instance_type = local.instance_types[var.environment]
+
+  # Common tags
+  common_tags = merge(
+    var.common_tags,
+    {
+      App         = var.app
+      Environment = var.environment
+    }
+  )
+}
+
+# main.tf
+resource "aws_vpc" "this" {
+  cidr_block           = var.vpc_cidr
+  enable_dns_support   = true
+  enable_dns_hostnames = true
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${local.name_prefix}-vpc"
+    }
+  )
+
+  lifecycle {
+    create_before_destroy = true
+    prevent_destroy       = var.environment == "prod"
+  }
+}
+
+resource "aws_internet_gateway" "this" {
+  vpc_id = aws_vpc.this.id
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${local.name_prefix}-igw"
+    }
+  )
+}
+
+resource "aws_subnet" "private" {
+  for_each = var.private_subnets
+
+  vpc_id            = aws_vpc.this.id
+  cidr_block        = each.value
+  availability_zone = "${var.region}${each.key}"
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${local.name_prefix}-private-${each.key}"
+      Type = "private"
+    }
+  )
+
+  lifecycle {
+    precondition {
+      condition     = tonumber(split("/", each.value)[1]) <= 24
+      error_message = "Subnet CIDR must be /24 or smaller."
+    }
+  }
+}
+
+resource "aws_eip" "nat" {
+  count = var.environment == "prod" ? 1 : 0
+
+  domain = "vpc"
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${local.name_prefix}-nat-eip"
+    }
+  )
+
+  depends_on = [aws_internet_gateway.this]
+}
+
+resource "aws_nat_gateway" "this" {
+  count = var.environment == "prod" ? 1 : 0
+
+  allocation_id = aws_eip.nat[0].id
+  subnet_id     = values(aws_subnet.private)[0].id
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${local.name_prefix}-nat-gateway"
+    }
+  )
+
+  depends_on = [aws_internet_gateway.this]
+}
+
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.this.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = var.environment == "prod" ? aws_nat_gateway.this[0].id : null
+  }
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${local.name_prefix}-private-rt"
+    }
+  )
+}
+
+resource "aws_route_table_association" "private" {
+  for_each = aws_subnet.private
+
+  subnet_id      = each.value.id
+  route_table_id = aws_route_table.private.id
+}
+
+resource "aws_security_group" "web" {
+  name        = "${local.name_prefix}-web-sg"
+  description = "Security group for web servers"
+  vpc_id      = aws_vpc.this.id
+
+  ingress {
+    description = "HTTP"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "HTTPS"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    description = "All outbound"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${local.name_prefix}-web-sg"
+    }
+  )
+}
+
+# outputs.tf
+output "vpc_id" {
+  description = "VPC ID"
+  value       = aws_vpc.this.id
+}
+
+output "vpc_cidr" {
+  description = "VPC CIDR block"
+  value       = aws_vpc.this.cidr_block
+}
+
+output "private_subnet_ids" {
+  description = "Private subnet IDs"
+  value       = { for k, v in aws_subnet.private : k => v.id }
+}
+
+output "web_security_group_id" {
+  description = "Web security group ID"
+  value       = aws_security_group.web.id
+}
+
+output "nat_gateway_id" {
+  description = "NAT Gateway ID (if created)"
+  value       = var.environment == "prod" ? aws_nat_gateway.this[0].id : null
+}
+```
+
+**Key Patterns Demonstrated:**
+
+- ✅ Security: Proper IAM, security groups, encryption
+- ✅ Validation: Input validation, preconditions, postconditions
+- ✅ Lifecycle: Create before destroy, prevent destroy for prod
+- ✅ For-each: Stable addressing with maps
+- ✅ Conditions: Conditional resource creation
+- ✅ Tagging: Consistent tagging strategy
+- ✅ Outputs: Well-documented outputs
+- ✅ Best practices: Module structure, provider pinning
+
+## Advanced Module Patterns
+
+### Module Composition
+
+```hcl
+# Root module composes multiple modules
+module "networking" {
+  source = "./modules/networking"
+
+  app         = var.app
+  environment = var.environment
+  vpc_cidr    = var.vpc_cidr
+}
+
+module "compute" {
+  source = "./modules/compute"
+
+  app                = var.app
+  environment        = var.environment
+  vpc_id             = module.networking.vpc_id
+  subnet_ids         = module.networking.private_subnet_ids
+  security_group_ids = [module.networking.web_sg_id]
+
+  depends_on = [module.networking]
+}
+
+module "database" {
+  source = "./modules/database"
+
+  app                = var.app
+  environment        = var.environment
+  vpc_id             = module.networking.vpc_id
+  subnet_ids         = module.networking.private_subnet_ids
+  security_group_ids = [module.networking.db_sg_id]
+
+  depends_on = [module.networking]
+}
+```
+
+### Module Outputs as Inputs
+
+```hcl
+# Module A outputs
+output "vpc_id" {
+  value = aws_vpc.this.id
+}
+
+# Module B uses Module A output
+module "app" {
+  source = "./modules/app"
+
+  vpc_id = module.networking.vpc_id  # Cross-module reference
+}
+```
+
+### Conditional Module Usage
+
+```hcl
+# Use module conditionally
+module "monitoring" {
+  count = var.enable_monitoring ? 1 : 0
+
+  source = "./modules/monitoring"
+
+  app         = var.app
+  environment = var.environment
+}
+
+# Access conditional module output
+output "monitoring_dashboard_url" {
+  value = var.enable_monitoring ? module.monitoring[0].dashboard_url : null
+}
+```
+
+## Testing Patterns
+
+### Unit Testing with Terratest
+
+```go
+package test
+
+import (
+    "testing"
+    "github.com/gruntwork-io/terratest/modules/terraform"
+    "github.com/stretchr/testify/assert"
+)
+
+func TestVPCModule(t *testing.T) {
+    terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
+        TerraformDir: "../modules/vpc",
+        Vars: map[string]interface{}{
+            "app":         "test",
+            "environment": "test",
+            "vpc_cidr":   "10.0.0.0/16",
+        },
+    })
+
+    defer terraform.Destroy(t, terraformOptions)
+    terraform.InitAndApply(t, terraformOptions)
+
+    vpcId := terraform.Output(t, terraformOptions, "vpc_id")
+    assert.NotEmpty(t, vpcId)
+}
+```
+
+### Integration Testing
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+# Test module in isolated environment
+cd test/fixtures/vpc
+
+terraform init
+terraform plan
+terraform apply -auto-approve
+
+# Verify outputs
+VPC_ID=$(terraform output -raw vpc_id)
+aws ec2 describe-vpcs --vpc-ids "$VPC_ID"
+
+# Cleanup
+terraform destroy -auto-approve
+```
+
+### Validation Testing
+
+```hcl
+# Test validation rules
+variable "test_environment" {
+  type = string
+  validation {
+    condition     = contains(["dev", "staging", "prod"], var.test_environment)
+    error_message = "Environment must be dev, staging, or prod."
+  }
+}
+
+# Test with invalid value (should fail)
+# terraform apply -var="test_environment=invalid"
+```
+
+## Performance Optimization Examples
+
+### State File Optimization
+
+```bash
+# BAD: Large monolithic state (slow operations)
+# All resources in one state file
+
+# GOOD: Separate states by change frequency
+# networking/terraform.tfstate (rarely changes)
+# compute/terraform.tfstate (moderate changes)
+# applications/terraform.tfstate (frequent changes)
+
+# Use remote state data source for cross-stack references
+data "terraform_remote_state" "networking" {
+  backend = "s3"
+  config = {
+    bucket = "terraform-state"
+    key    = "networking/terraform.tfstate"
+    region = "us-east-1"
+  }
+}
+
+# Reference remote state outputs
+resource "aws_instance" "web" {
+  subnet_id = data.terraform_remote_state.networking.outputs.public_subnet_ids[0]
+}
+```
+
+### Plan File Usage
+
+```bash
+# Save plan for consistency
+terraform plan -out=tfplan
+
+# Review plan
+terraform show tfplan | less
+
+# Apply saved plan (faster, ensures consistency)
+terraform apply tfplan
+
+# Plan specific resources/modules
+terraform plan -target=module.vpc
+terraform plan -target=aws_instance.web
+```
+
+### Parallel Execution
+
+```hcl
+# Terraform automatically parallelizes independent resources
+# Ensure no unnecessary dependencies
+
+# BAD: Unnecessary dependency
+resource "aws_instance" "web" {
+  depends_on = [aws_vpc.this]  # Redundant if using vpc_id reference
+}
+
+# GOOD: Let Terraform infer dependencies
+resource "aws_instance" "web" {
+  subnet_id = aws_subnet.public.id  # Dependency automatically inferred
+}
+```
+
+## Advanced Troubleshooting Patterns
+
+### State Corruption Recovery
+
+```bash
+# Backup state before operations
+terraform state pull > backup-$(date +%Y%m%d-%H%M%S).tfstate
+
+# If state corrupted, restore from backup
+terraform state push backup-20241201-120000.tfstate
+
+# Remove corrupted resource from state
+terraform state rm aws_instance.corrupted
+
+# Re-import resource
+terraform import aws_instance.corrupted i-0abc1234def56789
+```
+
+### Dependency Cycle Resolution
+
+```hcl
+# BAD: Circular dependency
+resource "aws_security_group" "web" {
+  ingress {
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    security_groups = [aws_security_group.app.id]  # References app
+  }
+}
+
+resource "aws_security_group" "app" {
+  ingress {
+    from_port       = 8080
+    to_port         = 8080
+    protocol        = "tcp"
+    security_groups = [aws_security_group.web.id]  # References web (cycle!)
+  }
+}
+
+# GOOD: Use separate security group rules
+resource "aws_security_group" "web" {
+  name = "web-sg"
+}
+
+resource "aws_security_group" "app" {
+  name = "app-sg"
+}
+
+resource "aws_security_group_rule" "web_to_app" {
+  type                     = "ingress"
+  from_port                = 8080
+  to_port                  = 8080
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.web.id
+  security_group_id        = aws_security_group.app.id
+}
+
+resource "aws_security_group_rule" "app_from_web" {
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.app.id
+  security_group_id        = aws_security_group.web.id
+}
+```
+
+### Provider Configuration Issues
+
+```hcl
+# BAD: Provider config in resource (not allowed)
+resource "aws_instance" "web" {
+  provider {
+    region = "us-west-2"  # Error!
+  }
+}
+
+# GOOD: Provider alias
+provider "aws" {
+  alias  = "west"
+  region = "us-west-2"
+}
+
+resource "aws_instance" "web" {
+  provider = aws.west
+  # ...
+}
+```
 
 **Terraform Version**: 1.12.x
 **AWS Provider Version**: 6.x
