@@ -89,6 +89,10 @@ local var="value"           # Function-local variable
 - **Linting:** Must pass **`shellcheck`** with **0 errors/warnings**.
 - **Formatting:** Must pass **`shfmt -i 2 -ci -sr -bn`** (2-space indent, indent switch/case, simplify redirects, binary ops at line end).
 - **Extension:** Use `.sh` for scripts, no extension for executables in `bin/` is acceptable if documented.
+- **Variable Naming:**
+  - **Uppercase** for constants and configuration: `readonly MAX_RETRIES=10`, `readonly CONFIG_FILE="/etc/app.conf"`
+  - **Lowercase** for local variables: `local count=0`, `local file_name="data.txt"`
+  - **Uppercase convention** helps distinguish constants from variables, avoids collisions with environment variables, and follows Bash conventions
 
 ---
 
@@ -334,6 +338,53 @@ EOF
 }
 ```
 
+### Here-Documents (Here-Docs)
+
+**Use here-docs for multiline strings, templates, and embedded content:**
+
+```bash
+# Basic here-doc
+cat <<EOF > config.yaml
+port: 8080
+env: production
+database:
+  host: localhost
+  port: 5432
+EOF
+
+# Here-doc with variable expansion
+cat <<EOF > message.txt
+Hello ${USER},
+Your script completed at $(date).
+EOF
+
+# Indented here-doc (removes leading tabs)
+cat <<-EOF
+    This line has leading tabs removed
+    So does this one
+EOF
+
+# Here-doc without variable expansion (literal)
+cat <<'EOF'
+This $VAR will not be expanded
+Nor will $(command) be executed
+EOF
+```
+
+**When to use here-docs:**
+- Configuration file generation
+- Template files (Dockerfiles, Kubernetes manifests)
+- Multiline error messages
+- Embedded SQL queries
+- Inline documentation
+- Cleaner than multiple `echo` statements
+
+**Benefits:**
+- Preserves formatting and whitespace
+- More readable than concatenated strings
+- Supports variable expansion (or literal with `'EOF'`)
+- Reduces quoting complexity
+
 ---
 
 ## 6) Common Pitfalls (Avoid These)
@@ -396,6 +447,55 @@ while read -r line; do
 done < <(echo "data")
 echo "$count"  # Works!
 ```
+
+### 6. Using `$*` Instead of `"$@"`
+
+**Always use `"$@"` for script arguments to preserve argument boundaries:**
+
+```bash
+#  WRONG - $* loses argument boundaries
+my_script() {
+  for arg in $*; do  # Breaks on spaces!
+    echo "$arg"
+  done
+}
+
+my_script "file one.txt" "file two.txt"
+# Output: file (lost quotes!)
+#         one.txt
+#         file
+#         two.txt
+
+#  CORRECT - "$@" preserves boundaries
+my_script() {
+  for arg in "$@"; do  # Preserves spaces and quotes
+    echo "$arg"
+  done
+}
+
+my_script "file one.txt" "file two.txt"
+# Output: file one.txt (preserved!)
+#         file two.txt
+
+#  WRONG - $* in command substitution
+some_command $*  # Breaks on spaces
+
+#  CORRECT - "$@" preserves all arguments
+some_command "$@"
+
+#  When to use $* (rare):
+#  Only when you explicitly want word splitting
+#  echo "All args: $*"  # Single string with spaces
+```
+
+**Why `"$@"` matters:**
+- Preserves quoted arguments with spaces
+- Handles filenames correctly
+- Maintains argument count (`$#`)
+- Prevents data loss and security issues
+- Essential for wrapper scripts and functions
+
+**Rule of thumb:** Always use `"$@"` unless you explicitly need word splitting (which is rare).
 
 ---
 
