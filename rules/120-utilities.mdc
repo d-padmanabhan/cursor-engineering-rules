@@ -356,6 +356,10 @@ $(brew --prefix)/opt/fzf/install
   - caching strategy
   - escalation path (lynx/curl -> Context7 (optional) -> Playwright -> screenshot + VLM -> OCR)
 
+## Resources
+
+- [awesome-tuis](https://github.com/rothgar/awesome-tuis) - Curated list of TUI applications for terminal productivity (dashboards, file managers, git tools, database clients, etc.)
+
 ---
 
 **Purpose**: Tool selection and repeatable patterns for agents reading docs, blogs, logs, and diagrams
