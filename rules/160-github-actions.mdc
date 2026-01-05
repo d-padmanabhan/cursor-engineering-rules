@@ -139,33 +139,49 @@ jobs:
 
 **For AI Agents Authoring Workflows:**
 
-When initially creating GitHub Actions workflows, **for every action** you add, use `gh api` to fetch the latest release tag and pin to that specific version:
+When initially creating GitHub Actions workflows, **for every action** you add, use `gh api` to fetch the latest release tag and extract the **major version** to pin:
 
 ```bash
-# Get latest tag for any action (replace OWNER/REPO with the action's repository)
-gh api repos/OWNER/REPO/releases/latest --jq .tag_name
-# Returns: v6
+# Get latest MAJOR version for any action (replace OWNER/REPO with the action's repository)
+gh api repos/OWNER/REPO/releases/latest --jq '.tag_name | split(".")[0]'
+# Returns: v4 (extracts major version from v4.2.2)
 
-# Use in workflow with the fetched version
-- uses: OWNER/REPO@v6
+# Use in workflow with the major version
+- uses: OWNER/REPO@v4
 ```
 
 **Rationale:**
-- AI agents should use the most current stable version when initially authoring workflows
+- AI agents should use the most current stable **major** version when initially authoring workflows
+- Using major versions (e.g., `@v4`) allows automatic minor/patch updates while avoiding breaking changes
 - This applies to **all actions**, not just common ones
 - After initial creation, Dependabot will handle keeping actions updated automatically
 - This ensures workflows start with recent versions while maintaining reproducibility
 
 **Examples for common actions:**
 ```bash
-# Checkout
-gh api repos/actions/checkout/releases/latest --jq .tag_name
+# Checkout - get latest major version
+gh api repos/actions/checkout/releases/latest --jq '.tag_name | split(".")[0]'
+# Returns: v6 (as of Jan 2026)
 
-# Setup Node
-gh api repos/actions/setup-node/releases/latest --jq .tag_name
+# Setup Node - get latest major version
+gh api repos/actions/setup-node/releases/latest --jq '.tag_name | split(".")[0]'
+# Returns: v4
 
-# GitHub Script
-gh api repos/actions/github-script/releases/latest --jq .tag_name
+# GitHub Script - get latest major version
+gh api repos/actions/github-script/releases/latest --jq '.tag_name | split(".")[0]'
+# Returns: v7
+
+# AWS Configure Credentials - get latest major version
+gh api repos/aws-actions/configure-aws-credentials/releases/latest --jq '.tag_name | split(".")[0]'
+# Returns: v5 (as of Jan 2026)
+
+# Cache - get latest major version
+gh api repos/actions/cache/releases/latest --jq '.tag_name | split(".")[0]'
+# Returns: v4
+
+# Upload Artifact - get latest major version
+gh api repos/actions/upload-artifact/releases/latest --jq '.tag_name | split(".")[0]'
+# Returns: v4
 ```
 
 - Use `@main` only for experiments

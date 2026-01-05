@@ -34,7 +34,7 @@ files:
 ```yaml
 # BAD: Hardcoded, insecure, monolithic
 Resources:
-  MyDatabase:
+  rMyDatabase:
     Type: AWS::RDS::DBInstance
     Properties:
       MasterUsername: admin
@@ -43,25 +43,25 @@ Resources:
 
 # GOOD: Parameterized, secure, modular
 Parameters:
-  Environment:
+  pEnvironment:
     Type: String
     AllowedValues: [dev, staging, prod]
     Description: Deployment environment
 
-  DatabasePassword:
+  pDatabasePassword:
     Type: String
     NoEcho: true
     Description: Database password from Secrets Manager
 
 Resources:
-  Database:
+  rDatabase:
     Type: AWS::RDS::DBInstance
     Properties:
-      MasterUsername: !Ref DatabaseUsername
-      MasterUserPassword: !Ref DatabasePassword
-      DBInstanceClass: !If [IsProduction, db.r5.xlarge, db.t3.micro]
+      MasterUsername: !Ref pDatabaseUsername
+      MasterUserPassword: !Ref pDatabasePassword
+      DBInstanceClass: !If [cIsProduction, db.r5.xlarge, db.t3.micro]
       StorageEncrypted: true
-      DeletionProtection: !If [IsProduction, true, false]
+      DeletionProtection: !If [cIsProduction, true, false]
 ```
 
 ## Core Principles
@@ -80,7 +80,7 @@ Description: 'Brief description of what this template does'
 
 Parameters:
   # Environment-specific parameters
-  Environment:
+  pEnvironment:
     Type: String
     Default: dev
     AllowedValues: [dev, staging, prod]
@@ -103,9 +103,71 @@ Outputs:
 
 ## Resource Naming
 
-- Use logical resource names: `MyDatabase`, `WebServerRole`
+- Use logical resource names with prefixes:
+  - `r` for resources: `rMyDatabase`, `rWebServerRole`
+  - `p` for parameters: `pEnvironment`, `pInstanceType`
+  - `c` for conditions: `cIsProduction`, `cEnableNatGateway`
+  - `m` for mappings: `mEnvironmentMap`, `mRegionMap`
+  - `o` for outputs: `oVpcId`, `oSubnetIds`
 - Use tags consistently: `Environment`, `Project`, `ManagedBy`
 - Follow AWS naming conventions
+
+## Stack Naming Convention
+
+Always append the region to stack names to enable multi-region deployments and avoid naming conflicts:
+
+```bash
+# Pattern: <stack-name>-${AWS_REGION}
+my-vpc-stack-us-east-1
+my-app-stack-eu-west-1
+```
+
+## Deployment Commands: `create-stack`/`update-stack` vs `deploy`
+
+| Aspect | create-stack / update-stack | deploy |
+|--------|----------------------------|--------|
+| Commands | Two separate commands | Single unified command |
+| Stack existence | Must know if stack exists beforehand | Automatically creates OR updates |
+| Idempotency | update-stack fails if no changes | Succeeds with "No changes" message |
+| Change sets | Manual: create-change-set → execute-change-set | Automatically creates and executes |
+| Use case | Granular control, CI/CD pipelines | Interactive/scripted deployments |
+
+### `create-stack` / `update-stack`
+
+```bash
+# Must use correct command based on stack existence
+aws cloudformation create-stack \
+  --stack-name my-stack-${AWS_REGION} \
+  --template-body file://template.yaml
+
+# If stack exists, use update (fails if no changes!)
+aws cloudformation update-stack \
+  --stack-name my-stack-${AWS_REGION} \
+  --template-body file://template.yaml
+```
+
+### `deploy` (recommended for most cases)
+
+```bash
+# Works whether stack exists or not - creates or updates automatically
+aws cloudformation deploy \
+  --stack-name my-stack-${AWS_REGION} \
+  --template-file template.yaml \
+  --parameter-overrides Key1=Value1 Key2=Value2
+
+# Note: uses --template-file not --template-body
+```
+
+**Key `deploy` benefits:**
+- **Idempotent** - Safe to run repeatedly
+- **No "no changes" error** - Just reports no changes needed
+- **Simpler scripting** - No need to check if stack exists first
+- **Built-in change set** - Creates, reviews, and executes automatically
+
+**When to use `create-stack`/`update-stack`:**
+- Need to review change sets before execution (use `--no-execute-changeset` with deploy, or manual change set workflow)
+- CI/CD pipelines requiring explicit create vs update logic
+- Need `--on-failure` options (only available on create-stack)
 
 ## Validation
 
@@ -114,7 +176,16 @@ Outputs:
 aws cloudformation validate-template --template-body file://template.yaml
 
 # Check for drift
-aws cloudformation detect-stack-drift --stack-name my-stack
+aws cloudformation detect-stack-drift --stack-name my-stack-${AWS_REGION}
+
+# Create change set
+aws cloudformation create-change-set --stack-name my-stack-${AWS_REGION} --change-set-name my-change-set --template-body file://template.yaml
+
+# Review changes
+aws cloudformation describe-change-set --stack-name my-stack-${AWS_REGION} --change-set-name my-change-set
+
+# Execute change set
+aws cloudformation execute-change-set --stack-name my-stack-${AWS_REGION} --change-set-name my-change-set
 ```
 
 ## Advanced Patterns
@@ -123,7 +194,7 @@ aws cloudformation detect-stack-drift --stack-name my-stack
 
 ```yaml
 Mappings:
-  EnvironmentMap:
+  mEnvironmentMap:
     dev:
       InstanceType: t3.micro
       MinSize: 1
@@ -134,18 +205,18 @@ Mappings:
       MaxSize: 10
 
 Conditions:
-  IsProduction: !Equals [!Ref Environment, prod]
-  IsDevelopment: !Equals [!Ref Environment, dev]
+  cIsProduction: !Equals [!Ref pEnvironment, prod]
+  cIsDevelopment: !Equals [!Ref pEnvironment, dev]
 
 Resources:
-  AutoScalingGroup:
+  rAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
-      MinSize: !FindInMap [EnvironmentMap, !Ref Environment, MinSize]
-      MaxSize: !FindInMap [EnvironmentMap, !Ref Environment, MaxSize]
+      MinSize: !FindInMap [mEnvironmentMap, !Ref pEnvironment, MinSize]
+      MaxSize: !FindInMap [mEnvironmentMap, !Ref pEnvironment, MaxSize]
       LaunchTemplate:
-        LaunchTemplateId: !Ref LaunchTemplate
-        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+        LaunchTemplateId: !Ref rLaunchTemplate
+        Version: !GetAtt rLaunchTemplate.LatestVersionNumber
 ```
 
 ### Nested Stacks
@@ -153,41 +224,41 @@ Resources:
 ```yaml
 # Parent stack
 Resources:
-  VPCStack:
+  rVPCStack:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: https://s3.amazonaws.com/bucket/vpc.yaml
       Parameters:
-        Environment: !Ref Environment
-        VpcCidr: 10.0.0.0/16
+        pEnvironment: !Ref pEnvironment
+        pVpcCidr: 10.0.0.0/16
       TimeoutInMinutes: 15
 
-  ApplicationStack:
+  rApplicationStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: VPCStack
+    DependsOn: rVPCStack
     Properties:
       TemplateURL: https://s3.amazonaws.com/bucket/app.yaml
       Parameters:
-        VpcId: !GetAtt VPCStack.Outputs.VpcId
-        SubnetIds: !Join [",", !GetAtt VPCStack.Outputs.PrivateSubnetIds]
+        pVpcId: !GetAtt rVPCStack.Outputs.oVpcId
+        pSubnetIds: !Join [",", !GetAtt rVPCStack.Outputs.oPrivateSubnetIds]
 ```
 
 ### Custom Resources
 
 ```yaml
 Resources:
-  CustomResource:
+  rCustomResource:
     Type: AWS::CloudFormation::CustomResource
     Properties:
-      ServiceToken: !GetAtt CustomResourceFunction.Arn
+      ServiceToken: !GetAtt rCustomResourceFunction.Arn
       CustomProperty: value
 
-  CustomResourceFunction:
+  rCustomResourceFunction:
     Type: AWS::Lambda::Function
     Properties:
       Runtime: python3.12
       Handler: index.handler
-      Role: !GetAtt LambdaExecutionRole.Arn
+      Role: !GetAtt rLambdaExecutionRole.Arn
       Code:
         ZipFile: |
           import boto3
@@ -206,18 +277,18 @@ Resources:
 
 ```yaml
 # Join and Split
-!Join [":", [!Ref Environment, !Ref AppName]]
+!Join [":", [!Ref pEnvironment, !Ref pAppName]]
 !Split [":", !Ref SomeValue]
 
 # Select and GetAtt
-!Select [0, !GetAtt SubnetGroup.SubnetIds]
+!Select [0, !GetAtt rSubnetGroup.SubnetIds]
 
 # Base64 and Sub
 !Base64 "value"
-!Sub "arn:aws:s3:::${BucketName}/*"
+!Sub "arn:aws:s3:::${pBucketName}/*"
 
 # ImportValue (cross-stack references)
-!ImportValue NetworkStack-VpcId-Export
+!ImportValue rNetworkStack-VpcId-Export
 
 # Transform (SAM, macros)
 Transform: AWS::Serverless-2016-10-31
@@ -230,7 +301,7 @@ Transform: AWS::Serverless-2016-10-31
 ```yaml
 # BAD: Monolithic stack (slow updates, high blast radius)
 Resources:
-  VPC: ...
+  rVPC: ...
   Subnets: ...
   SecurityGroups: ...
   EC2Instances: ...
@@ -248,18 +319,18 @@ Resources:
 ```bash
 # Create change set for review
 aws cloudformation create-change-set \
-  --stack-name my-stack \
+  --stack-name my-stack-${AWS_REGION} \
   --change-set-name my-change-set \
   --template-body file://template.yaml
 
 # Review changes
 aws cloudformation describe-change-set \
-  --stack-name my-stack \
+  --stack-name my-stack-${AWS_REGION} \
   --change-set-name my-change-set
 
 # Execute change set
 aws cloudformation execute-change-set \
-  --stack-name my-stack \
+  --stack-name my-stack-${AWS_REGION} \
   --change-set-name my-change-set
 ```
 
@@ -284,7 +355,7 @@ aws cloudformation execute-change-set \
 
 # Apply policy
 aws cloudformation set-stack-policy \
-  --stack-name my-stack \
+  --stack-name my-stack-${AWS_REGION} \
   --stack-policy-body file://stack-policy.json
 ```
 
@@ -349,12 +420,12 @@ cfn_nag_scan --input-path template.yaml
 ```bash
 # View stack events
 aws cloudformation describe-stack-events \
-  --stack-name my-stack \
+  --stack-name my-stack-${AWS_REGION} \
   --max-items 20
 
 # View failed resource details
 aws cloudformation describe-stack-resource \
-  --stack-name my-stack \
+  --stack-name my-stack-${AWS_REGION} \
   --logical-resource-id FailedResource
 ```
 
@@ -395,11 +466,11 @@ Parameters:
 
 ```bash
 # Detect drift
-aws cloudformation detect-stack-drift --stack-name my-stack
+aws cloudformation detect-stack-drift --stack-name my-stack-${AWS_REGION}
 
 # Get drift details
 aws cloudformation describe-stack-resource-drifts \
-  --stack-name my-stack
+  --stack-name my-stack-${AWS_REGION}
 ```
 
 ## Comprehensive Example Template
@@ -416,33 +487,33 @@ Metadata:
       - Label:
           default: Network Configuration
         Parameters:
-          - Environment
-          - VpcCidr
+          - pEnvironment
+          - pVpcCidr
       - Label:
           default: Security Configuration
         Parameters:
-          - AllowedCidr
+          - pAllowedCidr
 
 Parameters:
-  Environment:
+  pEnvironment:
     Type: String
     Default: dev
     AllowedValues: [dev, staging, prod]
     Description: Deployment environment
 
-  VpcCidr:
+  pVpcCidr:
     Type: String
     Default: 10.0.0.0/16
     Description: CIDR block for VPC
     AllowedPattern: ^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}$
 
-  AllowedCidr:
+  pAllowedCidr:
     Type: String
     Default: 0.0.0.0/0
     Description: CIDR block allowed to access resources
 
 Mappings:
-  EnvironmentMap:
+  mEnvironmentMap:
     dev:
       NatInstanceType: t3.micro
       EnableNatGateway: false
@@ -451,197 +522,197 @@ Mappings:
       EnableNatGateway: true
 
 Conditions:
-  IsProduction: !Equals [!Ref Environment, prod]
-  CreateNatGateway: !FindInMap [EnvironmentMap, !Ref Environment, EnableNatGateway]
+  cIsProduction: !Equals [!Ref pEnvironment, prod]
+  cCreateNatGateway: !FindInMap [mEnvironmentMap, !Ref pEnvironment, EnableNatGateway]
 
 Resources:
-  VPC:
+  rVPC:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: !Ref VpcCidr
+      CidrBlock: !Ref pVpcCidr
       EnableDnsSupport: true
       EnableDnsHostnames: true
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-vpc'
+          Value: !Sub '${pEnvironment}-vpc'
         - Key: Environment
-          Value: !Ref Environment
+          Value: !Ref pEnvironment
         - Key: ManagedBy
           Value: CloudFormation
 
-  InternetGateway:
+  rInternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-igw'
+          Value: !Sub '${pEnvironment}-igw'
 
-  InternetGatewayAttachment:
+  rInternetGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
-      InternetGatewayId: !Ref InternetGateway
-      VpcId: !Ref VPC
+      InternetGatewayId: !Ref rInternetGateway
+      VpcId: !Ref rVPC
 
-  PublicSubnet1:
+  rPublicSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref VPC
+      VpcId: !Ref rVPC
       AvailabilityZone: !Select [0, !GetAZs '']
-      CidrBlock: !Select [0, !Cidr [!Ref VpcCidr, 8, 8]]
+      CidrBlock: !Select [0, !Cidr [!Ref pVpcCidr, 8, 8]]
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-public-subnet-1'
+          Value: !Sub '${pEnvironment}-public-subnet-1'
 
-  PublicSubnet2:
+  rPublicSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref VPC
+      VpcId: !Ref rVPC
       AvailabilityZone: !Select [1, !GetAZs '']
-      CidrBlock: !Select [1, !Cidr [!Ref VpcCidr, 8, 8]]
+      CidrBlock: !Select [1, !Cidr [!Ref pVpcCidr, 8, 8]]
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-public-subnet-2'
+          Value: !Sub '${pEnvironment}-public-subnet-2'
 
-  PrivateSubnet1:
+  rPrivateSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref VPC
+      VpcId: !Ref rVPC
       AvailabilityZone: !Select [0, !GetAZs '']
-      CidrBlock: !Select [2, !Cidr [!Ref VpcCidr, 8, 8]]
+      CidrBlock: !Select [2, !Cidr [!Ref pVpcCidr, 8, 8]]
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-private-subnet-1'
+          Value: !Sub '${pEnvironment}-private-subnet-1'
 
-  PrivateSubnet2:
+  rPrivateSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref VPC
+      VpcId: !Ref rVPC
       AvailabilityZone: !Select [1, !GetAZs '']
-      CidrBlock: !Select [3, !Cidr [!Ref VpcCidr, 8, 8]]
+      CidrBlock: !Select [3, !Cidr [!Ref pVpcCidr, 8, 8]]
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-private-subnet-2'
+          Value: !Sub '${pEnvironment}-private-subnet-2'
 
-  NatGatewayEIP:
+  rNatGatewayEIP:
     Type: AWS::EC2::EIP
-    DependsOn: InternetGatewayAttachment
+    DependsOn: rInternetGatewayAttachment
     Properties:
       Domain: vpc
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-nat-eip'
+          Value: !Sub '${pEnvironment}-nat-eip'
 
-  NatGateway:
+  rNatGateway:
     Type: AWS::EC2::NatGateway
-    Condition: CreateNatGateway
+    Condition: cCreateNatGateway
     Properties:
-      AllocationId: !GetAtt NatGatewayEIP.AllocationId
-      SubnetId: !Ref PublicSubnet1
+      AllocationId: !GetAtt rNatGatewayEIP.AllocationId
+      SubnetId: !Ref rPublicSubnet1
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-nat-gateway'
+          Value: !Sub '${pEnvironment}-nat-gateway'
 
-  PublicRouteTable:
+  rPublicRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
-      VpcId: !Ref VPC
+      VpcId: !Ref rVPC
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-public-rt'
+          Value: !Sub '${pEnvironment}-public-rt'
 
-  DefaultPublicRoute:
+  rDefaultPublicRoute:
     Type: AWS::EC2::Route
-    DependsOn: InternetGatewayAttachment
+    DependsOn: rInternetGatewayAttachment
     Properties:
-      RouteTableId: !Ref PublicRouteTable
+      RouteTableId: !Ref rPublicRouteTable
       DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: !Ref InternetGateway
+      GatewayId: !Ref rInternetGateway
 
-  PublicSubnet1RouteTableAssociation:
+  rPublicSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref PublicSubnet1
-      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref rPublicSubnet1
+      RouteTableId: !Ref rPublicRouteTable
 
-  PublicSubnet2RouteTableAssociation:
+  rPublicSubnet2RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref PublicSubnet2
-      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref rPublicSubnet2
+      RouteTableId: !Ref rPublicRouteTable
 
-  PrivateRouteTable:
+  rPrivateRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
-      VpcId: !Ref VPC
+      VpcId: !Ref rVPC
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-private-rt'
+          Value: !Sub '${pEnvironment}-private-rt'
 
-  DefaultPrivateRoute:
+  rDefaultPrivateRoute:
     Type: AWS::EC2::Route
-    Condition: CreateNatGateway
+    Condition: cCreateNatGateway
     Properties:
-      RouteTableId: !Ref PrivateRouteTable
+      RouteTableId: !Ref rPrivateRouteTable
       DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref NatGateway
+      NatGatewayId: !Ref rNatGateway
 
-  PrivateSubnet1RouteTableAssociation:
+  rPrivateSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref PrivateSubnet1
-      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref rPrivateSubnet1
+      RouteTableId: !Ref rPrivateRouteTable
 
-  PrivateSubnet2RouteTableAssociation:
+  rPrivateSubnet2RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref PrivateSubnet2
-      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref rPrivateSubnet2
+      RouteTableId: !Ref rPrivateRouteTable
 
-  WebSecurityGroup:
+  rWebSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Security group for web servers
-      VpcId: !Ref VPC
+      VpcId: !Ref rVPC
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
-          CidrIp: !Ref AllowedCidr
+          CidrIp: !Ref pAllowedCidr
         - IpProtocol: tcp
           FromPort: 443
           ToPort: 443
-          CidrIp: !Ref AllowedCidr
+          CidrIp: !Ref pAllowedCidr
       SecurityGroupEgress:
         - IpProtocol: -1
           CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
-          Value: !Sub '${Environment}-web-sg'
+          Value: !Sub '${pEnvironment}-web-sg'
 
 Outputs:
-  VpcId:
+  oVpcId:
     Description: VPC ID
-    Value: !Ref VPC
+    Value: !Ref rVPC
     Export:
       Name: !Sub '${AWS::StackName}-VpcId'
 
-  PublicSubnetIds:
+  oPublicSubnetIds:
     Description: Public subnet IDs
-    Value: !Join [',', [!Ref PublicSubnet1, !Ref PublicSubnet2]]
+    Value: !Join [',', [!Ref rPublicSubnet1, !Ref rPublicSubnet2]]
     Export:
       Name: !Sub '${AWS::StackName}-PublicSubnetIds'
 
-  PrivateSubnetIds:
+  oPrivateSubnetIds:
     Description: Private subnet IDs
-    Value: !Join [',', [!Ref PrivateSubnet1, !Ref PrivateSubnet2]]
+    Value: !Join [',', [!Ref rPrivateSubnet1, !Ref rPrivateSubnet2]]
     Export:
       Name: !Sub '${AWS::StackName}-PrivateSubnetIds'
 
-  WebSecurityGroupId:
+  oWebSecurityGroupId:
     Description: Web security group ID
-    Value: !Ref WebSecurityGroup
+    Value: !Ref rWebSecurityGroup
     Export:
       Name: !Sub '${AWS::StackName}-WebSecurityGroupId'
 ```
@@ -671,10 +742,11 @@ Outputs:
 - [ ] Nested stacks for modularity
 - [ ] Stack policies for protection
 - [ ] Change sets used for review
-- [ ] Nested stacks for modularity
 - [ ] Custom resources when needed
 - [ ] Intrinsic functions used appropriately
 - [ ] Cross-stack references via exports
+- [ ] Stack names include region suffix (e.g., `my-stack-${AWS_REGION}`)
+- [ ] Consistent naming prefixes (r for resources, p for parameters, c for conditions, m for mappings, o for outputs)
 
 ## Testing & Validation Patterns
 
@@ -692,14 +764,14 @@ aws cloudformation validate-template \
 
 # Dry-run with change set
 aws cloudformation create-change-set \
-  --stack-name test-stack \
+  --stack-name test-stack-${AWS_REGION} \
   --change-set-name test-changes \
   --template-body file://template.yaml \
   --change-set-type CREATE
 
 # Review changes without applying
 aws cloudformation describe-change-set \
-  --stack-name test-stack \
+  --stack-name test-stack-${AWS_REGION} \
   --change-set-name test-changes
 ```
 
@@ -722,21 +794,21 @@ cfn-lint template.yaml --regions us-east-1
 ```bash
 # Create test stack
 aws cloudformation create-stack \
-  --stack-name test-stack \
+  --stack-name test-stack-${AWS_REGION} \
   --template-body file://template.yaml \
   --parameters ParameterKey=Environment,ParameterValue=dev
 
 # Wait for completion
 aws cloudformation wait stack-create-complete \
-  --stack-name test-stack
+  --stack-name test-stack-${AWS_REGION}
 
 # Verify resources
 aws cloudformation describe-stack-resources \
-  --stack-name test-stack
+  --stack-name test-stack-${AWS_REGION}
 
 # Cleanup
 aws cloudformation delete-stack \
-  --stack-name test-stack
+  --stack-name test-stack-${AWS_REGION}
 ```
 
 ## Advanced Troubleshooting
@@ -746,14 +818,14 @@ aws cloudformation delete-stack \
 ```bash
 # Get recent events
 aws cloudformation describe-stack-events \
-  --stack-name my-stack \
+  --stack-name my-stack-${AWS_REGION} \
   --max-items 50 \
   --query 'StackEvents[*].[Timestamp,ResourceStatus,ResourceType,LogicalResourceId,ResourceStatusReason]' \
   --output table
 
 # Filter failed events
 aws cloudformation describe-stack-events \
-  --stack-name my-stack \
+  --stack-name my-stack-${AWS_REGION} \
   --query 'StackEvents[?ResourceStatus==`CREATE_FAILED`]' \
   --output json
 ```
@@ -763,16 +835,16 @@ aws cloudformation describe-stack-events \
 ```bash
 # Get resource details
 aws cloudformation describe-stack-resource \
-  --stack-name my-stack \
+  --stack-name my-stack-${AWS_REGION} \
   --logical-resource-id MyResource
 
 # List all resources
 aws cloudformation list-stack-resources \
-  --stack-name my-stack
+  --stack-name my-stack-${AWS_REGION}
 
 # Get resource physical ID
 aws cloudformation describe-stack-resource \
-  --stack-name my-stack \
+  --stack-name my-stack-${AWS_REGION} \
   --logical-resource-id MyResource \
   --query 'StackResourceDetail.PhysicalResourceId' \
   --output text
@@ -783,7 +855,7 @@ aws cloudformation describe-stack-resource \
 ```bash
 # Detect drift
 DRIFT_ID=$(aws cloudformation detect-stack-drift \
-  --stack-name my-stack \
+  --stack-name my-stack-${AWS_REGION} \
   --query 'StackDriftDetectionId' \
   --output text)
 
@@ -793,7 +865,7 @@ aws cloudformation describe-stack-drift-detection-status \
 
 # Get drift details
 aws cloudformation describe-stack-resource-drifts \
-  --stack-name my-stack \
+  --stack-name my-stack-${AWS_REGION} \
   --query 'StackResourceDrifts[?StackResourceDriftStatus==`MODIFIED`]'
 ```
 
@@ -850,21 +922,21 @@ Parameters:
 ```bash
 # Create change set for review
 aws cloudformation create-change-set \
-  --stack-name my-stack \
+  --stack-name my-stack-${AWS_REGION} \
   --change-set-name my-changes \
   --template-body file://template.yaml \
   --change-set-type UPDATE
 
 # Review changes without applying
 aws cloudformation describe-change-set \
-  --stack-name my-stack \
+  --stack-name my-stack-${AWS_REGION} \
   --change-set-name my-changes \
   --query 'Changes[*].[Action,LogicalResourceId,ResourceType]' \
   --output table
 
 # Execute only after review
 aws cloudformation execute-change-set \
-  --stack-name my-stack \
+  --stack-name my-stack-${AWS_REGION} \
   --change-set-name my-changes
 ```
 
