@@ -13,39 +13,41 @@ Comprehensive, battle-tested Cursor IDE rules for professional software engineer
 ### Core Standards
 
 - **[100-core.mdc](rules/100-core.mdc)** - Core coding standards and review guidelines
-- **[050-workflow.mdc](rules/050-workflow.mdc)** - Development workflow patterns
-- **[110-git.mdc](rules/110-git.mdc)** - Git conventions and commit standards
+- **[010-workflow.mdc](rules/010-workflow.mdc)** - Development workflow patterns
+- **[020-agent-audit.mdc](rules/020-agent-audit.mdc)** - Agent audit requirements
+- **[130-git.mdc](rules/130-git.mdc)** - Git conventions and commit standards
 
 ### Programming Languages
 
-- **[160-python.mdc](rules/160-python.mdc)** - Python best practices (PEP 8, type hints, async)
-- **[180-go.mdc](rules/180-go.mdc)** - Go patterns (error handling, concurrency, generics)
-- **[170-javascript.mdc](rules/170-javascript.mdc)** - JavaScript/Node.js (ES modules, async/await)
-- **[165-typescript.mdc](rules/165-typescript.mdc)** - TypeScript (type safety, advanced types)
-- **[185-rust.mdc](rules/185-rust.mdc)** - Rust (ownership, borrowing, async)
-- **[130-bash.mdc](rules/130-bash.mdc)** - Shell scripting (POSIX compliance, safety)
+- **[200-python.mdc](rules/200-python.mdc)** - Python best practices (PEP 8, type hints, async)
+- **[210-go.mdc](rules/210-go.mdc)** - Go patterns (error handling, concurrency, generics)
+- **[230-javascript.mdc](rules/230-javascript.mdc)** - JavaScript/Node.js (ES modules, async/await)
+- **[240-typescript.mdc](rules/240-typescript.mdc)** - TypeScript (type safety, advanced types)
+- **[220-rust.mdc](rules/220-rust.mdc)** - Rust (ownership, borrowing, async)
+- **[140-bash.mdc](rules/140-bash.mdc)** - Shell scripting (POSIX compliance, safety)
 
 ### Cloud Platforms
 
-- **[280-aws.mdc](rules/280-aws.mdc)** - AWS (EKS, VPC Lattice, Zero Trust, IAM)
-- **[285-azure.mdc](rules/285-azure.mdc)** - Azure (Bicep, Key Vault, App Service)
-- **[290-gcp.mdc](rules/290-gcp.mdc)** - GCP (Cloud Run, GKE, Secret Manager)
-- **[250-cloudflare.mdc](rules/250-cloudflare.mdc)** - Cloudflare (Workers, Rules Engine)
+- **[410-aws.mdc](rules/410-aws.mdc)** - AWS (EKS, VPC Lattice, Zero Trust, IAM)
+- **[430-azure.mdc](rules/430-azure.mdc)** - Azure (Bicep, Key Vault, App Service)
+- **[420-gcp.mdc](rules/420-gcp.mdc)** - GCP (Cloud Run, GKE, Secret Manager)
+- **[400-cloudflare.mdc](rules/400-cloudflare.mdc)** - Cloudflare (Workers, Rules Engine)
 
 ### AI & Machine Learning
 
-- **[295-ai-ml.mdc](rules/295-ai-ml.mdc)** - LLM integration (OpenAI, Claude, Bedrock, Vertex AI)
-- **[230-mcp-servers.mdc](rules/230-mcp-servers.mdc)** - Model Context Protocol servers
+- **[500-ai-ml.mdc](rules/500-ai-ml.mdc)** - LLM integration (OpenAI, Claude, Bedrock, Vertex AI)
+- **[510-mcp-servers.mdc](rules/510-mcp-servers.mdc)** - Model Context Protocol servers
 
 ### DevOps & Infrastructure
 
-- **[140-terraform.mdc](rules/140-terraform.mdc)** - Terraform (modules, state, validation)
-- **[150-cloudformation.mdc](rules/150-cloudformation.mdc)** - CloudFormation templates
-- **[260-kubernetes.mdc](rules/260-kubernetes.mdc)** - Kubernetes & EKS patterns
-- **[120-gha.mdc](rules/120-gha.mdc)** - GitHub Actions (workflows, security, OIDC)
-- **[145-ansible.mdc](rules/145-ansible.mdc)** - Ansible (playbooks, roles, idempotency)
-- **[195-helm.mdc](rules/195-helm.mdc)** - Helm charts and templating
-- **[155-docker.mdc](rules/155-docker.mdc)** - Docker & containers (multi-stage builds, security)
+- **[180-terraform.mdc](rules/180-terraform.mdc)** - Terraform (modules, state, validation)
+- **[170-cloudformation.mdc](rules/170-cloudformation.mdc)** - CloudFormation templates
+- **[450-kubernetes.mdc](rules/450-kubernetes.mdc)** - Kubernetes & EKS patterns
+- **[160-github-actions.mdc](rules/160-github-actions.mdc)** - GitHub Actions (workflows, security, OIDC)
+- **[190-ansible.mdc](rules/190-ansible.mdc)** - Ansible (playbooks, roles, idempotency)
+- **[460-helm.mdc](rules/460-helm.mdc)** - Helm charts and templating
+- **[440-docker.mdc](rules/440-docker.mdc)** - Docker & containers (multi-stage builds, security)
+- **[150-justfile.mdc](rules/150-justfile.mdc)** - Justfile patterns (modern command runner)
 
 ### Security & Testing
 
@@ -56,16 +58,15 @@ Comprehensive, battle-tested Cursor IDE rules for professional software engineer
 
 - **[320-api-design.mdc](rules/320-api-design.mdc)** - REST API design patterns
 - **[330-observability.mdc](rules/330-observability.mdc)** - Logging, metrics, tracing
-- **[270-postgresql.mdc](rules/270-postgresql.mdc)** - PostgreSQL patterns
-- **[220-documentation.mdc](rules/220-documentation.mdc)** - Documentation standards
-- **[210-open-source.mdc](rules/210-open-source.mdc)** - Open source project patterns
-- **[200-cli.mdc](rules/200-cli.mdc)** - CLI application patterns
-- **[190-makefile.mdc](rules/190-makefile.mdc)** - Makefile patterns
-- **[240-configuration.mdc](rules/240-configuration.mdc)** - Configuration management
+- **[470-postgresql.mdc](rules/470-postgresql.mdc)** - PostgreSQL patterns
+- **[810-documentation.mdc](rules/810-documentation.mdc)** - Documentation standards
+- **[820-open-source.mdc](rules/820-open-source.mdc)** - Open source project patterns
+- **[250-cli.mdc](rules/250-cli.mdc)** - CLI application patterns
+- **[110-configuration.mdc](rules/110-configuration.mdc)** - Configuration management
 
 ### Utilities
 
-- **[115-utilities.mdc](rules/115-utilities.mdc)** - CLI utilities (lynx, curl, jq, ripgrep)
+- **[120-utilities.mdc](rules/120-utilities.mdc)** - CLI utilities (lynx, curl, jq, ripgrep, fd, fzf)
 - **[800-markdown.mdc](rules/800-markdown.mdc)** - Markdown & Mermaid diagrams
 
 ### Scripts
@@ -98,6 +99,9 @@ Workflow commands for explicit phase transitions. Type `/command` in Cursor chat
 | `/qa` | Run QA validation - check dependencies, config, environment |
 | `/build` | Enter implementation phase - write code following approved plan |
 | `/review` | Enter review phase - verify implementation, suggest improvements |
+| `/self-review` | Comprehensive local PR review (compare branch to main) |
+| `/quick-review` | Fast critical issues check (pre-commit validation) |
+| `/check-progress` | Review work progress, propose commit message |
 | `/archive` | Archive task - document lessons learned, update knowledge base |
 
 **Installation:**
@@ -179,12 +183,12 @@ ln -s /path/to/cursor-engineering-rules/rules .cursor/rules
 
 | Rule | Purpose |
 | --- | --- |
-| `050-workflow.mdc` | Plan/Build/Review workflow |
-| `060-agent-audit.mdc` | Agent audit requirements |
+| `010-workflow.mdc` | Plan/Build/Review workflow |
+| `020-agent-audit.mdc` | Agent audit requirements |
 | `100-core.mdc` | Core coding standards |
-| `110-git.mdc` | Git conventions |
-| `115-utilities.mdc` | CLI tools |
-| `240-configuration.mdc` | Configuration management |
+| `110-configuration.mdc` | Configuration management |
+| `120-utilities.mdc` | CLI tools |
+| `130-git.mdc` | Git conventions |
 | `310-security.mdc` | Security best practices |
 | `800-markdown.mdc` | Markdown formatting |
 
@@ -203,8 +207,8 @@ rulesDirectory: .cursor/rules
 # .cursorrules - Option 2: Explicit rule list
 rules:
   - .cursor/rules/100-core.mdc
-  - .cursor/rules/160-python.mdc
-  - .cursor/rules/280-aws.mdc
+  - .cursor/rules/200-python.mdc
+  - .cursor/rules/410-aws.mdc
 ```
 
 > [!NOTE]
@@ -231,8 +235,8 @@ Copy specific rules to your project:
 mkdir -p .cursor/rules
 
 # Copy specific rules you need
-cp path/to/cursor-engineering-rules/rules/160-python.mdc .cursor/rules/
-cp path/to/cursor-engineering-rules/rules/280-aws.mdc .cursor/rules/
+cp path/to/cursor-engineering-rules/rules/200-python.mdc .cursor/rules/
+cp path/to/cursor-engineering-rules/rules/410-aws.mdc .cursor/rules/
 
 # (Optional) Copy workflow templates (tasks, active-context, etc.)
 mkdir -p .cursor/rules/templates
@@ -251,8 +255,8 @@ Add to your `.cursorrules` file:
 
 ```yaml
 rules:
-  - .cursor/rules/160-python.mdc
-  - .cursor/rules/280-aws.mdc
+  - .cursor/rules/200-python.mdc
+  - .cursor/rules/410-aws.mdc
 ```
 
 ### Option 2: Use All Rules (Recommended)
@@ -273,7 +277,7 @@ rulesDirectory: .cursor/rules
 # Or be selective with alwaysApply rules
 rules:
   - .cursor/rules/100-core.mdc
-  - .cursor/rules/160-python.mdc
+  - .cursor/rules/200-python.mdc
   - .cursor/rules/310-security.mdc
 ```
 
@@ -285,10 +289,10 @@ Create a custom `.cursorrules` that includes only relevant rules:
 # Python + AWS project
 rules:
   - .cursor/rules/100-core.mdc
-  - .cursor/rules/110-git.mdc
-  - .cursor/rules/160-python.mdc
-  - .cursor/rules/280-aws.mdc
-  - .cursor/rules/140-terraform.mdc
+  - .cursor/rules/130-git.mdc
+  - .cursor/rules/200-python.mdc
+  - .cursor/rules/410-aws.mdc
+  - .cursor/rules/180-terraform.mdc
   - .cursor/rules/310-security.mdc
   - .cursor/rules/300-testing.mdc
 ```
@@ -299,7 +303,7 @@ rules:
 
 Rules have `alwaysApply` flags and priority levels:
 
-- **Always Apply**: Core standards (100-core, 110-git, 310-security)
+- **Always Apply**: Core standards (100-core, 130-git, 310-security)
 - **High Priority**: Language-specific rules for your stack
 - **Medium Priority**: Platform/tool-specific rules
 - **Low Priority**: Documentation and utility guides
@@ -318,9 +322,9 @@ See [rules/INDEX.md](rules/INDEX.md) for complete categorization.
 
 ### Comprehensive Coverage
 
-- **9 programming languages** (Python, Go, TypeScript, JavaScript, Rust, Bash, SQL, etc.)
+- **6 programming languages** (Python, Go, TypeScript, JavaScript, Rust, Bash)
 - **4 major cloud platforms** (AWS, Azure, GCP, Cloudflare)
-- **15+ DevOps tools** (Terraform, K8s, Docker, Ansible, Helm, GitHub Actions)
+- **10+ DevOps tools** (Terraform, K8s, Docker, Ansible, Helm, GitHub Actions)
 - **AI/ML integration** (OpenAI, Claude, Bedrock, Vertex AI)
 
 ### Code Examples
@@ -332,9 +336,9 @@ See [rules/INDEX.md](rules/INDEX.md) for complete categorization.
 
 ### Modern Standards
 
-- **Latest versions** (Python 3.14+, Go 1.25+, Node 25+)
+- **Latest versions** (Python 3.12+, Go 1.25+, Node 22+)
 - **Modern patterns** (async/await, generics, type safety)
-- **Current tools** (ripgrep, jq, httpie)
+- **Current tools** (ripgrep, fd, fzf, just, jq)
 
 ---
 
