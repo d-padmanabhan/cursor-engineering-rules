@@ -1,0 +1,568 @@
+---
+title: Justfile Engineering Ruleset
+description: Standardized justfile patterns for consistent project commands across platforms and languages.
+priority: 150
+alwaysApply: false
+files:
+  include:
+    - "**/justfile"
+    - "**/Justfile"
+    - "**/.justfile"
+---
+
+# Justfile Engineering Ruleset
+
+**Goal:** Standardized justfile patterns that provide consistent, discoverable commands across all projects regardless of underlying technology.
+
+## Why Just over Make?
+
+| Feature | Make | Just |
+|---------|------|------|
+| Cross-platform | Requires GNU Make | Works consistently everywhere |
+| PHONY declarations | Required for non-file targets | Not needed (all recipes are "phony") |
+| Default recipe | Requires explicit `default:` | First recipe or `default` |
+| Help/listing | Manual implementation | Built-in `just --list` |
+| Variables | Complex syntax `$(VAR)` | Simple syntax `{{var}}` |
+| Parameters | Awkward | Native support |
+| String interpolation | Limited | Full support |
+| Error messages | Cryptic | Clear and helpful |
+| Dependencies | File-based | Recipe-based |
+
+## Installation
+
+```bash
+# macOS
+brew install just
+
+# Cargo (cross-platform)
+cargo install just
+
+# Other platforms: https://github.com/casey/just#installation
+```
+
+## Core Principles
+
+- **Consistency**: Common interface across all components regardless of underlying technology
+- **Simplicity**: Hide platform-specific commands behind standard recipes
+- **Discoverability**: `just --list` shows all available commands with descriptions
+- **Platform Independence**: Works across different languages and toolchains
+
+## Standard Structure
+
+### Required Elements
+
+Every justfile MUST have:
+
+1. **Recipe comments** using `#` for `--list` output
+2. **Default recipe** (first recipe or explicit `default`)
+3. **Standard recipes** for common operations
+
+### Template
+
+```just
+# Show available recipes
+default:
+    @just --list
+
+# Set up and validate the local development environment
+init:
+    ./scripts/init.sh
+
+# Install all dependencies
+install:
+    npm install  # or pip install -r requirements.txt, etc.
+
+# Run in development mode (with live reload)
+dev:
+    npm run dev  # or python -m flask run, etc.
+
+# Validate code formatting and linting
+lint:
+    npm run lint  # or ruff check, etc.
+
+# Auto-fix linting issues
+lint-fix:
+    npm run lint:fix  # or ruff check --fix, etc.
+
+# Run tests
+test:
+    npm test  # or pytest, etc.
+
+# Run tests with coverage
+test-coverage:
+    npm test -- --coverage  # or pytest --cov, etc.
+
+# Build the project for distribution
+build:
+    npm run build  # or go build, etc.
+
+# Remove build artifacts and temporary files
+clean:
+    rm -rf dist/ node_modules/.cache/
+
+# Run all CI checks
+ci: lint test build
+    @echo "CI checks passed"
+```
+
+## Standard Recipes
+
+These recipes should be consistent across projects:
+
+| Recipe | Purpose | Example |
+|--------|---------|---------|
+| `init` | Setup and validate local development environment | Install tools, check versions |
+| `install` | Install all dependencies | `npm install`, `pip install -r requirements.txt` |
+| `dev` | Run in development mode (live reload) | `npm run dev`, `python -m flask run` |
+| `lint` | Validate formatting and linting | `npm run lint`, `ruff check` |
+| `lint-fix` | Auto-fix linting issues | `npm run lint:fix`, `ruff check --fix` |
+| `test` | Run unit tests | `npm test`, `pytest` |
+| `test-watch` | Run tests in watch mode | `npm test:watch`, `pytest-watch` |
+| `test-coverage` | Run tests with coverage | `npm test:coverage`, `pytest --cov` |
+| `build` | Build for distribution | `npm run build`, `go build` |
+| `clean` | Remove build artifacts | `rm -rf dist/ build/` |
+| `fmt` | Format code | `prettier --write`, `black .` |
+
+> [!NOTE]
+> Use hyphens (`lint-fix`) not colons (`lint:fix`) for recipe names. Colons have special meaning in just.
+
+## Just Features
+
+### Variables and Settings
+
+```just
+# Settings
+set shell := ["bash", "-euc"]
+set dotenv-load := true
+
+# Variables
+version := `git describe --tags --always 2>/dev/null || echo "dev"`
+commit := `git rev-parse --short HEAD 2>/dev/null || echo "unknown"`
+build_time := `date -u +"%Y-%m-%d_%H:%M:%S"`
+
+# Build with version info
+build:
+    go build -ldflags "-X main.Version={{version}} -X main.Commit={{commit}}" -o bin/app .
+```
+
+### Recipe Parameters
+
+```just
+# Deploy to specific environment
+deploy env="dev":
+    terraform apply -var="environment={{env}}"
+
+# Usage: just deploy prod
+```
+
+### Conditional Logic
+
+```just
+# Platform-specific commands
+install-tools:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        brew install jq
+    else
+        apt-get install -y jq
+    fi
+```
+
+### Dependencies
+
+```just
+# Recipe with dependencies
+ci: lint test build
+    @echo "All CI checks passed"
+
+# Build depends on clean
+build: clean
+    go build -o bin/app .
+```
+
+### Private Recipes
+
+```just
+# Private recipe (not shown in --list)
+[private]
+_setup:
+    mkdir -p bin/
+
+build: _setup
+    go build -o bin/app .
+```
+
+### Confirmation Prompts
+
+```just
+# Require confirmation before dangerous operations
+[confirm("Are you sure you want to delete all data?")]
+nuke:
+    rm -rf data/
+```
+
+### Documentation
+
+```just
+# Group related recipes
+[group('development')]
+dev:
+    npm run dev
+
+[group('development')]
+lint:
+    npm run lint
+
+[group('testing')]
+test:
+    npm test
+```
+
+## Monorepo Patterns
+
+### Service-Level Justfiles
+
+Each service/module has its own justfile with service-specific commands:
+
+```just
+# ui/justfile
+
+# Start UI in development mode
+dev:
+    npm run dev -- --port 3000
+```
+
+### Project-Level Justfile
+
+Root justfile orchestrates all services:
+
+```just
+# Root justfile
+
+# Start all services in development mode
+dev:
+    docker compose up
+
+# Lint all services
+lint:
+    cd ui && just lint
+    cd api && just lint
+    cd infra && just lint
+
+# Or run in parallel
+lint-all:
+    just -f ui/justfile lint &
+    just -f api/justfile lint &
+    wait
+```
+
+## Best Practices
+
+### Use Shebang for Complex Logic
+
+```just
+# ✅ GOOD: Complex logic in shebang recipe
+init:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ ! -f .env ]; then
+        cp .env.example .env
+        echo "Created .env file"
+    fi
+    npm install
+    pip install -r requirements.txt
+
+# ❌ BAD: Complex inline commands
+init-bad:
+    @if [ ! -f .env ]; then cp .env.example .env; fi
+    npm install
+```
+
+### Hide Command Output with @
+
+```just
+# Show only command output, not the command itself
+test:
+    @pytest -v
+
+# Show command being run (default)
+build:
+    go build -o bin/app .
+```
+
+### Use set for Shell Options
+
+```just
+# Apply to all recipes
+set shell := ["bash", "-euc"]
+
+# Or per-recipe with shebang
+build:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    go build -o bin/app .
+```
+
+### Load Environment Variables
+
+```just
+# Load .env file automatically
+set dotenv-load := true
+
+deploy:
+    echo "Deploying to $ENVIRONMENT"
+```
+
+### Default Values for Parameters
+
+```just
+# With default value
+deploy env="dev" region="us-east-1":
+    terraform apply -var="environment={{env}}" -var="region={{region}}"
+
+# Usage:
+# just deploy           -> env=dev, region=us-east-1
+# just deploy prod      -> env=prod, region=us-east-1
+# just deploy prod eu   -> env=prod, region=eu
+```
+
+## Examples
+
+### Python Project
+
+```just
+set shell := ["bash", "-euc"]
+set dotenv-load := true
+
+# Show available recipes
+default:
+    @just --list
+
+# Setup development environment
+init:
+    python3 -m venv .venv
+    .venv/bin/pip install --upgrade pip
+    .venv/bin/pip install -r requirements.txt
+
+# Lint code
+lint:
+    .venv/bin/ruff check .
+    .venv/bin/black --check .
+
+# Fix linting issues
+lint-fix:
+    .venv/bin/ruff check --fix .
+    .venv/bin/black .
+
+# Run tests
+test:
+    .venv/bin/pytest
+
+# Run tests with coverage
+test-coverage:
+    .venv/bin/pytest --cov=src --cov-report=term-missing
+
+# Type check
+typecheck:
+    .venv/bin/mypy src/
+
+# Run all checks
+check: lint typecheck test
+```
+
+### Node.js Project
+
+```just
+set shell := ["bash", "-euc"]
+
+# Show available recipes
+default:
+    @just --list
+
+# Setup development environment
+init:
+    npm install
+
+# Start development server
+dev:
+    npm run dev
+
+# Lint code
+lint:
+    npm run lint
+
+# Fix linting issues
+lint-fix:
+    npm run lint:fix
+
+# Run tests
+test:
+    npm test
+
+# Build for production
+build:
+    npm run build
+
+# Clean build artifacts
+clean:
+    rm -rf dist/ node_modules/.cache/
+```
+
+### Go Project
+
+```just
+set shell := ["bash", "-euc"]
+
+version := `git describe --tags --always 2>/dev/null || echo "dev"`
+commit := `git rev-parse --short HEAD 2>/dev/null || echo "unknown"`
+build_time := `date -u +"%Y-%m-%d_%H:%M:%S"`
+
+# Show available recipes
+default:
+    @just --list
+
+# Setup development environment
+init:
+    go mod download
+    go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
+# Lint code
+lint:
+    golangci-lint run
+
+# Format code
+fmt:
+    go fmt ./...
+
+# Run tests
+test:
+    go test ./...
+
+# Run tests with coverage
+test-coverage:
+    go test -coverprofile=coverage.out ./...
+    go tool cover -html=coverage.out -o coverage.html
+
+# Check for vulnerabilities
+vuln:
+    govulncheck ./...
+
+# Build binary
+build:
+    go build -ldflags "-s -w -X main.Version={{version}} -X main.BuildTime={{build_time}} -X main.GitCommit={{commit}}" -o bin/app .
+
+# Install binary locally
+install: build
+    cp bin/app ~/.local/bin/
+
+# Clean build artifacts
+clean:
+    rm -rf bin/ coverage.out coverage.html
+
+# Run all checks
+check: fmt lint vuln test
+```
+
+### Terraform Project
+
+```just
+set shell := ["bash", "-euc"]
+set dotenv-load := true
+
+env := env_var_or_default("TF_ENV", "dev")
+
+# Show available recipes
+default:
+    @just --list
+
+# Initialize Terraform
+init:
+    terraform init
+
+# Validate configuration
+validate:
+    terraform validate
+    terraform fmt -check
+
+# Format Terraform files
+fmt:
+    terraform fmt -recursive
+
+# Plan changes
+plan:
+    terraform plan -var-file="envs/{{env}}.tfvars"
+
+# Apply changes
+apply:
+    terraform apply -var-file="envs/{{env}}.tfvars"
+
+# Destroy resources (with confirmation)
+[confirm("This will DESTROY all resources. Are you sure?")]
+destroy:
+    terraform destroy -var-file="envs/{{env}}.tfvars"
+```
+
+## CI/CD Integration
+
+### GitHub Actions
+
+```yaml
+- name: Install just
+  uses: extractions/setup-just@v2
+
+- name: Run CI checks
+  run: just ci
+```
+
+### Local CI Testing
+
+```just
+# Run all CI checks locally
+ci: lint test build
+    @echo "✅ All CI checks passed"
+
+# Run CI in Docker (matches CI environment)
+ci-docker:
+    docker run --rm -v $(pwd):/app -w /app node:20 just ci
+```
+
+## Migration from Makefile
+
+| Makefile | Justfile |
+|----------|----------|
+| `.PHONY: target` | Not needed |
+| `$(VAR)` | `{{var}}` |
+| `$@` | `{{justfile()}}` |
+| `target: dep1 dep2` | `target: dep1 dep2` |
+| `@command` | `@command` |
+| `$$VAR` in recipe | `$VAR` in recipe |
+| `target:` with comment | Comment line above recipe |
+
+## Security Considerations
+
+- Don't hardcode secrets in justfiles
+- Use environment variables or `.env` files for sensitive values
+- Use `set dotenv-load` to load `.env` files
+- Validate required environment variables before running commands
+- Use `[confirm]` attribute for destructive operations
+
+## Review Checklist
+
+When reviewing justfiles, check:
+
+- [ ] Has descriptive comments for each recipe
+- [ ] Uses `set shell` for consistent behavior
+- [ ] Standard recipes are present (`init`, `dev`, `lint`, `test`, `build`)
+- [ ] No hardcoded secrets or credentials
+- [ ] Uses parameters with defaults where appropriate
+- [ ] Complex logic uses shebang recipes
+- [ ] Destructive operations have `[confirm]` attribute
+- [ ] Consistent with project's language/framework conventions
+
+## Resources
+
+- [Just Manual](https://just.systems/man/en/)
+- [Just GitHub Repository](https://github.com/casey/just)
+- [Just Cheatsheet](https://cheatography.com/linux-china/cheat-sheets/justfile/)
+---
