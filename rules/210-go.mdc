@@ -20,6 +20,9 @@ files:
 
 **Core Philosophy**: Correctness & Safety  Simplicity & Maintainability  Evidence-Based Performance
 
+- **Formatting:** `gofmt -s` (required); tab indentation (Go standard); no line length limit.
+- **Linting:** Run `go vet`, `staticcheck`, `golangci-lint`, and `govulncheck`. Code must pass `go test -race`.
+
 **Essential Reading:**
 - [Go Proverbs](https://go-proverbs.github.io/) - Simple, poetic, pithy principles from Rob Pike
 - [Effective Go](https://go.dev/doc/effective_go) - Official idiomatic Go guide (note: written in 2009, still valuable for language idioms)
