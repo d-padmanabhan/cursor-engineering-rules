@@ -15,9 +15,6 @@ updates:
       time: "00:00"
       timezone: UTC
     open-pull-requests-limit: 10
-    labels:
-      - dependencies
-      - github-actions
 
   # npm (for MCP server and any JS tooling)
   - package-ecosystem: npm
@@ -30,6 +27,3 @@ updates:
       time: "00:00"
       timezone: UTC
     open-pull-requests-limit: 5
-    labels:
-      - dependencies
-      - npm

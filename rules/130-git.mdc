@@ -756,9 +756,6 @@ updates:
       time: "00:00"
       timezone: UTC
     open-pull-requests-limit: 10
-    labels:
-      - dependencies
-      - github-actions
 
   # Add additional ecosystems as needed:
   # - package-ecosystem: pip
@@ -771,6 +768,9 @@ updates:
   #     time: "00:00"
   #     timezone: UTC
 ```
+
+> [!NOTE]
+> If you want to use `labels:`, create the labels in your repository first via GitHub UI or API.
 
 ---
 
