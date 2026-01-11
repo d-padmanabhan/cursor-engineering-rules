@@ -20,6 +20,9 @@ files:
 > MAKE SURE TO READ AWS WELL-ARCHITECTED FRAMEWORK BEFORE ANSWERING.
 > Use the AWS Well-Architected Framework as the baseline for recommendations: https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html
 
+> [!IMPORTANT]
+> Treat AWS Service Quotas as a first-class design constraint (regional/account limits). Validate quotas early for the services you depend on, request quota increases before rollout, and bake the limits into scaling and architecture decisions: https://docs.aws.amazon.com/servicequotas/latest/userguide/intro.html
+
 ## AWS Engineering Philosophy
 
 **Guiding Principles:**
