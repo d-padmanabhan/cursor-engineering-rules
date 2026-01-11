@@ -118,6 +118,7 @@ When providing code assistance, follow these guardrails:
 ### Formatting & Linting Commands
 
 **Format code (auto-fix):**
+
 ```bash
 # Format with black
 black .
@@ -130,6 +131,7 @@ black . && isort .
 ```
 
 **Check formatting (CI/pre-commit):**
+
 ```bash
 # Check without modifying files
 black --check .
@@ -140,6 +142,7 @@ black --check . && isort --check-only .
 ```
 
 **Lint with ruff:**
+
 ```bash
 # Check for issues
 ruff check .
@@ -152,6 +155,7 @@ ruff check path/to/file.py
 ```
 
 **Type checking with mypy:**
+
 ```bash
 # Strict type checking (recommended)
 mypy --strict .
@@ -164,6 +168,7 @@ ty check .
 ```
 
 **Lint with pylint:**
+
 ```bash
 # Run pylint on file/directory
 pylint path/to/file.py
@@ -203,6 +208,7 @@ bandit -r . -ll
 ```
 
 **Quick check (CI/pre-commit):**
+
 ```bash
 # Check-only mode (no modifications)
 black --check . && \
@@ -267,12 +273,14 @@ score=yes
 ### Pylint Score Targets
 
 **Score interpretation:**
+
 - **10.0** - Perfect (rare, may require disabling some checks)
 - **9.5-9.9** - Excellent (target for production code)
 - **9.0-9.4** - Good (acceptable, but aim higher)
 - **<9.0** - Needs improvement
 
 **Common issues that lower score:**
+
 - Missing docstrings
 - Long lines (>120 chars)
 - Too many arguments (>5)
@@ -280,6 +288,7 @@ score=yes
 - Cyclomatic complexity (>10)
 
 **Improving pylint score:**
+
 ```bash
 # Run pylint to see issues
 pylint path/to/file.py
@@ -499,6 +508,80 @@ from models import User
 
 - **Literal Types:** Use `status: Literal["active", "inactive"]` for fixed values.
 - **Type Safety:** Use `isinstance` and `issubclass` for safe type checks.
+
+### Python 3.14 Features (Released Oct 2025)
+
+**Template String Literals (PEP 750):**
+
+Safe custom string processing with t-strings for parameterized queries, HTML escaping, and custom formatting:
+
+```python
+# SQL query with safe parameterization
+query = t"SELECT * FROM users WHERE id = {user_id}"
+
+# HTML generation with auto-escaping
+html = t"<div>{user_input}</div>"
+
+# Custom formatting
+config = t"server={host}:{port}"
+```
+
+**Deferred Annotation Evaluation (PEP 649):**
+
+Annotations are no longer evaluated eagerly, improving startup performance for heavily-annotated code:
+
+```python
+# Annotations stored in __annotate__ function
+# Evaluated only when inspect.get_annotations() is called
+def process(data: ComplexType) -> Result:
+    """Annotations evaluated lazily, not at import time."""
+    ...
+```
+
+**Free-Threading Support (PEP 779):**
+
+True parallelism without the GIL (experimental, use with `python3.14t`):
+
+```python
+# Enable with: python3.14t (free-threaded build)
+# Performance penalty reduced to 5-10% for single-threaded code
+import concurrent.futures
+
+with concurrent.futures.ThreadPoolExecutor() as executor:
+    results = executor.map(cpu_intensive_task, items)
+```
+
+**datetime Improvements:**
+
+Direct parsing of date and time strings:
+
+```python
+from datetime import date, time
+
+# Python 3.14+
+d = date.fromisoformat("2025-10-07")
+t = time.fromisoformat("14:30:00")
+```
+
+**UUID7 and UUID8 Support:**
+
+Modern UUID versions with better properties:
+
+```python
+import uuid
+
+# UUID7: Time-ordered, sortable (recommended for databases)
+id = uuid.uuid7()
+
+# UUID8: Custom format
+id = uuid.uuid8(bytes16)
+```
+
+**Enhanced REPL:**
+
+- Colorized syntax highlighting as you type
+- Improved error messages with keyword suggestions
+- Better interactive debugging experience
 
 ### Functional Programming
 
@@ -918,18 +1001,21 @@ Port = Annotated[int, "Port number between 1 and 65535"]
 #### When to Use Third-Party Libraries
 
 **Use third-party libraries when:**
+
 - Standard library doesn't provide the functionality
 - Third-party library offers significant performance improvements
 - Standard library solution is too complex for the use case
 - You need features not available in stdlib
 
 **Examples:**
+
 - **`requests`** over `urllib` - Better API, connection pooling, sessions
 - **`pydantic`** over `dataclasses` - Advanced validation, JSON schema
 - **`click`** over `argparse` - Better CLI framework (if building complex CLIs)
 - **`httpx`** over `urllib` - Async HTTP, HTTP/2 support
 
 **Prefer stdlib when:**
+
 - `pathlib` over `path.py`
 - `tomllib` over `tomli` (Python 3.11+)
 - `secrets` over `random` for security
@@ -1011,6 +1097,7 @@ class Point:
 **Decision Framework:** Choose the simplest tool that solves the problem. Avoid premature abstraction.
 
 **Use Functions When:**
+
 - Operation is stateless (pure input → output transformation)
 - No need to maintain state between calls
 - Simple utilities, helpers, or scripts
@@ -1029,6 +1116,7 @@ class TotalCalculator:
 ```
 
 **Use Dataclasses When:**
+
 - Need structured data with validation
 - Want automatic `__init__`, `__repr__`, `__eq__` without boilerplate
 - Creating DTOs, configs, or data containers
@@ -1061,6 +1149,7 @@ class User:
 ```
 
 **Use Classes When:**
+
 - Need to maintain state between method calls
 - Require polymorphism or inheritance
 - Framework requires it (Django models, FastAPI dependencies)
@@ -1148,6 +1237,7 @@ Do you need to maintain state between calls?
 ```
 
 **Framework Requirements:**
+
 - **Django:** Models must be classes (inheritance from `models.Model`)
 - **FastAPI:** Dependencies can be functions or classes (use classes for stateful dependencies)
 - **Pydantic:** Models are classes (but can use `@dataclass` with Pydantic v2)
@@ -1353,6 +1443,7 @@ For very complex validation patterns (>50 characters, multiple nested groups), c
 3. **Pregex** (optional) - For teams that frequently work with complex regex and need maximum readability
 
 **Preference order:**
+
 1. Simple stdlib `re` with variables/comments
 2. `re.VERBOSE` flag for complex patterns
 3. Validation library for structured data
@@ -1622,6 +1713,7 @@ max_val = max(items)
 ### asyncio (I/O-Bound, Async Libraries)
 
 Use `asyncio` when:
+
 - Working with async libraries (`aiohttp`, `asyncpg`, `aioredis`)
 - Many concurrent I/O operations (API calls, database queries)
 - Network-bound workloads
@@ -1645,6 +1737,7 @@ async def fetch_one(session: aiohttp.ClientSession, url: str) -> dict:
 ### threading (I/O-Bound, Blocking Libraries)
 
 Use `threading` when:
+
 - Using blocking libraries (`requests`, `psycopg2`, synchronous boto3)
 - I/O-bound operations with blocking calls
 - Need to run blocking code concurrently
@@ -1691,6 +1784,7 @@ def process_with_threads(items: list[str], worker: Callable[[str], None], num_th
 ### multiprocessing (CPU-Bound)
 
 Use `multiprocessing` when:
+
 - CPU-intensive computations (image processing, data analysis)
 - Need to bypass GIL (Global Interpreter Lock)
 - Parallel number crunching
@@ -1993,6 +2087,7 @@ def complex_function(data: list[dict]) -> dict:
 ```
 
 **pdb Commands:**
+
 - `n` (next): Execute next line
 - `s` (step): Step into function calls
 - `c` (continue): Continue execution
