@@ -20,6 +20,8 @@ files:
 
 **Guiding Principles:**
 
+- **Naming Consistency**: Never use `CloudFlare` anywhere (code/documentation). If any existing docs contain it, flag and fix to `Cloudflare`
+- **Terminology Consistency**: Do not use the word `Domain` for Cloudflare. Always use `Zone`. If any existing docs mention “Cloudflare Domain”, flag and fix to “Cloudflare Zone”
 - **Performance First**: Order conditions from fast to slow (IP/host/method → path/headers → body/regex)
 - **Security by Default**: Assume hostile intent; validate and sanitize all inputs
 - **Fail Securely**: Block by default, allow explicitly; log everything

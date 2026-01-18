@@ -1,0 +1,115 @@
+---
+title: Context Engineering for Coding Agents
+description: Prompt packing, retrieval, and compaction patterns for reliable agent work.
+alwaysApply: true
+priority: 15
+---
+
+# Context Engineering for Coding Agents
+
+This rule strengthens agent performance by making context **intentional**, **minimal**, and **reproducible**.
+
+> [!NOTE]
+> This rule complements `010-workflow.mdc` (phases + context files) and `100-core.mdc` (anti-slop guardrails).
+
+---
+
+## Goals
+
+- Keep the agent’s working context small and high-signal
+- Make work resumable across sessions without “reloading the world”
+- Prefer retrieval over memory: fetch exactly what you need, when you need it
+
+---
+
+## Mental Model: Three Layers of Context
+
+- **Working context (volatile)**: what the model sees right now
+- **Repo context (retrievable)**: files, diffs, logs, docs that can be re-read on demand
+- **Durable context (portable)**: short summaries + decisions captured in `extras/` context files
+
+> [!IMPORTANT]
+> If it’s important and will matter later, it must be captured in **durable context**.
+
+---
+
+## Prompt Packing (What to Carry vs. What to Fetch)
+
+### Always carry (paste/recap)
+
+- **Goal**: one sentence
+- **Non-goals**: 1–3 bullets
+- **Constraints**: security, tooling, performance, “don’t refactor”, etc.
+- **Current plan**: 3–7 steps max
+- **Current state**: what’s done / what’s blocked
+- **Critical artifacts**: exact file paths, key identifiers, and error messages (verbatim)
+
+### Never carry (fetch instead)
+
+- Entire files or long logs “just in case”
+- Repeated restatements of requirements
+- Unbounded command output without a reason
+
+---
+
+## Retrieval Strategy (Search → Read Narrow → Cite)
+
+Use a tight loop:
+
+1. **Search** for the smallest set of candidate files (prefer repo-local sources first)
+2. **Read** only the minimal sections needed to decide or implement
+3. **Cite** exact file paths / relevant snippets in your reasoning and updates
+
+> [!TIP]
+> Prefer “retrieve just-in-time” over “load everything up-front”. It is faster and more accurate.
+
+---
+
+## Compaction Strategy (Frequent Intentional Compaction)
+
+After any meaningful milestone (plan approved, a module completed, a bug fixed), compact:
+
+- Update `extras/active-context.md` with:
+  - **Current focus**
+  - **Key decisions** (what and why)
+  - **Blockers** (and next action)
+  - **Context from previous sessions** (only what must persist)
+- Update `extras/progress.md` (if used) with “done/next”
+- Add a **Handoff Bundle** (copy/pasteable) for resuming work
+
+### Handoff Bundle (copy/paste)
+
+```text
+Goal:
+Non-goals:
+Constraints:
+Current state:
+Next 3 actions:
+Key files/paths:
+Key commands + outputs (verbatim, minimal):
+```
+
+---
+
+## Context Reset Triggers (Start Fresh on Purpose)
+
+Prefer a fresh chat/session when:
+
+- Plan is approved and you’re moving into implementation (see `010-workflow.mdc`)
+- The conversation has accumulated long tool output or multiple competing threads
+- You are switching to a new, independent task
+
+When restarting, bring only:
+
+- The approved plan (or the updated `extras/tasks.md`)
+- The Handoff Bundle
+- The minimal file/line references needed to continue
+
+---
+
+## Guardrails (Quality + Security)
+
+- Follow `100-core.mdc` anti-slop rules: be minimal, anchored, specific
+- Never paste secrets into context; redact tokens/keys/passwords
+- Prefer deterministic artifacts: file paths, commands, exit codes, and diffs
+
