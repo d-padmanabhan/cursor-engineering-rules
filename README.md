@@ -13,6 +13,7 @@ Comprehensive, battle-tested Cursor IDE rules for professional software engineer
 ### Core Standards
 
 - **[100-core.mdc](rules/100-core.mdc)** - Core coding standards and review guidelines
+- **[015-context-engineering.mdc](rules/015-context-engineering.mdc)** - Context engineering (prompt packing, retrieval, compaction)
 - **[010-workflow.mdc](rules/010-workflow.mdc)** - Development workflow patterns
 - **[020-agent-audit.mdc](rules/020-agent-audit.mdc)** - Agent audit requirements
 - **[130-git.mdc](rules/130-git.mdc)** - Git conventions and commit standards

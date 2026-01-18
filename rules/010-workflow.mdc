@@ -250,6 +250,9 @@ Treat recurring mistakes as a signal to improve the system, not just the code:
 
 **IMPORTANT**: Context files are **workspace-specific** and should be in the **extras/** directory in the project root, NOT in the rules directory. This allows each workspace to have its own context while sharing rules via symlinks.
 
+> [!NOTE]
+> For prompt packing, retrieval, and “frequent intentional compaction” patterns, see `015-context-engineering.mdc`.
+
 **Templates:** Copy/paste-ready templates live alongside these rules under `templates/` (e.g., `.cursor/rules/templates/` when installed). In this repo, that path is `rules/templates/`. Copy them into `extras/` when you start a new workspace.
 
 For complex projects, maintain context files in the `extras/` directory:

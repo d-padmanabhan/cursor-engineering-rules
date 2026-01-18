@@ -384,6 +384,20 @@ import "github.com/lib/timeutils"  // When time package works fine
 //  - It's a well-maintained, stable library
 ```
 
+### Dependency Injection (DI) & Application Wiring
+
+**Default (Go-idiomatic):** Prefer **manual wiring** at the composition root (`cmd/<app>/main.go`). Pass interfaces/structs explicitly via constructors.
+
+Use a DI framework **only when** it clearly reduces risk/complexity, typically:
+- You have a **large dependency graph** changing frequently across teams
+- You need consistent **lifecycle orchestration** (start/stop ordering, cleanup) across modules
+- You run multiple servers/workers in one binary and need coordinated shutdown
+
+If you adopt a DI framework (e.g., `uber/fx`/`dig`, or compile-time `google/wire`):
+- Keep framework usage **at the edges** (composition root); constructors remain plain Go
+- Avoid “service locator” patterns (hidden dependencies); make deps visible in constructors
+- Prefer the **smallest safe change** when refactoring wiring; don’t churn the graph without need
+
 ### Make the Zero Value Useful
 
 **Proverb**: "Make the zero value useful"

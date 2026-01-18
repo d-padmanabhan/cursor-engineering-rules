@@ -122,9 +122,18 @@ When providing feedback, organize by impact:
 
 1.  **Identify main issues first** before diving into details.
 2.  **Provide specific, actionable suggestions** with working code examples.
+3.  **Look for inefficient logic** and propose a more efficient rewrite when it is safe and justified.
 3.  **Explain the "why"** - what benefit does the change provide?
 4.  **Suggest incremental refactoring** over big-bang rewrites.
 5.  **Preserve existing code** - no placeholders like `// ... (existing code)` or incomplete sections.
+
+> [!IMPORTANT]
+> **Performance rewrite requirement (when reviewing existing code):**
+>
+> If you find clearly inefficient logic (e.g., \(O(n^2)\) loops, N+1 queries, repeated expensive work, unnecessary allocations/parsing), you MUST:
+> - Provide a **concrete improved implementation** (minimal diff) that preserves behavior
+> - State the **expected impact** (time/space/calls) and a **measurement plan** (benchmark/metric)
+> - Prefer the **smallest safe change**; do not “optimize everything” without evidence
 
 ### Anti-slop guardrails (write less, say more)
 

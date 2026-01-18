@@ -87,11 +87,25 @@ Examples (not exhaustive):
 
 For every non-trivial task, write **one** report file at a deterministic path.
 
+### Chat/session identifier (required)
+
+Agents MUST ensure a stable identifier is available for the current chat/session:
+
+- If `CURSOR_AGENT_CHAT_ID` is already set: reuse it
+- Otherwise, generate one and export it once for the session:
+  - `export CURSOR_AGENT_CHAT_ID="$(uuidgen | tr '[:upper:]' '[:lower:]')"`
+
+### Repo root identifier (required)
+
+Agents MUST resolve the absolute repository root path:
+
+- `export GIT_REPO_ROOT="$(git rev-parse --show-toplevel)"`
+
 ### Path rules
-- If the repo has an `extras/` folder **and** it is gitignored, write to:
-  - `extras/agent_reports/agent_report_<repo>_<branch>_<yyyymmdd_HHMMSS>.md`
+- If `<GIT_REPO_ROOT>/extras/` exists **and** it is gitignored, write to:
+  - `<GIT_REPO_ROOT>/extras/agent_reports/agent_report_<repo>_<branch>_<CURSOR_AGENT_CHAT_ID>.md`
 - Otherwise write to:
-  - `/tmp/agent_report_<repo>_<branch>_<yyyymmdd_HHMMSS>.md`
+  - `/tmp/agent_report_<repo>_<branch>_<CURSOR_AGENT_CHAT_ID>.md`
 
 ### Required contents
 The report MUST include:
@@ -117,13 +131,13 @@ For complex debugging sessions or demos, agents MAY create terminal recordings u
 - When user explicitly requests a recording
 
 **Recording path:**
-- Save to: `extras/agent_reports/recordings/<repo>_<branch>_<yyyymmdd_HHMMSS>.cast`
+- Save to: `<GIT_REPO_ROOT>/extras/agent_reports/recordings/<repo>_<branch>_<CURSOR_AGENT_CHAT_ID>.cast`
 - Reference the recording path in the markdown audit report
 
 **How to record:**
 ```bash
 # Start recording
-asciinema rec -q extras/agent_reports/recordings/session.cast
+asciinema rec -q "<GIT_REPO_ROOT>/extras/agent_reports/recordings/session.cast"
 
 # ... perform commands ...
 
