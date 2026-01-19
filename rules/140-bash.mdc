@@ -23,6 +23,7 @@ files:
 - **"Portability matters"** - Prefer POSIX-compliant code when possible, document Bash-specific features
 - **"Security by default"** - Sanitize inputs, use `mktemp`, avoid `eval`, validate file paths
 - **"Composition over complexity"** - Small functions, clear separation of concerns, reusable patterns
+- **"Prefer `case` for branching"** - When matching on a single value/pattern, prefer `case` over long `if/elif/else` chains
 - **"Observability is essential"** - Structured logging, proper exit codes, error context
 - **"Test what you write"** - Use shellcheck, test on multiple platforms, write BATS tests
 
