@@ -566,6 +566,7 @@ Emojis MAY be used in:
 - Add horizontal rules (`---`) to separate sections
 - Maintain consistent formatting
 - Ensure mobile-friendly layouts
+- Avoid headings like **"Executive Summary"** (reads AI-generated); prefer **"TL;DR"** or **"Summary"**
 
 ---
 
