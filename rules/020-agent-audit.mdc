@@ -15,7 +15,7 @@ These rules apply to **AI agents operating in this workspace**. They are designe
 
 By default, AI agents MUST NOT modify **any remote state**.
 
-If (and only if) the user explicitly authorizes a specific remote write, the agent may execute **only** the authorized command(s) and MUST record:
+If (and only if) the user explicitly authorizes a specific remote write (**HITL / human-in-the-loop**), the agent may execute **only** the authorized command(s) and MUST record:
 - the exact authorization (who/when/what),
 - the exact commands executed,
 - the results and exit codes,

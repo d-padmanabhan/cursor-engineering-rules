@@ -10,7 +10,7 @@ You are now in **IMPLEMENTATION** phase.
 
 Before building, confirm:
 
-- [ ] Plan has been approved by user
+- [ ] Plan has been approved by user (**HITL / human-in-the-loop**)
 - [ ] QA validation passed (for Level 2+ tasks)
 - [ ] Creative phase completed (for Level 3-4 tasks)
 
