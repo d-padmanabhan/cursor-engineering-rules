@@ -31,7 +31,7 @@ You are now in **PLANNING** phase. Do NOT write code yet.
 
 5. **Present and WAIT**
    - Show the plan clearly
-   - Ask for explicit approval before proceeding
+   - Ask for explicit approval before proceeding (**HITL / human-in-the-loop**)
    - Answer any clarifying questions
 
 ## Output Format

@@ -9,7 +9,10 @@ priority: 10
 
 **YOU MUST FOLLOW THIS THREE-PHASE APPROACH FOR ALL NON-TRIVIAL WORK:**
 
-1. **PLAN** -> Design solution -> Document approach -> **WAIT FOR EXPLICIT APPROVAL**
+> [!NOTE]
+> **HITL (human-in-the-loop)**: Any step that requires **explicit user approval** is a HITL gate. Do not proceed past a HITL gate until approval is received.
+
+1. **PLAN** -> Design solution -> Document approach -> **WAIT FOR EXPLICIT APPROVAL (HITL)**
 2. **IMPLEMENT** -> Code ONLY what was approved -> **STOP** when agreed scope is complete
 3. **REVIEW** -> Verify results -> Suggest improvements -> Return to PLAN phase
 

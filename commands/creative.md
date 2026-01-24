@@ -105,4 +105,4 @@ Required for:
 - Explore thoroughly before deciding
 - Document ALL options considered
 - Be explicit about trade-offs
-- Get user approval before proceeding to `/build`
+- Get user approval before proceeding to `/build` (**HITL / human-in-the-loop**)

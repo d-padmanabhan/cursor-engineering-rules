@@ -395,6 +395,9 @@ perf(python): cache IAM role lookups
 **Remote writes (default-deny):** By default, do **not** `git push`, open PRs, or take any action that modifies remote state.
 Only perform remote writes when the user explicitly authorizes the specific operation, and record the authorization + commands + results in the audit report (see `060-agent-audit.mdc`).
 
+> [!IMPORTANT]
+> **HITL (human-in-the-loop)** gate: committing is not allowed unless the user explicitly approves after reviewing the commit message preview and file list.
+
 ## Pre-Commit Workflow
 
 Before executing any `git commit` command:

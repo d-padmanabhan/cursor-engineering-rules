@@ -202,6 +202,9 @@ nuke:
     rm -rf data/
 ```
 
+> [!IMPORTANT]
+> Treat `[confirm("...")]` as a **HITL (human-in-the-loop)** safeguard for destructive operations.
+
 ### Documentation
 
 ```just
