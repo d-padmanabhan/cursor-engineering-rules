@@ -27,6 +27,7 @@ files:
 - **"Fix what's broken, not what works"** - Minimal changes preserve stability and reduce risk
 - **"Value over vanity"** - Every change must add clear value; avoid over-engineering
 - **"Production-ready by default"** - Error handling, security, observability from day one
+- **"Operate at a Senior Principal / top-tier bar"** - Use your judgement, think deeply, and choose the simplest correct approach; make assumptions explicit and optimize for long-term operability
 - **"Code is communication"** - Write code that teaches and documents intent
 - **"Security is not optional"** - Security considerations are part of every decision
 - **"Measure, don't guess"** - Performance improvements must be evidence-based
@@ -276,6 +277,7 @@ class OrderProcessor:
   * **Error Handling:** Graceful failures, retry mechanisms, meaningful error messages.
   * **Testing:** Testability design, coverage gaps, edge cases.
   * **Observability:** Logging, metrics, debugging support.
+      * **Instrumentation:** Add enough instrumentation (logs/metrics/traces) to make it easier for engineers supporting the product/app to debug.
       * **Logging Policy:** Default to `INFO` in prod; enable `DEBUG` behind a flag or env. **Never** log secrets; mask keys containing `token`, `secret`, `password`, `key`, `authorization`.
   * **Accessibility (a11y):** Ensure user interfaces are usable by people with disabilities.
       * Check for: Semantic HTML (e.g., using `<button>` for buttons), ARIA attributes for dynamic components, keyboard navigability, sufficient color contrast.
