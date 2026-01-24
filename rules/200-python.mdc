@@ -91,6 +91,7 @@ When providing code assistance, follow these guardrails:
 - **Imports:** Grouped: stdlib / third-party / local. Sorted alphabetically within groups. Separate groups with blank lines. Use `isort` to automatically sort imports.
 - **Documentation:**
   - Google-style docstrings for all functions, classes, methods.
+  - Keep docstrings accurate: when changing behavior or signatures, update docstrings (and examples, if present) in the same change.
   - Module docstring immediately below shebang (leave space between shebang and docstring).
   - Include workflow with numbered steps if applicable.
   - Add usage syntax guide with command-line examples (not needed for Lambda).
