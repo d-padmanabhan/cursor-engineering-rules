@@ -1336,14 +1336,29 @@ fi
 Complete example demonstrating Bash best practices:
 
 ```bash
-#!/usr/bin/env bash
-set -eEuo pipefail
+#!/bin/bash
+#
+# Script Name         : my_script.sh
+#
+# Purpose             : This script automates the processing of files and makes network requests.
+#
+#
+# Usage               : ./script.sh [-d] [-h] <provider> <module> [path]
+#
+# Dependencies        : curl, tar, jq, nc, parallel
+#
+# Prompt Behavior     : Prompts use green for questions, red for errors.
+#
+#
+# Exit Codes          : 0 (success), 1 (error), 2 (cancel), 3 (dependency missing)
+#
+#
+# ----------------------------------------------------------------------------------------
+# Turn debug on or off
+# set -x
+# ----------------------------------------------------------------------------------------
 
-# ================================================================
-# Script: process-users.sh
-# Purpose: Process user data files with validation and error handling
-# Usage: ./process-users.sh [OPTIONS] <input_file>
-# ================================================================
+set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_NAME="$(basename "$0" .sh)"
@@ -1593,7 +1608,7 @@ fi
 
 **Key Patterns Demonstrated:**
 
-- ✅ Strict error handling (`set -eEuo pipefail`)
+- ✅ Strict error handling (`set -euo pipefail`)
 - ✅ Lock file for concurrency control
 - ✅ Dependency checking
 - ✅ Input validation

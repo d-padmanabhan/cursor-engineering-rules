@@ -87,14 +87,6 @@ Examples (not exhaustive):
 
 For every non-trivial task, write **one** report file at a deterministic path.
 
-### Chat/session identifier (required)
-
-Agents MUST ensure a stable identifier is available for the current chat/session:
-
-- If `CURSOR_AGENT_CHAT_ID` is already set: reuse it
-- Otherwise, generate one and export it once for the session:
-  - `export CURSOR_AGENT_CHAT_ID="$(uuidgen | tr '[:upper:]' '[:lower:]')"`
-
 ### Repo root identifier (required)
 
 Agents MUST resolve the absolute repository root path:
@@ -103,9 +95,14 @@ Agents MUST resolve the absolute repository root path:
 
 ### Path rules
 - If `<GIT_REPO_ROOT>/extras/` exists **and** it is gitignored, write to:
-  - `<GIT_REPO_ROOT>/extras/agent_reports/agent_report_<repo>_<branch>_<CURSOR_AGENT_CHAT_ID>.md`
+  - `<GIT_REPO_ROOT>/extras/agent_reports/$(date +%F)-agent-report-<repo>-<branch>.md`
 - Otherwise write to:
-  - `/tmp/agent_report_<repo>_<branch>_<CURSOR_AGENT_CHAT_ID>.md`
+  - `/tmp/$(date +%F)-agent-report-<repo>-<branch>.md`
+
+### Append vs create (required)
+
+- If the report file already exists for the day, **append** a new session section (include start/end timestamps, commands, results, etc.)
+- If it does not exist, **create** it and then append the session content
 
 ### Required contents
 The report MUST include:
@@ -131,7 +128,7 @@ For complex debugging sessions or demos, agents MAY create terminal recordings u
 - When user explicitly requests a recording
 
 **Recording path:**
-- Save to: `<GIT_REPO_ROOT>/extras/agent_reports/recordings/<repo>_<branch>_<CURSOR_AGENT_CHAT_ID>.cast`
+- Save to: `<GIT_REPO_ROOT>/extras/agent_reports/recordings/$(date +%F)-agent-recording-<repo>-<branch>-$(date +%H%M%S).cast`
 - Reference the recording path in the markdown audit report
 
 **How to record:**

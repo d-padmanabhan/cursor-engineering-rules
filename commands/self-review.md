@@ -160,7 +160,7 @@ Generate a structured review report:
 
 **Generate Audit Report (per `060-agent-audit.mdc`):**
 
-- Ensure `CURSOR_AGENT_CHAT_ID` and `GIT_REPO_ROOT` are set (generate/export if missing), then write report to `<GIT_REPO_ROOT>/extras/agent_reports/agent_report_<repo>_<branch>_<CURSOR_AGENT_CHAT_ID>.md` (if `<GIT_REPO_ROOT>/extras/` exists and is gitignored) or `/tmp/agent_report_<repo>_<branch>_<CURSOR_AGENT_CHAT_ID>.md`
+- Ensure `GIT_REPO_ROOT` is set, then write/append the report to `<GIT_REPO_ROOT>/extras/agent_reports/$(date +%F)-agent-report-<repo>-<branch>.md` (if `<GIT_REPO_ROOT>/extras/` exists and is gitignored) or `/tmp/$(date +%F)-agent-report-<repo>-<branch>.md`
 - Include:
   - Start/end timestamps (local and UTC)
   - Repo name, branch name, `HEAD` SHA
