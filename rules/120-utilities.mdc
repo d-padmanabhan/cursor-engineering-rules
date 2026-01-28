@@ -347,6 +347,65 @@ $(brew --prefix)/opt/fzf/install
 - Enhancing git workflows with interactive selection
 - Filtering command output interactively
 
+---
+
+## Syncing folders between Git repos (rsync)
+
+Use `rsync` when you need a **repeatable, deterministic** way to copy **specific directories** from one repo to another (e.g., syncing shared docs or rule files).
+
+> [!IMPORTANT]
+> **Always run with `--dry-run` first**, review the itemized changes, then remove `--dry-run` once you’re confident the target path is correct.
+
+### Common footguns
+
+- **Trailing slash matters**:
+  - `rsync ... src/ dest/` copies the **contents** of `src/` into `dest/`
+  - `rsync ... src dest/` copies the **directory** `src` into `dest/`
+- **`--delete` is destructive**: it deletes files in the destination that don’t exist in the source (within the synced subtree)
+- **Never sync `.git/`**: always exclude it explicitly
+
+### Safe baseline command (local → local)
+
+```bash
+rsync -avh --dry-run --itemize-changes \
+  --exclude='.git/' \
+  --filter=':- .gitignore' \
+  "SOURCE_DIR/" "DEST_DIR/"
+```
+
+Notes:
+- `--itemize-changes` makes the dry run reviewable.
+- `--filter=':- .gitignore'` applies ignore rules from `.gitignore` files in the source tree (useful, but still validate the output).
+
+### Mirroring a folder (source of truth → consumer repo)
+
+Only use `--delete` when the destination should be a mirror of the source.
+
+```bash
+rsync -avh --dry-run --itemize-changes --delete \
+  --exclude='.git/' \
+  --filter=':- .gitignore' \
+  "SOURCE_DIR/" "DEST_DIR/"
+```
+
+### Sync only specific paths
+
+Use include/exclude rules when you want a narrow subset.
+
+```bash
+rsync -avh --dry-run --itemize-changes \
+  --exclude='.git/' \
+  --include='/rules/***' \
+  --include='/commands/***' \
+  --exclude='*' \
+  "SOURCE_REPO_ROOT/" "DEST_REPO_ROOT/"
+```
+
+### Git hygiene
+
+- Prefer syncing into a **clean working tree** (no local modifications) to keep diffs obvious.
+- After syncing, use `git diff --stat` and `pre-commit run --all-files` (if configured).
+
 ## Related files
 
 - Prefer pairing this with an "agent ingestion" rule that defines:
