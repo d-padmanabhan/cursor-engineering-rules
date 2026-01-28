@@ -1,0 +1,46 @@
+# PRD
+
+## Problem statement
+[What problem are we solving and for whom?]
+
+## Goals
+- [Goal 1]
+- [Goal 2]
+
+## Non-goals
+- [Non-goal 1]
+- [Non-goal 2]
+
+## Users & use cases
+- **Primary user(s)**: [who]
+- **Key use cases**:
+  - [Use case 1]
+  - [Use case 2]
+
+## Requirements
+### Functional requirements
+- [Requirement 1]
+- [Requirement 2]
+
+### Non-functional requirements
+- **Reliability**: [SLOs, error budgets, retry expectations]
+- **Security**: [auth/authz, data classification, OWASP concerns]
+- **Performance**: [p95/p99 targets, scale assumptions]
+- **Operability**: [logging/metrics/alerts, runbooks]
+
+## Constraints & assumptions
+- **Constraints**: [time, infra, dependency, compliance]
+- **Assumptions**: [what we’re assuming; what changes if wrong]
+
+## Success metrics
+- [Metric 1]
+- [Metric 2]
+
+## Milestones
+- [Milestone 1]
+- [Milestone 2]
+
+## Open questions
+- [Question 1]
+- [Question 2]
+
