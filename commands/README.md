@@ -29,6 +29,7 @@ ln -s /path/to/cursor-engineering-rules/commands .cursor/commands
 | `/review` | Enter review phase | After implementation complete |
 | `/self-review` | Comprehensive local PR review | Before creating PR, compare branch to main |
 | `/quick-review` | Fast critical issues check | Pre-commit validation, rapid iteration |
+| `/check-progress` | Fix issues and summarize progress | During development to fix errors and draft commit messages without staging |
 | `/bash` | Bash mode (create/modify/review scripts) | When working on Bash scripts and you want to enforce `140-bash.mdc` |
 | `/gha` | GitHub Actions mode (create/modify/review) | When working on `.github/workflows/*` and you want to enforce `160-github-actions.mdc` |
 | `/python` | Python mode (create/modify/review) | When working on Python and you want to enforce `200-python.mdc` |

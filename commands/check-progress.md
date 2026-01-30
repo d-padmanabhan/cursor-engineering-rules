@@ -1,13 +1,15 @@
 ---
-description: Review work progress - analyze changes, run checks, propose commit message (no staging/commit)
+description: Fix issues, summarize progress, run pre-commit, propose commit message (no staging/commit)
 ---
 
 # CHECK PROGRESS MODE ACTIVATED
 
-Review current work progress without staging or committing. Analyze changes, run quality checks, and propose commit messages following `100-core.mdc` and `110-git.mdc` standards.
+Review current work progress without staging or committing. Fix issues, run quality checks, and propose commit messages following `100-core.mdc` and `110-git.mdc` standards.
 
 > [!IMPORTANT]
-> **Read-only analysis.** No staging, committing, or pushing will be performed.
+> **Fix mode.** Fix errors and formatting issues, then report what was fixed.
+>
+> No staging, committing, or pushing will be performed.
 
 ## Phase 1: Change Detection
 
@@ -24,49 +26,64 @@ Review current work progress without staging or committing. Analyze changes, run
 
 ## Phase 2: Quality Checks
 
-Run appropriate linters and formatters based on **modified files only**:
+Run appropriate formatters and linters based on **modified files only**.
+
+> [!IMPORTANT]
+> Do not stage anything. Do not run commands that modify the git index.
 
 ### Python Files
 
-- `ruff check <files>` (linting)
-- `ruff format --check <files>` (format check)
-- `black --check <files>` (format check)
+Fix, then validate:
+
+- `ruff format <files>` (format)
+- `ruff check <files> --fix` (lint autofix where safe)
+- `black <files>` (format, if used in repo)
+- `isort <files>` (imports, if used in repo)
 - `mypy <files>` or `ty <files>` (type checking)
 - `pylint <files>` (aim for score ≥9.0, prefer ≥9.5)
 - `bandit -r <files> -ll` (security scanning - high/low severity)
-- `isort --check-only <files>` (import sorting)
 
 ### Bash/Shell Files
 
-- `shellcheck <files>` (linting)
-- `shfmt -d <files>` (format check)
+Fix, then validate:
+
+- `shfmt -w -i 2 -ci -sr -bn <files>` (format)
+- `shellcheck <files>` (lint)
 
 ### Go Files
 
-- `gofmt -d <files>` (format check)
-- `golangci-lint run <files>`
-- `govulncheck <files>`
+Fix, then validate:
+
+- `gofmt -w -s <files>` (format)
+- `go vet ./...`
+- `staticcheck ./...`
+- `golangci-lint run ./...`
+- `govulncheck ./...`
 
 ### JavaScript/TypeScript Files
 
+Fix, then validate:
+
+- `eslint <files> --fix` (if configured)
 - `eslint <files> --max-warnings=0`
 - `tsc --noEmit` (if TypeScript)
 - `npm audit` (if `package.json` exists)
 
 ### Terraform Files
 
-- `terraform fmt -check -recursive`
+Fix, then validate:
+
+- `terraform fmt -recursive`
 - `terraform validate`
 - `tflint`
 
 ### General Checks
 
 - `gitleaks detect --source .` (secrets scanning)
-- `pre-commit autoupdate` (if `.pre-commit-config.yaml` exists)
-- `pre-commit run --all-files` (if configured)
+- `pre-commit autoupdate && pre-commit run --all-files` (if `.pre-commit-config.yaml` exists)
 
 > [!NOTE]
-> If pre-commit hooks fail, report failures but continue analysis. Do not block on pre-commit failures unless they indicate Critical security issues.
+> If pre-commit hooks fail, fix what you can and re-run. Block progress only for Critical security issues or correctness bugs.
 
 ## Phase 3: Change Analysis
 
@@ -124,7 +141,7 @@ Provide a structured summary:
 
 ## Phase 5: Commit Message Proposal
 
-**Only if no Critical issues found:**
+**Only if no Critical issues found after fixes:**
 
 Propose **one primary commit message** following `110-git.mdc` format:
 
@@ -153,6 +170,15 @@ Propose **one primary commit message** following `110-git.mdc` format:
 
 **Optionally provide 1-2 alternative commit messages** if multiple valid interpretations exist.
 
+## Phase 6: Task Management
+
+1. Create or update `<repo-root>/extras/TODO.md` with:
+   - Remaining tasks
+   - Edge cases
+   - Follow-ups and future improvements
+
+2. Ensure `extras/` is present in `.gitignore`. Add it if missing.
+
 ## Constraints
 
 ⚠️ **DO NOT:**
@@ -161,12 +187,12 @@ Propose **one primary commit message** following `110-git.mdc` format:
 - Commit changes (`git commit`)
 - Push to remote (`git push`)
 - Run commands that would stage or commit
-- Modify files (this is analysis only)
 
 ✅ **DO:**
 
 - Analyze only modified files
-- Run quality checks on changed code
+- Fix errors and formatting issues on changed code
+- Re-run checks after fixes
 - Provide actionable feedback
 - Follow Priority Framework (Critical → Recommended → Optional)
 - Use Conventional Commits format
