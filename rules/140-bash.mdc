@@ -137,6 +137,48 @@ Use for: Production scripts with comprehensive error handling via ERR traps.
   flock -n 200 || { echo "Already running"; exit 1; }
   ```
 
+### Curl in scripts (production-ready defaults)
+
+Prefer a consistent, debuggable baseline for `curl` in scripts:
+
+- **Fail clearly**: `-sS` (quiet progress, show errors), plus `--fail-with-body` (curl ≥ 7.76) or `-f`
+- **Bounded time**: `--connect-timeout`, `--max-time`
+- **Retries**: `--retry`, `--retry-delay`, `--retry-max-time` (optionally `--retry-all-errors`)
+- **HTTPS-only hardening** (optional): `--proto "=https"` and `--tlsv1.2`
+
+```bash
+# Baseline curl options for scripts (tune per environment)
+# Note: --fail-with-body requires curl >= 7.76; fall back to -f if unavailable.
+CURL_OPTS=(
+  -sS
+  -L
+  --connect-timeout 15
+  --max-time 120
+  --retry 3
+  --retry-delay 5
+  --retry-max-time 60
+  --compressed
+  --fail-with-body
+  --proto "=https"
+  --tlsv1.2
+)
+
+curl_json_get() {
+  local url="$1"
+  curl "${CURL_OPTS[@]}" -H "Accept: application/json" "$url"
+}
+
+curl_json_post_file() {
+  local url="$1"
+  local payload_file="$2"
+  curl "${CURL_OPTS[@]}" \
+    -H "Accept: application/json" \
+    -H "Content-Type: application/json" \
+    --data-binary "@${payload_file}" \
+    "$url"
+}
+```
+
 ---
 
 ## 3) Performance & Patterns
@@ -870,7 +912,7 @@ retry_cmd() {
 main() {
   check_deps
 
-  local url="https://api.github.com"
+  local url="https://api.acme.com/health"
 
   log "INFO" "Starting job..."
 
