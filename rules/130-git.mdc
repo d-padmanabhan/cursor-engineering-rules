@@ -431,6 +431,16 @@ Should I proceed with this commit? (yes/no)
 
 4. **Only execute** after receiving explicit user approval
 
+## Forbidden trailers (Cursor attribution)
+
+Do **NOT** add Cursor attribution trailers to commit messages, including:
+
+```text
+Co-authored-by: Cursor <cursoragent@cursor.com>
+```
+
+If your editor/agent auto-inserts this trailer, remove it before committing (or disable the setting) to avoid unwanted GitHub contribution attribution.
+
 ## Example Interaction
 
 ```
