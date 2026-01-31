@@ -30,6 +30,7 @@ ln -s /path/to/cursor-engineering-rules/commands .cursor/commands
 | `/self-review` | Comprehensive local PR review | Before creating PR, compare branch to main |
 | `/quick-review` | Fast critical issues check | Pre-commit validation, rapid iteration |
 | `/check-progress` | Fix issues and summarize progress | During development to fix errors and draft commit messages without staging |
+| `/code-commit` | Format, pre-commit, stage, commit and push | When you want a controlled commit + push workflow with HITL approval |
 | `/bash` | Bash mode (create/modify/review scripts) | When working on Bash scripts and you want to enforce `140-bash.mdc` |
 | `/gha` | GitHub Actions mode (create/modify/review) | When working on `.github/workflows/*` and you want to enforce `160-github-actions.mdc` |
 | `/python` | Python mode (create/modify/review) | When working on Python and you want to enforce `200-python.mdc` |
