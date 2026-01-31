@@ -450,6 +450,9 @@ EOF
 
 **Use here-docs for multiline strings, templates, and embedded content:**
 
+> [!IMPORTANT]
+> The heredoc terminator (e.g., `EOF`) must start at **column 0** and match exactly. If you want indentation, use `<<-EOF` and **tabs only** (spaces will break termination).
+
 ```bash
 # Basic here-doc
 cat <<EOF > config.yaml
