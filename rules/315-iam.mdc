@@ -1,0 +1,248 @@
+---
+title: Identity, Access, and Authentication (IAM, OIDC, SAML, PKCE, PKI, PAM)
+description: Practical security guidance for IAM design and identity protocols (OIDC/OAuth2/PKCE, SAML/ADFS) plus PKI and PAM operational patterns.
+priority: 315
+alwaysApply: false
+files:
+  include:
+    - "**/*auth*.*"
+    - "**/*oauth*.*"
+    - "**/*oidc*.*"
+    - "**/*pkce*.*"
+    - "**/*saml*.*"
+    - "**/*adfs*.*"
+    - "**/*iam*.*"
+    - "**/*identity*.*"
+    - "**/*login*.*"
+    - "**/.github/workflows/*.yaml"
+    - "**/.github/workflows/*.yml"
+    - "**/*.tf"
+    - "**/*.yaml"
+    - "**/*.yml"
+---
+
+# Identity, Access, and Authentication (IAM, OIDC, SAML, PKCE, PKI, PAM)
+
+**Audience**: engineers designing authentication/authorization and cloud access patterns
+**Goal**: build secure-by-default identity systems with least privilege, strong verification, and clean operations
+
+> [!IMPORTANT]
+> This ruleset complements `310-security.mdc` (OWASP) and `320-api-design.mdc` (API auth patterns).
+> Use this for identity-specific decisions: token validation, federation, access boundaries, and certificate lifecycle.
+
+---
+
+## Non-negotiables
+
+- **Default deny**: no implicit access - access must be explicitly granted
+- **Least privilege**: minimal actions, minimal resources, minimal time (short-lived creds)
+- **Separation of duties**: admin != deploy != runtime
+- **No secret material in logs**: never log passwords, tokens, session cookies, private keys, assertions
+- **Prove authenticity**: always validate signatures (JWT/JWS, SAML XML signature), issuer, audience, and time bounds
+- **Assume breach**: monitor, rotate, revoke, and limit blast radius
+
+---
+
+## IAM (cloud access control)
+
+### Policy design principles
+
+- **Prefer roles over users** for workloads and automation
+- **Prefer short-lived credentials** (STS, workload identity) over long-lived access keys
+- **Use conditions** to reduce blast radius:
+  - source IP / VPC conditions (when valid)
+  - required tags (ABAC)
+  - MFA requirement for interactive access
+  - session duration limits
+- **Use boundaries and guardrails**:
+  - permission boundaries for roles created by automation
+  - org-level controls (SCPs) where applicable
+  - break-glass roles with strong protections and monitoring
+
+> [!WARNING]
+> Avoid wildcarding both **action** and **resource**. `Action: "*" + Resource: "*"` is almost never acceptable.
+
+### Session and identity propagation
+
+- **Use session tags** to propagate identity attributes when supported
+- **Log principal context**, not secrets:
+  - principal ARN / role ARN
+  - session name
+  - request ID / trace ID
+  - account / region
+
+### Common anti-patterns (avoid)
+
+- Using root/admin for automation
+- Reusing a single “god role” across multiple apps/environments
+- Long session durations by default
+- Attaching `*` permissions “temporarily” and forgetting to remove them
+- Storing cloud access keys in repos, CI logs, or shell history
+
+---
+
+## OIDC and OAuth2 (with PKCE)
+
+### Recommended baseline (public clients)
+
+For browser/native clients:
+
+- **Authorization Code Flow + PKCE**
+- **No implicit flow**
+- **Use state + nonce**
+- **Strict redirect URI allowlist**
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Client
+  participant AS as Authorization Server (OIDC)
+  participant RS as Resource Server (API)
+
+  Client->>Client: Generate code_verifier + code_challenge (S256)
+  Client->>AS: /authorize (response_type=code, code_challenge, state, nonce)
+  AS-->>Client: redirect with code (+ state)
+  Client->>AS: /token (code + code_verifier)
+  AS-->>Client: id_token + access_token (and refresh_token if allowed)
+  Client->>RS: API request with access_token
+  RS-->>Client: Response
+```
+
+### Token validation checklist (resource servers)
+
+When validating JWT access tokens (or ID tokens where applicable):
+
+- **Signature**:
+  - verify using provider JWKS
+  - pin **issuer** and validate `kid` lookup
+  - cache JWKS with sane TTL, handle key rotation
+- **Claims**:
+  - `iss` must match expected issuer
+  - `aud` must include your API audience
+  - `exp` and `nbf` enforced (allow small clock skew only)
+  - `sub` present and stable per identity provider rules
+  - `nonce` validated for OIDC ID tokens (client-side)
+- **Transport**:
+  - only accept tokens over HTTPS
+  - do not accept tokens in query strings (prefer `Authorization: Bearer`)
+
+> [!CAUTION]
+> Do not treat an ID token as an access token. ID tokens are for the client to learn about the user; access tokens are for APIs.
+
+### PKCE checklist (authorization server + client)
+
+- **S256 required** (avoid plain)
+- **code_verifier length and charset** per spec
+- **Single use** authorization codes (replay protection)
+- **state required** (CSRF protection)
+- **nonce required** for OIDC (replay protection for ID token)
+
+### Operational guidance
+
+- Prefer short access token TTLs and rotate refresh tokens if used
+- Rate limit token endpoints and sensitive auth paths
+- Log:
+  - auth failures (reason category, not raw tokens)
+  - token verification failures (issuer mismatch, audience mismatch, expired)
+
+---
+
+## SAML and ADFS (enterprise federation)
+
+SAML is common with enterprise IdPs and ADFS.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant User
+  participant SP as Service Provider (App)
+  participant IdP as IdP (ADFS)
+
+  User->>SP: Access app
+  SP-->>User: Redirect with SAMLRequest
+  User->>IdP: Authenticate + MFA
+  IdP-->>User: POST SAMLResponse to SP ACS URL
+  User->>SP: SAMLResponse (signed assertion)
+  SP->>SP: Validate signature, audience, recipient, time, replay
+  SP-->>User: Session established
+```
+
+### SAML validation checklist (service provider)
+
+- Validate **XML signature** against trusted IdP cert(s)
+- Validate **audience** and **recipient** / ACS URL
+- Validate **NotBefore/NotOnOrAfter** with small skew
+- Enforce **replay protection** (assertion ID)
+- Validate **issuer** and required attributes
+- Treat IdP metadata and cert rotation as a normal event (test rotation)
+
+> [!WARNING]
+> Never accept unsigned assertions. Never “skip signature validation to unblock a launch”.
+
+---
+
+## PKI (certificates, keys, and mTLS)
+
+### Key management basics
+
+- Private keys are **secrets** - store in secret managers/HSM where appropriate
+- Prefer modern algorithms and key sizes (org policy governs exact choices)
+- Rotate:
+  - certs on schedule
+  - keys when compromised or per policy
+- Separate CAs:
+  - root CA offline where possible
+  - intermediate CAs for issuing
+
+### mTLS guidance
+
+- Prefer mTLS for service-to-service authentication where operationally feasible
+- Validate:
+  - chain to trusted CA
+  - SAN (service identity)
+  - EKU constraints
+  - revocation strategy (OCSP/CRL) per environment needs
+
+### Certificate lifecycle
+
+- Automate issuance/renewal where possible (ACME or internal issuance workflows)
+- Track inventory: what cert is used where, expiry dates, owners
+- Monitor and alert well before expiry
+
+---
+
+## PAM (Privileged Access Management)
+
+PAM is about controlling and auditing privileged actions.
+
+### Recommended patterns
+
+- **Just-in-time (JIT) access**: time-bound elevation, not standing access
+- **Strong MFA** for privileged operations
+- **Approval workflows** for production changes and break-glass access
+- **Session recording** and tamper-evident audit logs for privileged sessions
+- **Separate break-glass** path:
+  - minimal principals
+  - stored offline where possible
+  - heavily monitored
+  - tested regularly
+
+### “Break-glass” checklist
+
+- Explicit runbook with owner + steps
+- Alarm on use, notify security/on-call
+- Immediate post-incident review and credential rotation
+
+---
+
+## Review checklist (quick)
+
+- [ ] Default deny and least privilege enforced
+- [ ] Short-lived creds preferred over static secrets
+- [ ] Token/assertion signatures validated
+- [ ] Issuer + audience validation implemented
+- [ ] Replay protection (auth codes, SAML assertions) implemented
+- [ ] Secrets (tokens/keys/assertions) never logged
+- [ ] Rotation and revocation paths exist and are tested
+- [ ] PAM controls exist for privileged actions (JIT, MFA, auditability)
+

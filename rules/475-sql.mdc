@@ -1,0 +1,130 @@
+---
+title: SQL Engineering Ruleset
+description: Safe, maintainable SQL patterns for analysts and engineers - command categories (DQL/DML/DDL/DCL/TCL), transactions, and destructive-operation guardrails.
+priority: 475
+alwaysApply: false
+files:
+  include:
+    - "**/*.sql"
+    - "**/migrations/**/*.sql"
+    - "**/schema/**/*.sql"
+    - "**/db/**/*.sql"
+    - "**/*query*.*"
+---
+
+# SQL Engineering Ruleset
+
+**Audience**: analysts and engineers writing or reviewing SQL (any RDBMS)
+**Goal**: write SQL that is safe-by-default, reviewable, and operationally predictable
+
+> [!IMPORTANT]
+> This rule is intentionally database-agnostic. For PostgreSQL specifics, also follow `470-postgresql.mdc`.
+
+---
+
+## SQL command categories (mental model)
+
+Use these categories to quickly understand **risk**, **required privileges**, and **rollback strategy**.
+
+### DQL - Data Query Language (read-only queries)
+
+- Primary command: `SELECT`
+- Common clauses: `FROM`, `WHERE`, `GROUP BY`, `HAVING`, `ORDER BY`, `LIMIT`, `OFFSET`
+
+### DML - Data Manipulation Language (changes table contents)
+
+- `INSERT`, `UPDATE`, `DELETE`, `MERGE` (where supported)
+
+> [!CAUTION]
+> DML is where “I destroyed production data” incidents happen.
+> Always prove the rowset first and use transactions for risky changes.
+
+### DDL - Data Definition Language (changes schema/objects)
+
+- `CREATE`, `ALTER`, `DROP`, `TRUNCATE`, `RENAME`
+
+> [!WARNING]
+> DDL can take locks, block traffic, and be irreversible (especially `DROP` and `TRUNCATE`).
+> Treat DDL as code: migration-reviewed, tested, and rolled out safely.
+
+### DCL - Data Control Language (permissions)
+
+- `GRANT`, `REVOKE` (and role/user management depending on DB)
+
+### TCL - Transaction Control Language (atomicity and recovery)
+
+- `BEGIN` / `START TRANSACTION`, `COMMIT`, `ROLLBACK`, `SAVEPOINT`
+
+---
+
+## Destructive-operation guardrails (must follow)
+
+### DELETE / UPDATE safety
+
+- **Never run `DELETE` or `UPDATE` without a `WHERE`**.
+- Before destructive writes:
+  - run the exact `SELECT` first to validate the target rows
+  - record expected row count and a small sample of primary keys
+- Prefer patterns that make review safer:
+  - `... WHERE ... RETURNING ...` (when supported)
+  - limit scope by immutable IDs, not names
+
+> [!TIP]
+> For large tables, add a predicate that can use an index. Avoid “whole table” scans for hot production paths.
+
+### TRUNCATE vs DELETE
+
+- `TRUNCATE` removes **all rows** quickly and may bypass row-level triggers depending on DB
+- `DELETE` can be scoped, can be rolled back (in a transaction), and may fire triggers
+
+### DROP safety
+
+- `DROP TABLE` / `DROP COLUMN` is often irreversible and can break apps immediately
+- Prefer a multi-step deprecation:
+  - stop writes
+  - backfill/migrate readers
+  - remove usage
+  - drop later
+
+---
+
+## Transactions (TCL) - safe workflows
+
+### “Prove then mutate” pattern
+
+1. `BEGIN`
+2. `SELECT` to verify target set
+3. Perform DML
+4. Verify results with `SELECT`
+5. `COMMIT` or `ROLLBACK`
+
+> [!IMPORTANT]
+> If the DB supports it, use statement/lock timeouts for production migrations to avoid prolonged blocking.
+
+### Savepoints for complex operations
+
+Use `SAVEPOINT` when you need partial rollback inside a longer transaction.
+
+---
+
+## Security essentials
+
+- **Parameterized queries** (no string concatenation) to prevent SQL injection
+- Use **least privilege** roles:
+  - read-only roles for analytics
+  - write roles scoped to the minimal schema/tables needed
+- Avoid exposing sensitive data:
+  - do not `SELECT *` from secrets/PII tables into logs or exports
+  - mask/redact in tooling where possible
+
+---
+
+## Review checklist (quick)
+
+- [ ] Query category understood (DQL/DML/DDL/DCL/TCL)
+- [ ] DML has a `WHERE` and is proven with an equivalent `SELECT`
+- [ ] Transaction strategy is clear (`BEGIN`/`COMMIT`/`ROLLBACK`/`SAVEPOINT`)
+- [ ] Permissions are least privilege (DCL changes reviewed)
+- [ ] No secrets/PII leaked via `SELECT *` or logging
+- [ ] Migration/DDL risk is documented (locks, downtime, rollback plan)
+
