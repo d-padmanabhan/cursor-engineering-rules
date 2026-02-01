@@ -259,6 +259,11 @@ Treat recurring mistakes as a signal to improve the system, not just the code:
 
 **IMPORTANT**: Context files are **workspace-specific** and should be in the **extras/** directory in the project root, NOT in the rules directory. This allows each workspace to have its own context while sharing rules via symlinks.
 
+> [!IMPORTANT]
+> `extras/` is intended for **workspace-local context and artifacts** and should be **gitignored by default**.
+>
+> Do **not** commit or push files under `extras/` unless the user explicitly requests it (for example, promoting a draft document from `extras/` into the repo proper).
+
 > [!NOTE]
 > For prompt packing, retrieval, and “frequent intentional compaction” patterns, see `015-context-engineering.mdc`.
 
