@@ -34,7 +34,7 @@ Detect the project language/framework based on **modified files** and run the ap
 
 ### GitHub Actions
 
-- `actionlint .github/*/*.yaml || actionlint .github/*/*.yml`
+- `actionlint .github/workflows/*.yaml .github/workflows/*.yml`
 
 ### Terraform
 
@@ -101,10 +101,17 @@ Requirements:
 
 - Follow Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`, etc.)
 - Clearly describe what changed and **why**
-- Append:
-  - `commit generated at <timestamp>`
-  - Timestamp must be in **ET** and rendered like:
-    - `Sunday, January 25, 2026 @ 3:30 PM ET`
+
+Show the full commit message and files to be committed. Do not proceed until the user explicitly approves the message.
+
+Timestamp:
+
+- Generate an ET timestamp (for a trailer):
+
+```bash
+set -euo pipefail
+LONG_DTTM="$(TZ=America/New_York date "+%A, %B %d, %Y @ %l:%M %p ET" | sed 's/  / /g')"
+```
 
 ---
 
@@ -126,7 +133,13 @@ Notes:
 
 ## Step 7: Commit using the commit message file
 
-- `git commit -F extras/commit_messages/<filename>.md`
+Commit using the file, and add the timestamp trailer:
+
+```bash
+set -euo pipefail
+LONG_DTTM="$(TZ=America/New_York date "+%A, %B %d, %Y @ %l:%M %p ET" | sed 's/  / /g')"
+git commit -F "extras/commit_messages/<filename>.md" --trailer "commit generated at ${LONG_DTTM}"
+```
 
 ---
 
