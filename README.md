@@ -6,6 +6,9 @@
 
 Comprehensive, battle-tested Cursor IDE rules for professional software engineering. Curated `.mdc` files covering languages, cloud platforms, DevOps tools, and engineering patterns.
 
+> [!NOTE]
+> As of early February 2026, this repo is maintained to work with both **Cursor** and **Claude Code** conventions (rules, commands, and Agent Skills directory layouts).
+
 ---
 
 ## What's Included
@@ -430,3 +433,19 @@ Thanks to [@DaKaZ](https://github.com/DaKaZ) for suggesting the commands-based w
 > 3. **MCP Server** - On-demand rule loading via tool calls
 >
 > Use all three together for maximum flexibility, or pick what works for your workflow.
+
+## Cursor rules vs Cursor skills
+
+Based on Cursor's docs:
+
+- **Cursor Rules** ([docs](https://cursor.com/docs/context/rules))
+  - **What they are**: System-level instructions included at the start of model context to provide persistent guidance
+  - **Where they live**: typically `.cursor/rules/` (project, version-controlled), plus User Rules (global) and Team Rules (dashboard). Also `AGENTS.md` as a simpler alternative
+  - **How they apply**: always apply, agent decides, file-glob scoped, or manual `@` mention
+  - **Best for**: coding standards, architectural constraints, security guardrails, "do/don't", house style
+
+- **Cursor Skills / Agent Skills** ([docs](https://cursor.com/docs/context/skills))
+  - **What they are**: portable, version-controlled packages that teach an agent a domain-specific workflow; may include executable scripts the agent runs
+  - **Where they live**: `.cursor/skills/` (project) or `~/.cursor/skills/` (user). Cursor also discovers `.claude/skills/` and `.codex/skills/` for compatibility
+  - **How they apply**: the agent can auto-select a relevant skill, or you can invoke it manually via `/skill-name`. You can force "manual only" by setting `disable-model-invocation: true`
+  - **Best for**: repeatable multi-step playbooks (release, deploy, migration, audit, generating artifacts) and "do X end-to-end" flows
