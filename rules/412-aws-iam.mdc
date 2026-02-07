@@ -1,0 +1,190 @@
+---
+title: AWS IAM (Principals, Policy Evaluation, STS, SCPs, KMS)
+description: AWS-specific IAM guidance covering principal types, policy evaluation, cross-account assume role patterns, SCPs, KMS key policies/grants, and AccessDenied debugging.
+priority: 412
+alwaysApply: false
+files:
+  include:
+    - "**/*iam*.*"
+    - "**/*sts*.*"
+    - "**/*assume*role*.*"
+    - "**/*trust*policy*.*"
+    - "**/*scp*.*"
+    - "**/*organizations*.*"
+    - "**/*kms*.*"
+    - "**/*.tf"
+    - "**/*.yaml"
+    - "**/*.yml"
+---
+
+# AWS IAM (Principals, Policy Evaluation, STS, SCPs, KMS)
+
+## Scope
+
+This rule is AWS-specific and complements:
+
+- `315-iam.mdc` (identity and auth concepts across IAM/OIDC/SAML/PKI/PAM)
+- `410-aws.mdc` (AWS engineering patterns)
+- `310-security.mdc` (OWASP and general security)
+
+## Mental model: "Who am I?" vs "What can I do?"
+
+- **Authentication** answers: **who am I?**
+  - Credentials and identity: IAM user access keys, federated user, or (most commonly) an **assumed role session** via STS
+- **Authorization** answers: **what am I permitted to do?**
+  - Policy evaluation over: identity-based policies, resource-based policies, boundaries, session policy, and org guardrails (SCP)
+
+## IAM request evaluation (what AWS actually decides)
+
+Think in four parts:
+
+- **Principal**: the caller identity (often an STS assumed-role session)
+- **Action**: the API operation (`s3:GetObject`, `kms:Decrypt`, `iam:PassRole`, ...)
+- **Resource**: the ARN(s) the action applies to
+- **Context**: condition keys (source VPC, principal tags, org ID, MFA, request region, ...)
+
+### Policy layers (common sources of confusion)
+
+AWS authorization can include all of the below at once:
+
+- **Identity-based policies** (attached to users/roles)
+- **Resource-based policies** (S3 bucket policy, KMS key policy, Lambda permission, API Gateway resource policy)
+- **Permission boundary** (limits the maximum permissions a role can exercise)
+- **Session policy** (optional policy passed at `AssumeRole` time, further restricting the session)
+- **SCP (Organizations)** (limits maximum permissions in an account/OU; does not grant)
+
+> [!IMPORTANT]
+> **Explicit deny wins.** A single applicable `Deny` in any policy layer blocks the request.
+
+## Principal types (be precise)
+
+Use the right terms in docs and debugging:
+
+- **IAM user**: long-lived identity (avoid for automation)
+- **IAM role**: identity intended to be assumed (workloads + automation)
+- **Assumed role session**: the *runtime principal* after STS (`arn:aws:sts::ACCOUNT:assumed-role/RoleName/SessionName`)
+- **Federated user**: temporary identity via federation mechanisms
+- **AWS account root principal**: `arn:aws:iam::ACCOUNT:root` (represents the account, not a human)
+- **Service principal**: `service.amazonaws.com` (used in trust policies; not a KMS grant grantee)
+
+## Roles, trust policies, and STS (assume role)
+
+### Trust policy is the "who can assume me?"
+
+Common anti-patterns:
+
+- Trusting `Principal: "*"` or broad external accounts without conditions
+- Missing `sts:ExternalId` for third-party cross-account integrations where the confused deputy risk applies
+
+#### Good baseline trust policy (workload identity / OIDC)
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::123456789012:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/EXAMPLE"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "oidc.eks.us-east-1.amazonaws.com/id/EXAMPLE:aud": "sts.amazonaws.com",
+          "oidc.eks.us-east-1.amazonaws.com/id/EXAMPLE:sub": "system:serviceaccount:default:my-service"
+        }
+      }
+    }
+  ]
+}
+```
+
+#### Cross-account access (third party) - ExternalId
+
+If a vendor assumes a role in your account, require an `ExternalId` and lock to the vendor's principal.
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": { "AWS": "arn:aws:iam::111122223333:role/vendor-access" },
+      "Action": "sts:AssumeRole",
+      "Condition": {
+        "StringEquals": { "sts:ExternalId": "REPLACE_WITH_CUSTOMER_GENERATED_ID" }
+      }
+    }
+  ]
+}
+```
+
+> [!NOTE]
+> Use `ExternalId` when you are protecting against the **confused deputy** problem (common in SaaS integrations).
+
+## Identity-based vs resource-based policies (quick rules)
+
+- **Identity-based** policies generally do **not** specify `Principal` (it's implicit: the attached user/role)
+- **Resource-based** policies **must** specify `Principal` (who is allowed to access the resource)
+- Cross-account access is frequently easiest with:
+  - a target resource policy + caller role, or
+  - assume-role into the target account + identity-based permissions
+
+## Organizations + SCPs (guardrails)
+
+- SCPs define **maximum available permissions** in an account/OU
+- SCPs **do not grant** permissions
+- Use SCPs for invariants like:
+  - deny disabling logging
+  - deny leaving approved regions (`aws:RequestedRegion`)
+  - deny IAM privilege escalation paths in non-admin OUs
+
+## KMS: key policies, IAM policies, and grants
+
+KMS often surprises people because **the key policy matters**.
+
+- **Key policy**: primary policy for the CMK
+- **IAM policy**: may grant KMS actions, but is not sufficient if the key policy does not allow it
+- **Grant**: delegated permissions (often for AWS services) with explicit constraints; useful for temporary or scoped access
+
+### Grant grantee principals (gotchas)
+
+A KMS grant grantee can be:
+
+- AWS account root principal
+- IAM user
+- IAM role
+- assumed role user (STS session)
+- federated user
+
+But typically **not**:
+
+- IAM group
+- AWS Organizations / OU
+- service principal (`service.amazonaws.com`)
+
+## Debugging `AccessDenied` (fast path)
+
+When you see `AccessDenied`:
+
+1. **Identify the runtime principal** (often STS assumed-role ARN)
+2. Confirm the **action** and **resource ARN** in the error
+3. Check for an **explicit deny** in:
+   - identity policy
+   - resource policy
+   - permission boundary
+   - session policy
+   - SCP
+4. For cross-account: verify both sides:
+   - trust policy allows assume
+   - permissions allow the API call
+   - resource policy (if any) allows the caller principal
+5. For KMS: verify key policy + IAM + grant constraints
+
+Useful commands:
+
+```bash
+aws sts get-caller-identity
+aws iam simulate-principal-policy --policy-source-arn "$ROLE_ARN" --action-names "s3:GetObject" --resource-arns "$RESOURCE_ARN"
+```
+

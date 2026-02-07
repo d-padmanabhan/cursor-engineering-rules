@@ -59,6 +59,7 @@ Quick lookup table for all cursor rules files.
 | [300-testing.mdc](300-testing.mdc) | Testing strategies (Unit/Integration/E2E) | 300 | No |
 | [310-security.mdc](310-security.mdc) | Security best practices & OWASP Top 10 | 310 | Yes |
 | [315-iam.mdc](315-iam.mdc) | Identity and access (IAM, OIDC/PKCE, SAML/ADFS, PKI, PAM) | 315 | No |
+| [412-aws-iam.mdc](412-aws-iam.mdc) | AWS IAM deep dive (principals, policy evaluation, STS, SCPs, KMS) | 412 | No |
 | [320-api-design.mdc](320-api-design.mdc) | API design best practices | 320 | No |
 | [330-observability.mdc](330-observability.mdc) | Monitoring & observability best practices | 330 | No |
 
