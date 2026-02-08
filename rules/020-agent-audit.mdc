@@ -54,6 +54,19 @@ Minimum checkpoints:
 - **Rollback anchor**: create a local checkpoint reference:
   - `git branch "checkout-point/<id>" <baseline-sha>`
 
+> [!IMPORTANT]
+> **User edits always take precedence.**
+>
+> AI agents MUST NOT discard or overwrite a user's manual working-tree changes unless the user explicitly asks.
+> Treat these as destructive operations that require explicit user direction:
+>
+> - `git restore ...` (worktree discard)
+> - `git checkout -- ...` (worktree discard)
+> - `git reset --hard ...` (index + worktree discard)
+> - `git clean -fd ...` (untracked deletion)
+>
+> If the agent needs to revert *its own* changes, it must propose the exact commands and file list first and wait for approval.
+
 Checkpoint rules:
 - Each checkpoint MUST have a unique `<id>` (recommend `YYYYMMDD_HHMMSS`).
 - Every checkpoint MUST be recorded with a timestamp and identifier in the audit report.

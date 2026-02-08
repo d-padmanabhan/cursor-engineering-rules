@@ -2,6 +2,10 @@
 
 Git 2.23+ split the multi-purpose `checkout` into focused commands for clarity and safety.
 
+> [!IMPORTANT]
+> Commands like `git restore`, `git checkout -- <path>`, `git reset --hard`, and `git clean -fd` can discard local changes.
+> If you are operating as an AI agent, do not run discard operations unless the user explicitly requests it.
+
 ## `git switch` vs `git checkout`
 
 | Old Command | New Command | Purpose |

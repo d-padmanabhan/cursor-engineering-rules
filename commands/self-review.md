@@ -4,20 +4,23 @@ description: Comprehensive local code review comparing current branch to main - 
 
 # SELF CODE REVIEW MODE ACTIVATED
 
-You are now in **SELF REVIEW** phase - performing a comprehensive local code review comparing the current branch to `main`, following the structured review approach from `100-core.mdc` and `050-workflow.mdc`.
+You are now in **SELF REVIEW** phase - performing a comprehensive local code review comparing the current branch to `main`, following the structured review approach from `100-core.mdc` and `010-workflow.mdc`.
 
 > [!IMPORTANT]
-> This is a **read-only analysis**. No commits or pushes will be made without explicit user authorization (see `060-agent-audit.mdc`).
+> This is a **read-only analysis**. No commits or pushes will be made without explicit user authorization (see `020-agent-audit.mdc`).
 
 ## Phase 1: Context Gathering & Audit Setup
 
-**Audit Requirements (from `060-agent-audit.mdc`):**
+**Audit Requirements (from `020-agent-audit.mdc`):**
 
 - Record baseline: `HEAD` SHA, branch name, timestamp
 - Document all commands with exit codes in audit report
 
 > [!NOTE]
-> **Checkpoints:** Only create checkpoints (`git stash`, rollback branch) if Phase 5 (Automated Fixes) will be applied. For read-only analysis, baseline recording is sufficient since formatting changes are easily reversible with `git restore` or `git checkout`.
+> **Checkpoints:** Only create checkpoints (`git stash`, rollback branch) if Phase 5 (Automated Fixes) will be applied.
+> For read-only analysis, baseline recording is sufficient.
+>
+> Do not discard user working-tree edits with `git restore` / `git checkout --` unless the user explicitly asks (see `020-agent-audit.mdc`).
 
 1. **Branch Information:**
    - Current branch name (`git branch --show-current`)
@@ -130,7 +133,7 @@ Generate a structured review report:
 ## Phase 5: Automated Fixes (Optional)
 
 > [!IMPORTANT]
-> **Before applying fixes:** Create checkpoints per `060-agent-audit.mdc`:
+> **Before applying fixes:** Create checkpoints per `020-agent-audit.mdc`:
 >
 > - `git stash push -u -m "checkpoint/<YYYYMMDD_HHMMSS>"`
 > - `git branch "checkpoint/<YYYYMMDD_HHMMSS>" <baseline-sha>`
@@ -149,7 +152,7 @@ Generate a structured review report:
 3. **Re-run linters:** Verify fixes resolved issues
 
 > [!TIP]
-> Formatting changes are easily reversible with `git restore <file>` or `git checkout -- <file>`, but checkpoints provide additional safety for complex changes.
+> If the user wants to revert formatting changes, propose the exact revert commands (for example `git restore <file>`), but do not run them unless the user explicitly asks. Checkpoints provide additional safety for complex changes.
 
 ## Phase 6: Verification & Audit Report
 
@@ -158,7 +161,7 @@ Generate a structured review report:
 3. **Diff summary:** Show final `git diff main...HEAD --stat`
 4. **Ready for PR:** Confirm all Critical issues resolved
 
-**Generate Audit Report (per `060-agent-audit.mdc`):**
+**Generate Audit Report (per `020-agent-audit.mdc`):**
 
 - Ensure `GIT_REPO_ROOT` is set, then write/append the report to `<GIT_REPO_ROOT>/extras/agent_reports/$(date +%F)-agent-report-<repo>-<branch>.md` (if `<GIT_REPO_ROOT>/extras/` exists and is gitignored) or `/tmp/$(date +%F)-agent-report-<repo>-<branch>.md`
 - Include:
@@ -179,7 +182,7 @@ Generate a structured review report:
 - Refactor code not part of current changes
 - Add features not in the current scope
 - Change APIs or break existing functionality
-- **Commit or push** without explicit user authorization (see `060-agent-audit.mdc`)
+- **Commit or push** without explicit user authorization (see `020-agent-audit.mdc`)
 - Perform any remote writes (git push, PR creation, etc.)
 
 ✅ **DO:**
@@ -230,7 +233,7 @@ If CodeRabbit is available and configured for the repository:
 
 **Integration:** This workflow aligns with:
 
-- `050-workflow.mdc` Review Phase
+- `010-workflow.mdc` Review Phase
 - `100-core.mdc` Code Review Mode standards
-- `060-agent-audit.mdc` Audit requirements
+- `020-agent-audit.mdc` Audit requirements
 - `110-git.mdc` Commit standards

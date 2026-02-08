@@ -1,5 +1,9 @@
 # The Reflog: Git's Safety Net
 
+> [!IMPORTANT]
+> `git reset --hard` and similar commands can discard local changes.
+> If you are operating as an AI agent, do not run discard operations unless the user explicitly requests it.
+
 ## What is the Reflog?
 
 The **reflog** (reference log) is Git's time machine. While `git log` shows only commits reachable from branches/tags, the reflog records **every movement of HEAD** — every checkout, reset, commit, rebase, branch switch, and even "lost" commits.
