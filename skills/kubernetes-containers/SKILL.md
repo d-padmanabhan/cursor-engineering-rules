@@ -32,6 +32,11 @@ kubectl apply -f manifest.yaml
 kubectl delete -f manifest.yaml
 kubectl rollout restart deployment/<name>
 
+# Kustomize
+kubectl kustomize overlays/dev
+kubectl diff -k overlays/dev
+kubectl apply -k overlays/dev
+
 # Debugging
 kubectl get events --sort-by='.lastTimestamp'
 kubectl top pods

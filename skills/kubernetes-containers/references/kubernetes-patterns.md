@@ -93,6 +93,41 @@ spec:
                   number: 80
 ```
 
+## Kustomize (bases + overlays)
+
+Use Kustomize when you want environment overlays without templating.
+
+**Common commands:**
+
+```bash
+# Preview rendered YAML
+kubectl kustomize overlays/dev
+
+# Diff before apply
+kubectl diff -k overlays/dev
+
+# Apply an overlay
+kubectl apply -k overlays/dev
+```
+
+**Minimal file layout:**
+
+```text
+kustomize/
+  base/
+    kustomization.yaml
+    deployment.yaml
+    service.yaml
+  overlays/
+    dev/
+      kustomization.yaml
+    prod/
+      kustomization.yaml
+```
+
+> [!IMPORTANT]
+> Do not generate or commit Secrets via Kustomize generators. Keep secrets in a secret manager or external secret mechanism.
+
 ## RBAC
 
 ```yaml

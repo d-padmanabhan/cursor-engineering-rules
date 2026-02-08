@@ -10,6 +10,8 @@ files:
     - "**/kubernetes/**/*.yaml"
     - "**/manifests/**/*.yaml"
     - "**/deployments/**/*.yaml"
+    - "**/kustomization.yaml"
+    - "**/kustomization.yml"
 ---
 
 # Kubernetes & EKS Engineering Ruleset
@@ -765,6 +767,19 @@ kubectl logs <pod-name> --previous
 
 # Check node resources
 kubectl top node
+```
+
+**Kustomize (bases/overlays):**
+
+```bash
+# Preview rendered manifests (no apply)
+kubectl kustomize overlays/dev
+
+# Diff before applying
+kubectl diff -k overlays/dev
+
+# Apply an overlay
+kubectl apply -k overlays/dev
 ```
 
 **Controller Not Reconciling:**
