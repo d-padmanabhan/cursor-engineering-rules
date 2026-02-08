@@ -1,8 +1,7 @@
 ---
 title: Rust Programming Best Practices
 description: Modern Rust patterns, ownership, error handling, async/await, and production-ready development practices
-priority: 22
-0
+priority: 220
 alwaysApply: false
 files:
   include:

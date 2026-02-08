@@ -1,154 +1,114 @@
 # Cursor Rules Index
 
-Quick lookup table for all cursor rules files.
+Quick lookup table for all Cursor rules files in `rules/`.
 
 ## Core Rules (000-099)
 
 | File | Description | Priority | Always Apply |
 |------|-------------|----------|--------------|
-| [050-workflow.mdc](050-workflow.mdc) | Workflow orchestration (Plan/Implement/Review) | 50 | Yes |
-| [060-agent-audit.mdc](060-agent-audit.mdc) | Agent workflow + audit requirements (no remote writes, verification gate, audit report) | 60 | Yes |
-| [100-core.mdc](100-core.mdc) | Core coding standards and best practices | 100 | Yes |
-| [110-git.mdc](110-git.mdc) | Git standards and workflows | 110 | Yes |
+| [010-workflow.mdc](010-workflow.mdc) | Plan/Implement/Review workflow with context persistence for complex projects. | 10 | Yes |
+| [015-context-engineering.mdc](015-context-engineering.mdc) | Prompt packing, retrieval, and compaction patterns for reliable agent work. | 15 | Yes |
+| [020-agent-audit.mdc](020-agent-audit.mdc) | Enforce no-remote-writes, mandatory verification, checkpoints/backups, and an auditable run report for AI agents. | 20 | Yes |
 
-## Language Standards (100-199)
-
-| File | Description | Priority | Always Apply |
-|------|-------------|----------|--------------|
-| [115-utilities.mdc](115-utilities.mdc) | Command-line utilities (lynx, curl, jq, httpie) | 115 | No |
-| [120-gha.mdc](120-gha.mdc) | GitHub Actions workflows and CI/CD | 120 | No |
-| [130-bash.mdc](130-bash.mdc) | Bash scripting standards | 130 | No |
-| [140-terraform.mdc](140-terraform.mdc) | Terraform Infrastructure as Code | 140 | No |
-| [145-ansible.mdc](145-ansible.mdc) | Ansible playbooks, roles, linting, and idempotency | 145 | No |
-| [150-cloudformation.mdc](150-cloudformation.mdc) | AWS CloudFormation standards | 150 | No |
-| [155-docker.mdc](155-docker.mdc) | Docker & container best practices | 155 | No |
-| [160-python.mdc](160-python.mdc) | Python development standards | 160 | No |
-| [165-typescript.mdc](165-typescript.mdc) | TypeScript patterns and type safety | 165 | No |
-| [170-javascript.mdc](170-javascript.mdc) | JavaScript/Node.js standards | 170 | No |
-| [180-go.mdc](180-go.mdc) | Go programming standards | 180 | No |
-| [185-rust.mdc](185-rust.mdc) | Rust programming best practices | 185 | No |
-| [190-makefile.mdc](190-makefile.mdc) | Makefile patterns | 190 | No |
-| [195-helm.mdc](195-helm.mdc) | Helm & Kubernetes package management | 195 | No |
-
-## Development Tools (200-299)
+## Foundation (100-199)
 
 | File | Description | Priority | Always Apply |
 |------|-------------|----------|--------------|
-| [200-cli.mdc](200-cli.mdc) | CLI application patterns | 200 | No |
-| [210-open-source.mdc](210-open-source.mdc) | Open source project patterns | 210 | No |
-| [220-documentation.mdc](220-documentation.mdc) | Documentation engineering | 220 | No |
-| [230-mcp-servers.mdc](230-mcp-servers.mdc) | MCP server patterns | 230 | No |
-| [240-configuration.mdc](240-configuration.mdc) | Configuration management | 240 | Yes |
+| [100-core.mdc](100-core.mdc) | Repo-wide engineering guardrails for review & generation. | 100 | Yes |
+| [110-configuration.mdc](110-configuration.mdc) | Patterns for managing configuration with proper precedence, environment variables, and validation. | 110 | Yes |
+| [120-utilities.mdc](120-utilities.mdc) | Practical tool selection for agents reading docs, blogs, logs, and diagrams (curl, lynx, jq, httpie, ripgrep, Playwright, OCR, VLM) | 120 | Yes |
+| [130-git.mdc](130-git.mdc) | Conventional commits, PR hygiene, branch naming, release notes, and foundational GitHub repository scaffolding requirements. | 130 | Yes |
+| [140-bash.mdc](140-bash.mdc) | Production-grade Bash standards for portability, safety, performance, and maintainability. | 140 | No |
+| [150-justfile.mdc](150-justfile.mdc) | Standardized justfile patterns for consistent project commands across platforms and languages. | 150 | No |
+| [160-github-actions.mdc](160-github-actions.mdc) | Secure, fast, maintainable workflows for this repo. | 160 | No |
+| [170-cloudformation.mdc](170-cloudformation.mdc) | Secure, maintainable CloudFormation templates with best practices for AWS infrastructure. | 170 | No |
+| [180-terraform.mdc](180-terraform.mdc) | Secure, efficient, modular Terraform with strong validation, docs, and CI hygiene. | 180 | No |
+| [190-ansible.mdc](190-ansible.mdc) | Ansible playbooks, roles, best practices, idempotency, and infrastructure automation patterns | 190 | No |
 
-## Cloud & Infrastructure (250-299)
+## Languages (200-249)
 
 | File | Description | Priority | Always Apply |
 |------|-------------|----------|--------------|
-| [250-cloudflare.mdc](250-cloudflare.mdc) | Cloudflare rules and Workers | 250 | No |
-| [260-kubernetes.mdc](260-kubernetes.mdc) | Kubernetes & EKS patterns | 260 | No |
-| [270-postgresql.mdc](270-postgresql.mdc) | PostgreSQL database patterns | 270 | No |
-| [280-aws.mdc](280-aws.mdc) | AWS platform engineering | 280 | No |
-| [285-azure.mdc](285-azure.mdc) | Azure best practices | 285 | No |
-| [290-gcp.mdc](290-gcp.mdc) | GCP best practices | 290 | No |
-| [295-ai-ml.mdc](295-ai-ml.mdc) | AI/ML & LLM integration best practices | 295 | No |
+| [200-python.mdc](200-python.mdc) | Opinionated, performance- and security-minded Python rules for generation and review. | 200 | No |
+| [210-go.mdc](210-go.mdc) | Secure, idiomatic, maintainable Go with evidence-based performance; applies to generation and review. | 210 | No |
+| [220-rust.mdc](220-rust.mdc) | Modern Rust patterns, ownership, error handling, async/await, and production-ready development practices | 220 | No |
+| [230-javascript.mdc](230-javascript.mdc) | Secure-by-default, type-checked (JSDoc + @ts-check), performant, and testable JavaScript guidelines for generation and review. | 230 | No |
+| [240-typescript.mdc](240-typescript.mdc) | Modern TypeScript patterns, type safety, advanced types, and production-ready configuration | 240 | No |
+
+## Tools & Platforms (250-299)
+
+| File | Description | Priority | Always Apply |
+|------|-------------|----------|--------------|
+| [250-cli.mdc](250-cli.mdc) | Patterns and best practices for building command-line interfaces and tools. | 250 | No |
 
 ## Testing & Security (300-399)
 
 | File | Description | Priority | Always Apply |
 |------|-------------|----------|--------------|
-| [300-testing.mdc](300-testing.mdc) | Testing strategies (Unit/Integration/E2E) | 300 | No |
-| [310-security.mdc](310-security.mdc) | Security best practices & OWASP Top 10 | 310 | Yes |
-| [315-iam.mdc](315-iam.mdc) | Identity and access (IAM, OIDC/PKCE, SAML/ADFS, PKI, PAM) | 315 | No |
-| [412-aws-iam.mdc](412-aws-iam.mdc) | AWS IAM deep dive (principals, policy evaluation, STS, SCPs, KMS) | 412 | No |
-| [320-api-design.mdc](320-api-design.mdc) | API design best practices | 320 | No |
-| [330-observability.mdc](330-observability.mdc) | Monitoring & observability best practices | 330 | No |
+| [300-testing.mdc](300-testing.mdc) | Comprehensive testing guide covering unit, integration, E2E, test frameworks, patterns, and CI/CD integration | 300 | No |
+| [310-security.mdc](310-security.mdc) | Comprehensive security guide covering OWASP Top 10, secret management, vulnerability scanning, and secure coding practices | 310 | Yes |
+| [315-iam.mdc](315-iam.mdc) | Practical security guidance for IAM design and identity protocols (OIDC/OAuth2/PKCE, SAML/ADFS) plus PKI and PAM operational patterns. | 315 | No |
+| [320-api-design.mdc](320-api-design.mdc) | REST API design patterns, GraphQL, gRPC, versioning, authentication, and API documentation standards | 320 | No |
+| [330-observability.mdc](330-observability.mdc) | Logging, metrics, tracing, alerting, and observability patterns for production systems | 330 | No |
+
+## Cloud & Infrastructure (400-499)
+
+| File | Description | Priority | Always Apply |
+|------|-------------|----------|--------------|
+| [400-cloudflare.mdc](400-cloudflare.mdc) | End-to-end prompts and patterns for designing, testing, and deploying Cloudflare rulesets (WAF, Rate Limiting, Transform, Workers integration). | 400 | No |
+| [410-aws.mdc](410-aws.mdc) | Best practices for AWS services, EKS, Platform Engineering, Zero Trust, and cloud infrastructure patterns. | 410 | No |
+| [412-aws-iam.mdc](412-aws-iam.mdc) | AWS-specific IAM guidance covering principal types, policy evaluation, cross-account assume role patterns, SCPs, KMS key policies/grants, and AccessDenied debugging. | 412 | No |
+| [420-gcp.mdc](420-gcp.mdc) | GCP platform engineering patterns, Cloud Build, Terraform for GCP, and cloud architecture best practices | 420 | No |
+| [430-azure.mdc](430-azure.mdc) | Azure platform engineering patterns, ARM/Bicep templates, Azure DevOps, and cloud architecture best practices | 430 | No |
+| [440-docker.mdc](440-docker.mdc) | Production-ready Docker patterns, multi-stage builds, security scanning, and compose orchestration | 440 | No |
+| [450-kubernetes.mdc](450-kubernetes.mdc) | Best practices for Kubernetes development, EKS operations, CRD development, and concurrency patterns. | 450 | No |
+| [460-helm.mdc](460-helm.mdc) | Helm charts, best practices, templating, values management, and GitOps deployment patterns | 460 | No |
+| [470-postgresql.mdc](470-postgresql.mdc) | Database naming conventions, schema patterns, and PostgreSQL best practices. | 470 | No |
+| [475-sql.mdc](475-sql.mdc) | Safe, maintainable SQL patterns for analysts and engineers - command categories (DQL/DML/DDL/DCL/TCL), transactions, and destructive-operation guardrails. | 475 | No |
+
+## AI & MCP (500-599)
+
+| File | Description | Priority | Always Apply |
+|------|-------------|----------|--------------|
+| [500-ai-ml.mdc](500-ai-ml.mdc) | LLM API integration, cloud AI services (Vertex AI, Bedrock, Azure OpenAI), AI agents, prompt engineering, and RAG patterns | 500 | No |
+| [510-mcp-servers.mdc](510-mcp-servers.mdc) | Patterns and best practices for building Model Context Protocol (MCP) servers and tools. | 510 | No |
 
 ## Documentation Standards (800-899)
 
 | File | Description | Priority | Always Apply |
 |------|-------------|----------|--------------|
-| [800-markdown.mdc](800-markdown.mdc) | Markdown & Mermaid diagramming | 800 | Yes |
+| [800-markdown.mdc](800-markdown.mdc) | Standardized rules for generating Markdown files using GitHub-flavored alerts and Mermaid diagrams for visual documentation. | 800 | Yes |
+| [810-documentation.mdc](810-documentation.mdc) | Patterns for creating effective documentation including documentation websites and markdown best practices. | 810 | No |
+| [820-open-source.mdc](820-open-source.mdc) | Best practices for open source projects including contribution guidelines, documentation, and community management. | 820 | No |
 
 ## Local Overrides (900-999)
 
 | File | Description | Priority | Always Apply |
 |------|-------------|----------|--------------|
-| [999-local-overrides.mdc](999-local-overrides.mdc) | Workspace-specific overrides | 999 | No |
+| [999-local-overrides.mdc](999-local-overrides.mdc) | Workspace-specific rule overrides. Customize this file for project-specific needs. | 999 | No |
 
 ---
 
-## Quick Reference by Technology
+## Quick Reference
 
-### Languages
-
-- **Bash**: [130-bash.mdc](130-bash.mdc)
-- **Go**: [180-go.mdc](180-go.mdc)
-- **JavaScript**: [170-javascript.mdc](170-javascript.mdc)
-- **Python**: [160-python.mdc](160-python.mdc)
-- **TypeScript**: [165-typescript.mdc](165-typescript.mdc)
-
-### Infrastructure as Code
-
-- **CloudFormation**: [150-cloudformation.mdc](150-cloudformation.mdc)
-- **Terraform**: [140-terraform.mdc](140-terraform.mdc)
-
-### Cloud Platforms
-
-- **AWS**: [280-aws.mdc](280-aws.mdc)
-- **Cloudflare**: [250-cloudflare.mdc](250-cloudflare.mdc)
-
-### Container & Orchestration
-
-- **Docker**: [155-docker.mdc](155-docker.mdc)
-- **Kubernetes**: [260-kubernetes.mdc](260-kubernetes.mdc)
-
-### CI/CD & Testing
-
-- **GitHub Actions**: [120-gha.mdc](120-gha.mdc)
-- **Testing**: [300-testing.mdc](300-testing.mdc)
-
-### Security
-
-- **Security Best Practices**: [310-security.mdc](310-security.mdc)
-
-### Databases
-
-- **PostgreSQL**: [270-postgresql.mdc](270-postgresql.mdc)
-- **SQL**: [475-sql.mdc](475-sql.mdc)
-
-### Utilities
-
-- **Command-Line Tools**: [115-utilities.mdc](115-utilities.mdc) (lynx, curl, jq, httpie)
-
-### Documentation
-
-- **Markdown & Diagrams**: [800-markdown.mdc](800-markdown.mdc)
-- **Documentation Engineering**: [220-documentation.mdc](220-documentation.mdc)
-
-### Development Patterns
-
-- **CLI Applications**: [200-cli.mdc](200-cli.mdc)
-- **Configuration**: [240-configuration.mdc](240-configuration.mdc)
-- **MCP Servers**: [230-mcp-servers.mdc](230-mcp-servers.mdc)
-- **Makefile**: [190-makefile.mdc](190-makefile.mdc)
-- **Open Source**: [210-open-source.mdc](210-open-source.mdc)
-
----
+- **Workflow**: [010-workflow.mdc](010-workflow.mdc), [015-context-engineering.mdc](015-context-engineering.mdc), [020-agent-audit.mdc](020-agent-audit.mdc)
+- **Core engineering**: [100-core.mdc](100-core.mdc), [130-git.mdc](130-git.mdc), [110-configuration.mdc](110-configuration.mdc)
+- **Utilities + docs**: [120-utilities.mdc](120-utilities.mdc), [800-markdown.mdc](800-markdown.mdc), [810-documentation.mdc](810-documentation.mdc)
+- **Languages**: [140-bash.mdc](140-bash.mdc), [200-python.mdc](200-python.mdc), [210-go.mdc](210-go.mdc), [220-rust.mdc](220-rust.mdc), [230-javascript.mdc](230-javascript.mdc), [240-typescript.mdc](240-typescript.mdc)
+- **Security**: [310-security.mdc](310-security.mdc), [315-iam.mdc](315-iam.mdc), [412-aws-iam.mdc](412-aws-iam.mdc)
+- **Cloud + IaC**: [170-cloudformation.mdc](170-cloudformation.mdc), [180-terraform.mdc](180-terraform.mdc), [400-cloudflare.mdc](400-cloudflare.mdc), [410-aws.mdc](410-aws.mdc), [420-gcp.mdc](420-gcp.mdc), [430-azure.mdc](430-azure.mdc)
+- **Containers**: [440-docker.mdc](440-docker.mdc), [450-kubernetes.mdc](450-kubernetes.mdc), [460-helm.mdc](460-helm.mdc)
+- **Databases**: [470-postgresql.mdc](470-postgresql.mdc), [475-sql.mdc](475-sql.mdc)
+- **AI + MCP**: [500-ai-ml.mdc](500-ai-ml.mdc), [510-mcp-servers.mdc](510-mcp-servers.mdc)
 
 ## Files Marked "Always Apply"
 
-These rules are automatically applied to all projects:
-
-1. **[060-agent-audit.mdc](060-agent-audit.mdc)** - Agent workflow & audit requirements
-2. **[100-core.mdc](100-core.mdc)** - Core coding standards
-3. **[310-security.mdc](310-security.mdc)** - Security best practices
-4. **[800-markdown.mdc](800-markdown.mdc)** - Markdown standards
-
----
-
-## Setup & Configuration
-
-- **[README.md](../README.md)** - Overview and quick start
-- **[docs/HOW-TO-USE.md](../docs/HOW-TO-USE.md)** - Installation and configuration guide
-
----
+- [010-workflow.mdc](010-workflow.mdc)
+- [015-context-engineering.mdc](015-context-engineering.mdc)
+- [020-agent-audit.mdc](020-agent-audit.mdc)
+- [100-core.mdc](100-core.mdc)
+- [110-configuration.mdc](110-configuration.mdc)
+- [120-utilities.mdc](120-utilities.mdc)
+- [130-git.mdc](130-git.mdc)
+- [310-security.mdc](310-security.mdc)
+- [800-markdown.mdc](800-markdown.mdc)
