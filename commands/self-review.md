@@ -14,7 +14,8 @@ You are now in **SELF REVIEW** phase - performing a comprehensive local code rev
 **Audit Requirements (from `020-agent-audit.mdc`):**
 
 - Record baseline: `HEAD` SHA, branch name, timestamp
-- Document all commands with exit codes in audit report
+- For **critical tasks**, write/append a full audit report
+- For routine tasks, a lightweight entry (or no report) is acceptable
 
 > [!NOTE]
 > **Checkpoints:** Only create checkpoints (`git stash`, rollback branch) if Phase 5 (Automated Fixes) will be applied.

@@ -96,9 +96,34 @@ Examples (not exhaustive):
 
 ---
 
-## 5) Verifiable Audit Report (Mandatory)
+## 5) Verifiable Audit Report (Tiered - mandatory for critical tasks)
 
-For every non-trivial task, write **one** report file at a deterministic path.
+Audit reports are useful, but writing a full command-by-command report for every task can slow down work.
+Use the following tiers.
+
+### Critical tasks (MANDATORY - full report)
+
+Write/append a full report when the task has meaningful blast radius or risk, including:
+
+- **History rewriting or force updates**: `git rebase`, `git filter-repo`, `git push --force-with-lease`
+- **Remote state changes**: `terraform apply`, `kubectl apply` (non-local clusters), `helm upgrade`, CloudFormation deploys, DB migrations
+- **Security / identity / access** changes: auth, IAM, KMS, OIDC, secrets handling
+- **Destructive actions** (even if explicitly requested): `git restore` (discard), `git reset --hard`, `git clean -fd`, mass deletes
+- **Multi-repo** operations or broad refactors where rollback is non-trivial
+
+### Routine tasks (OPTIONAL - lightweight entry)
+
+For small, routine changes (especially docs-only), an audit report is optional.
+If you want a record, append a lightweight entry:
+
+- timestamps
+- commit SHA + subject
+- file list
+- push command + result (if applicable)
+
+### Trivial local-only tasks (NO report)
+
+No report is needed for trivial local-only actions with no commit/push and no risk (for example: reading files, answering questions, exploring options).
 
 ### Repo root identifier (required)
 
@@ -117,7 +142,7 @@ Agents MUST resolve the absolute repository root path:
 - If the report file already exists for the day, **append** a new session section (include start/end timestamps, commands, results, etc.)
 - If it does not exist, **create** it and then append the session content
 
-### Required contents
+### Required contents (critical tasks)
 The report MUST include:
 - Start and end timestamps (**local time and UTC**)
 - Repo name, branch name, `HEAD` SHA
