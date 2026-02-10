@@ -20,6 +20,23 @@ def handle_response(code: int) -> str:
         case _: return "Unknown"
 ```
 
+### match-case with guards (case ... if ...)
+
+Use guards to express range checks or predicate logic without repeating the matched value:
+
+```python
+def classify_amount(amount: float) -> str:
+    match amount:
+        case x if x < 0:
+            return "invalid"
+        case 0:
+            return "zero"
+        case x if x > 10_000:
+            return "large"
+        case _:
+            return "normal"
+```
+
 ### Walrus Operator (:=)
 
 ```python
@@ -43,7 +60,7 @@ total = sum(x * 2 for x in numbers)
 ## Dataclasses
 
 ```python
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 @dataclass
 class Product:
@@ -55,6 +72,18 @@ class Product:
 class ImmutableConfig:
     host: str
     port: int = 8080
+
+
+@dataclass(slots=True, frozen=True)
+class Sale:
+    amount: float
+    currency: str
+    converted_value: float | None = None
+
+
+def convert_sale(sale: Sale, rate: float) -> Sale:
+    # Avoid mutation: return a new object with the updated field
+    return replace(sale, converted_value=sale.amount * rate)
 ```
 
 ## Functional Programming

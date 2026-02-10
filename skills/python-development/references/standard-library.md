@@ -275,7 +275,7 @@ short = textwrap.shorten("This is a very long string", width=20, placeholder="..
 **`contextlib` (Context managers):**
 
 ```python
-from contextlib import contextmanager, suppress, redirect_stdout
+from contextlib import ExitStack, contextmanager, suppress, redirect_stdout
 import io
 
 # Custom context manager
@@ -297,6 +297,36 @@ f = io.StringIO()
 with redirect_stdout(f):
     print("This goes to StringIO")
 output = f.getvalue()
+
+# ExitStack: manage a dynamic set of context managers
+def read_existing_files(paths: list[Path]) -> list[str]:
+    with ExitStack() as stack:
+        files = [stack.enter_context(p.open()) for p in paths if p.exists()]
+        return [f.read() for f in files]
+```
+
+**`contextvars` (Per-request context in async code):**
+
+Use `contextvars` to carry request-scoped values (request_id, user_id, trace_id) through async call chains without threading them through every function parameter.
+Unlike globals, context variables are isolated per task.
+
+```python
+from contextvars import ContextVar
+
+request_id_var: ContextVar[str] = ContextVar("request_id", default="unknown")
+
+
+async def handle_request(request_id: str) -> None:
+    token = request_id_var.set(request_id)
+    try:
+        await do_work()
+    finally:
+        request_id_var.reset(token)
+
+
+async def do_work() -> None:
+    request_id = request_id_var.get()
+    logger.info("Working", extra={"request_id": request_id})
 ```
 
 **`dataclasses` (Data containers):**
