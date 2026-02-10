@@ -76,6 +76,74 @@ Common anti-patterns:
 - Trusting `Principal: "*"` or broad external accounts without conditions
 - Missing `sts:ExternalId` for third-party cross-account integrations where the confused deputy risk applies
 
+### EKS Pod Identity: namespace scoping via session tags (ABAC)
+
+EKS Pod Identity assumes roles using the service principal `pods.eks.amazonaws.com` and uses `sts:TagSession` to attach **session tags** like:
+
+- `kubernetes-namespace`
+- `kubernetes-service-account`
+
+Those session tags are available as **principal tags** (`aws:PrincipalTag/...`) for authorization decisions.
+
+This enables a clean pattern for multi-tenant controls:
+
+- **Trust policy** restricts *which* namespace/serviceaccount can assume the role
+- **Downstream resource policies** (for example, VPC Lattice auth policies) restrict access based on `aws:PrincipalTag/kubernetes-namespace`
+
+Docs:
+
+- EKS Pod Identity trust policy and request tags: `https://docs.aws.amazon.com/eks/latest/userguide/pod-id-role.html`
+- EKS Pod Identity session tags (ABAC): `https://docs.aws.amazon.com/eks/latest/userguide/pod-id-abac.html`
+- VPC Lattice auth policies + principal tags: `https://docs.aws.amazon.com/vpc-lattice/latest/ug/auth-policies.html`
+
+#### Example: trust policy (restrict by namespace + service account)
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowEksAuthToAssumeRoleForPodIdentity",
+      "Effect": "Allow",
+      "Principal": { "Service": "pods.eks.amazonaws.com" },
+      "Action": ["sts:AssumeRole", "sts:TagSession"],
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestTag/kubernetes-namespace": ["my-namespace"],
+          "aws:RequestTag/kubernetes-service-account": ["my-service-account"]
+        }
+      }
+    }
+  ]
+}
+```
+
+#### Example: VPC Lattice auth policy (restrict invoke by namespace tag)
+
+> [!IMPORTANT]
+> VPC Lattice invoke uses the action prefix `vpc-lattice-svcs` (not `vpc-lattice`).
+> See AWS managed policy `VPCLatticeServicesInvokeAccess`: `https://docs.aws.amazon.com/aws-managed-policy/latest/reference/VPCLatticeServicesInvokeAccess.html`
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowNamespace",
+      "Effect": "Allow",
+      "Principal": { "AWS": "arn:aws:iam::ACCOUNT:role/multi-tenant-lattice-role" },
+      "Action": "vpc-lattice-svcs:Invoke",
+      "Resource": "arn:aws:vpc-lattice:REGION:ACCOUNT:service/svc-0123456789abcdef0/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:PrincipalTag/kubernetes-namespace": "my-namespace"
+        }
+      }
+    }
+  ]
+}
+```
+
 #### Good baseline trust policy (workload identity / OIDC)
 
 ```json
