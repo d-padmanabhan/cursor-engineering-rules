@@ -1192,6 +1192,101 @@ resource "aws_cloudwatch_event_target" "process_order" {
 }
 ```
 
+### Step Functions Callback-over-Polling (Recommended)
+
+**Pattern:** For long-running jobs, prefer callback/event-driven orchestration over `Wait -> Poll -> Choice` loops.
+
+> [!IMPORTANT]
+> Standard Step Functions workflows are billed per state transition.
+> Polling loops increase transitions and cost. Prefer callbacks/events when available.
+
+**When to use this pattern:**
+- AWS service emits completion events (for example, DMS to EventBridge)
+- Third-party API supports webhook/callback URL
+- Job duration is variable (minutes to hours)
+
+**Reference docs:**
+- Step Functions callback pattern: `https://docs.aws.amazon.com/step-functions/latest/dg/connect-lambda.html`
+- DMS events on EventBridge: `https://docs.aws.amazon.com/eventbridge/latest/ref/events-ref-dms.html`
+- Lambda durable execution SDK: `https://docs.aws.amazon.com/lambda/latest/dg/durable-execution-sdk.html`
+
+```mermaid
+flowchart LR
+  A[Step Functions Task waitForTaskToken] --> B[Starter Lambda]
+  B --> C[Long-running job e.g. DMS task]
+  B --> D[DynamoDB correlation migrationArn -> taskToken]
+  C --> E[EventBridge state-change event]
+  E --> F[Callback Lambda]
+  F --> D
+  F --> G[SendTaskSuccess or SendTaskFailure]
+  G --> H[Workflow resumes]
+```
+
+**State machine task example (task token callback):**
+```json
+{
+  "StartAt": "StartMigration",
+  "States": {
+    "StartMigration": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke.waitForTaskToken",
+      "Parameters": {
+        "FunctionName": "start-migration",
+        "Payload": {
+          "taskToken.$": "$$.Task.Token",
+          "executionId.$": "$$.Execution.Id",
+          "input.$": "$"
+        }
+      },
+      "TimeoutSeconds": 86400,
+      "Next": "PostMigration"
+    },
+    "PostMigration": {
+      "Type": "Pass",
+      "End": true
+    }
+  }
+}
+```
+
+**DMS EventBridge rule example:**
+```hcl
+resource "aws_cloudwatch_event_rule" "dms_state_change" {
+  name        = "dms-state-change"
+  description = "Capture DMS completion/failure events"
+
+  event_pattern = jsonencode({
+    source      = ["aws.dms"]
+    detail-type = ["DMS Replication Task State Change", "DMS Data Migration State Change"]
+  })
+}
+```
+
+**Callback handler requirements:**
+- Lookup task token from DynamoDB by stable correlation key (for example `migrationArn`)
+- Enforce idempotency (`ConditionExpression`) before calling `SendTaskSuccess/SendTaskFailure`
+- Handle duplicate/out-of-order events (EventBridge delivery is best effort)
+- Apply TTL cleanup to correlation records
+- Use least-privilege IAM for `states:SendTaskSuccess`, `states:SendTaskFailure`, and table access
+
+**Third-party API variant:**
+- Pass a callback URL containing a correlation ID (not the task token)
+- On callback, API handler looks up token in DynamoDB and signals Step Functions
+- Keep task tokens server-side only; never expose tokens to external clients
+
+**If polling is unavoidable:**
+- Use exponential backoff and max attempts
+- Keep polling cadence coarse for long jobs
+- Add explicit timeout and dead-letter/alerting path
+
+### Durable Lambda Functions Option
+
+For code-centric workflows in Lambda durable execution:
+- Use `waitForCondition` for durable polling
+- Use `waitForCallback` when event/webhook callbacks are available
+
+This provides the same orchestration intent with checkpointing/replay semantics in code.
+
 ### Blue-Green Deployments
 
 **Pattern:** Zero-downtime deployments with ECS/EKS.

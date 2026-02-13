@@ -1539,17 +1539,141 @@ Protect admin panel from unauthorized access. Only allows VPN IPs or mTLS client
 - Third-party integrations
 
 ## Emergency Disable
-```bash
-curl -X PATCH \
-  "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/rulesets/$RULESET_ID/rules/$RULE_ID" \
-  -H "Authorization: Bearer $CF_API_TOKEN" \
-  -d '{"enabled": false}'
-```
+Refer to **Incident Response -> Rollback Procedure** for the canonical command set.
 
 ## Escalation
 - On-call engineer: +1-xxx-xxx-xxxx
 - Security team: security@acme.com
 ```
+
+---
+
+## Managed WAF Operations Addendum
+
+This section captures operational guidance for managed rules, attack score tuning, and AI crawler controls.
+
+> [!IMPORTANT]
+> Normalize terminology in source material before updating rules:
+> - WAF (not "WTF" / "WFT")
+> - OWASP (not "OASP")
+> - DDoS (not "DOS")
+> - Zone (not "Domain") in Cloudflare context
+
+### Managed Rules Change Management
+
+- Review the WAF changelog weekly: `https://developers.cloudflare.com/waf/change-log/`
+- Treat managed rules updates as ongoing change, not one-time setup
+- Use the staged rollout in **Phase 6 -> Staged Rollout** (`log -> managed_challenge -> block`)
+- Avoid enabling all disabled-by-default managed rules without testing
+- Record false positives with `rule ID`, `path`, `host`, `user agent`, and `source IP/ASN`
+
+> [!NOTE]
+> Do not hardcode retention/query-window values in this guide. They vary by plan/dashboard and can change. Check current docs:
+> `https://developers.cloudflare.com/waf/analytics/security-analytics/`
+
+### Managed Rules Exceptions (Skip Rules)
+
+Use narrow exceptions and skip only what is necessary.
+
+- Place skip rules before the rules they are intended to bypass
+- Prefer skipping specific rule IDs over entire managed rulesets
+- Scope exceptions by host + path (+ optional IP/ASN) to minimize blast radius
+- Add expiration/review notes for temporary exceptions
+
+**Expression pattern (example):**
+```javascript
+(
+  http.host eq "api-dev.acme.com" and
+  starts_with(http.request.uri.path, "/health/")
+)
+```
+
+**Action pattern:**
+- Action: `skip`
+- Target: specific managed rule IDs whenever possible
+
+### WAF Attack Score (Plan-Aware)
+
+Use attack score as a complement to managed rules, not a replacement.
+
+| Plan | Recommended field(s) | Initial enforcement |
+|---|---|---|
+| Business | `cf.waf.score.class` | Start with `attack` class, usually challenge first |
+| Enterprise | `cf.waf.score`, `cf.waf.score.sqli`, `cf.waf.score.xss`, `cf.waf.score.rce` | Start around `<= 20` with scoped paths/hosts |
+
+> [!WARNING]
+> Do not globally block all traffic below `50` based only on attack score. Combine with request context (host/path/method/bot signals) to reduce false positives.
+
+**Enterprise examples:**
+```javascript
+# Global score gate for sensitive API paths
+(
+  http.host eq "api.acme.com" and
+  starts_with(http.request.uri.path, "/v2/") and
+  cf.waf.score le 20
+)
+```
+
+```javascript
+# SQLi-focused gate on search endpoint
+(
+  http.host eq "app.acme.com" and
+  http.request.uri.path eq "/search" and
+  cf.waf.score.sqli le 15
+)
+```
+
+**Business example:**
+```javascript
+(
+  http.host eq "app.acme.com" and
+  cf.waf.score.class eq "attack"
+)
+```
+
+### Security Analytics -> Security Events Workflow
+
+Use analytics for broad traffic shape, and events for rule-level mitigation details.
+
+```mermaid
+flowchart LR
+  A[Security Analytics] --> B[Find suspicious slice]
+  B --> C[Security Events]
+  C --> D[Identify exact rule IDs and actions]
+  D --> E[Create narrow custom rule or skip exception]
+  E --> F[Deploy in log mode]
+  F --> G[Promote to challenge or block after validation]
+```
+
+Operational loop:
+1. Filter by host/path/action/source
+2. Validate whether issue is true positive or false positive
+3. Implement minimal rule/exception
+4. Re-check event volume and false-positive rate
+5. Promote enforcement level gradually
+
+> [!TIP]
+> Use the query and alert templates in **Monitoring & Analytics** as the canonical instrumentation layer for this workflow.
+
+### AI Crawl Control + WAF Interplay
+
+- Use AI Crawl Control for per-crawler policy (`allow`, `block`, `charge` where available)
+- Track robots.txt behavior and violations in AI Crawl Control
+- Use WAF custom/rate-limit rules for non-compliant or non-self-identifying bots
+- Keep bot controls layered: managed rules + bot signals + crawler policy
+
+> [!NOTE]
+> AI crawler controls and WAF interact by precedence/order. Validate final behavior in dashboard and event logs:
+> `https://developers.cloudflare.com/ai-crawl-control/configuration/ai-crawl-control-with-waf/`
+
+### Ops Checklist (Weekly)
+
+- [ ] Review WAF changelog updates
+- [ ] Review top blocked/challenged events and false positives
+- [ ] Confirm exceptions are still required
+- [ ] Validate attack-score thresholds against current traffic
+- [ ] Review AI crawler policy and robots.txt compliance
+- [ ] Verify rollback path using **Incident Response -> Rollback Procedure**
 
 ---
 
