@@ -3,7 +3,7 @@
 #
 # Supports the recommended model:
 # - Workspace uses a symlink: <workspace>/.cursor/rules -> <this-repo>/rules
-# - Workspace context files live in: <workspace>/extras/ (gitignored)
+# - Workspace context files live in: <workspace>/tmp/ (gitignored)
 #
 # Usage:
 #   ./setup-workspace.sh -S -l /path/to/workspace
@@ -34,10 +34,10 @@ Sets up Cursor rules + workspace context files.
 
 Options:
   -S, --symlink-all       Symlink <workspace>/.cursor/rules to this repo's rules/ (recommended)
-  -l, --lightweight       Create only extras/tasks.md
-  -f, --full              Create extras/tasks.md, active-context.md, progress.md, project-brief.md
+  -l, --lightweight       Create only tmp/tasks.md
+  -f, --full              Create tmp/tasks.md, active-context.md, progress.md, project-brief.md
   --rules-source DIR      Override rules directory (defaults to <repo>/rules)
-  --ensure-gitignore      Ensure "extras/" is present in workspace .gitignore (append if needed)
+  --ensure-gitignore      Ensure "tmp/" is present in workspace .gitignore (append if needed)
   -h, --help              Show help
 
 Examples:
@@ -110,7 +110,7 @@ SOURCE_TEMPLATES_DIR="${SOURCE_RULES_DIR}/templates"
 
 WORKSPACE="$(cd "$WORKSPACE" && pwd)"
 CURSOR_RULES_DIR="${WORKSPACE}/.cursor/rules"
-EXTRAS_DIR="${WORKSPACE}/extras"
+TMP_DIR="${WORKSPACE}/tmp"
 
 if [[ ! -d "$SOURCE_RULES_DIR" ]]; then
   echo "${RED}Error: rules source directory not found: ${SOURCE_RULES_DIR}${NC}" >&2
@@ -152,12 +152,12 @@ if [[ "$LIGHTWEIGHT" == false && "$FULL" == false ]]; then
   LIGHTWEIGHT=true
 fi
 
-# Ensure extras directory exists
-mkdir -p "$EXTRAS_DIR"
+# Ensure tmp directory exists
+mkdir -p "$TMP_DIR"
 
 create_from_template() {
   local template_basename="$1" # e.g. tasks.md
-  local dest_path="$2"         # e.g. /workspace/extras/tasks.md
+  local dest_path="$2"         # e.g. /workspace/tmp/tasks.md
   local src_path="${SOURCE_TEMPLATES_DIR}/${template_basename}.template"
 
   if [[ -f "$dest_path" ]]; then
@@ -173,29 +173,29 @@ create_from_template() {
 }
 
 if [[ "$LIGHTWEIGHT" == true ]]; then
-  create_from_template "tasks.md" "${EXTRAS_DIR}/tasks.md"
+  create_from_template "tasks.md" "${TMP_DIR}/tasks.md"
 else
-  create_from_template "tasks.md" "${EXTRAS_DIR}/tasks.md"
-  create_from_template "active-context.md" "${EXTRAS_DIR}/active-context.md"
-  create_from_template "progress.md" "${EXTRAS_DIR}/progress.md"
-  create_from_template "project-brief.md" "${EXTRAS_DIR}/project-brief.md"
+  create_from_template "tasks.md" "${TMP_DIR}/tasks.md"
+  create_from_template "active-context.md" "${TMP_DIR}/active-context.md"
+  create_from_template "progress.md" "${TMP_DIR}/progress.md"
+  create_from_template "project-brief.md" "${TMP_DIR}/project-brief.md"
 fi
 
 if [[ "$ENSURE_GITIGNORE" == true ]]; then
   if [[ -d "${WORKSPACE}/.git" ]]; then
     GITIGNORE_PATH="${WORKSPACE}/.gitignore"
     if [[ ! -f "$GITIGNORE_PATH" ]]; then
-      printf "%s\n" "extras/" > "$GITIGNORE_PATH"
-      echo "${GREEN}✓${NC} Created .gitignore with extras/"
-    elif ! grep -qE '(^|/)\s*extras/\s*$' "$GITIGNORE_PATH"; then
+      printf "%s\n" "tmp/" > "$GITIGNORE_PATH"
+      echo "${GREEN}✓${NC} Created .gitignore with tmp/"
+    elif ! grep -qE '(^|/)\s*tmp/\s*$' "$GITIGNORE_PATH"; then
       {
         echo ""
         echo "# Private/local documentation"
-        echo "extras/"
+        echo "tmp/"
       } >> "$GITIGNORE_PATH"
-      echo "${GREEN}✓${NC} Appended extras/ to .gitignore"
+      echo "${GREEN}✓${NC} Appended tmp/ to .gitignore"
     else
-      echo "${YELLOW}⚠${NC} .gitignore already contains extras/"
+      echo "${YELLOW}⚠${NC} .gitignore already contains tmp/"
     fi
   else
     echo "${YELLOW}⚠${NC} Not a git repo (no .git); skipping .gitignore update"
@@ -207,5 +207,5 @@ echo "${GREEN}Setup complete.${NC}"
 echo ""
 echo "Next steps:"
 echo "  - Open the workspace in Cursor"
-echo "  - Context files are in: ${EXTRAS_DIR}"
+echo "  - Context files are in: ${TMP_DIR}"
 echo "  - Rules are in: ${WORKSPACE}/.cursor/rules"

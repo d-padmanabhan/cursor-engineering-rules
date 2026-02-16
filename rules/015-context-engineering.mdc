@@ -26,7 +26,7 @@ This rule strengthens agent performance by making context **intentional**, **min
 
 - **Working context (volatile)**: what the model sees right now
 - **Repo context (retrievable)**: files, diffs, logs, docs that can be re-read on demand
-- **Durable context (portable)**: short summaries + decisions captured in `extras/` context files
+- **Durable context (portable)**: short summaries + decisions captured in `tmp/` context files
 
 > [!IMPORTANT]
 > If it’s important and will matter later, it must be captured in **durable context**.
@@ -69,12 +69,12 @@ Use a tight loop:
 
 After any meaningful milestone (plan approved, a module completed, a bug fixed), compact:
 
-- Update `extras/active-context.md` with:
+- Update `tmp/active-context.md` with:
   - **Current focus**
   - **Key decisions** (what and why)
   - **Blockers** (and next action)
   - **Context from previous sessions** (only what must persist)
-- Update `extras/progress.md` (if used) with “done/next”
+- Update `tmp/progress.md` (if used) with “done/next”
 - Add a **Handoff Bundle** (copy/pasteable) for resuming work
 
 ### Handoff Bundle (copy/paste)
@@ -101,7 +101,7 @@ Prefer a fresh chat/session when:
 
 When restarting, bring only:
 
-- The approved plan (or the updated `extras/tasks.md`)
+- The approved plan (or the updated `tmp/tasks.md`)
 - The Handoff Bundle
 - The minimal file/line references needed to continue
 

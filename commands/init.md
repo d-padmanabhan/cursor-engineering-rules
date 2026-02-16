@@ -16,7 +16,7 @@ Initialize a new task by analyzing the project and determining the appropriate w
    - Scan project structure
    - Identify tech stack and patterns
    - Note existing conventions
-   - Check for existing context files (`extras/prd.md`, `extras/design.md`, `extras/project-brief.md`, `extras/tasks.md`, `extras/active-context.md`)
+   - Check for existing context files (`tmp/prd.md`, `tmp/design.md`, `tmp/project-brief.md`, `tmp/tasks.md`, `tmp/active-context.md`)
 
 2. **Understand the Request**
    - What is the user asking for?
@@ -33,8 +33,8 @@ Initialize a new task by analyzing the project and determining the appropriate w
    | 4 | Complex | Architectural, cross-cutting, multi-day | `/plan` -> `/creative` -> `/qa` -> `/build` -> `/review` -> `/archive` |
 
 4. **Set Up Context**
-   - Create/update `extras/tasks.md` if needed
-   - Create/update `extras/active-context.md` if needed
+   - Create/update `tmp/tasks.md` if needed
+   - Create/update `tmp/active-context.md` if needed
    - Note any existing progress
 
 5. **Route to Next Command**

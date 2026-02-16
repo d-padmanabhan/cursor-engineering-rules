@@ -172,12 +172,12 @@ Propose **one primary commit message** following `110-git.mdc` format:
 
 ## Phase 6: Task Management
 
-1. Create or update `<repo-root>/extras/TODO.md` with:
+1. Create or update `<repo-root>/tmp/TODO.md` with:
    - Remaining tasks
    - Edge cases
    - Follow-ups and future improvements
 
-2. Ensure `extras/` is present in `.gitignore`. Add it if missing.
+2. Ensure `tmp/` is present in `.gitignore`. Add it if missing.
 
 ## Constraints
 

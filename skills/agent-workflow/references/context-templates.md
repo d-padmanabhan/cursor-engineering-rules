@@ -248,7 +248,7 @@ Detailed technical design for complex features.
 [One paragraph summary of the approach.]
 
 ## Context
-- **Link to PRD**: `extras/prd.md`
+- **Link to PRD**: `tmp/prd.md`
 - **Current state**: [what exists today]
 - **Desired state**: [what will exist after]
 

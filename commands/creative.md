@@ -38,7 +38,7 @@ Required for:
    - Outline implementation approach
 
 5. **Document Decision**
-   - Create `creative-*.md` in extras/ folder
+   - Create `creative-*.md` in tmp/ folder
    - Update `tasks.md` with design decisions
 
 ## Output Format

@@ -115,11 +115,11 @@ LONG_DTTM="$(TZ=America/New_York date "+%A, %B %d, %Y @ %l:%M %p ET" | sed 's/  
 
 ---
 
-## Step 6: Write commit message file under `kb/extras/commit_messages`
+## Step 6: Write commit message file under `kb/tmp/commit_messages`
 
 Create the commit message file:
 
-- Directory: `extras/commit_messages`
+- Directory: `tmp/commit_messages`
 - Filename format:
   - `YYYYMMDD_HHMMSS_kb_<branch>_<last7sha>.md`
   - Example: `20251228_154700_kb_main_abcd123.md`
@@ -138,7 +138,7 @@ Commit using the file, and add the timestamp trailer:
 ```bash
 set -euo pipefail
 LONG_DTTM="$(TZ=America/New_York date "+%A, %B %d, %Y @ %l:%M %p ET" | sed 's/  / /g')"
-git commit -F "extras/commit_messages/<filename>.md" --trailer "commit generated at ${LONG_DTTM}"
+git commit -F "tmp/commit_messages/<filename>.md" --trailer "commit generated at ${LONG_DTTM}"
 ```
 
 ---

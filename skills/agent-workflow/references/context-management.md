@@ -2,7 +2,7 @@
 
 ## Context File Management
 
-Context files are workspace-specific and should be in an `extras/` directory:
+Context files are workspace-specific and should be in a `tmp/` directory:
 
 > [!NOTE]
 > For prompt packing, retrieval, and “frequent intentional compaction” patterns, see `agent-workflow/references/context-engineering.md`.
@@ -30,16 +30,16 @@ Context files are workspace-specific and should be in an `extras/` directory:
 
 For non-trivial work, keep a single “north star” scope document and use it to drive small, sequential feature slices.
 
-- `extras/` is intended for **workspace-local context and artifacts** and should be **gitignored by default**.
-- Do **not** commit or push files under `extras/` unless explicitly requested.
+- `tmp/` is intended for **workspace-local context and artifacts** and should be **gitignored by default**.
+- Do **not** commit or push files under `tmp/` unless explicitly requested.
 
-- **Recommended file**: `extras/prd.md`
-- **Design doc (recommended when architecture/approach matters)**: `extras/design.md`
+- **Recommended file**: `tmp/prd.md`
+- **Design doc (recommended when architecture/approach matters)**: `tmp/design.md`
 - **Greenfield**: Define scope, non-goals, key flows, architecture, milestones
 - **Brownfield**: Capture current state + next desired state + constraints
 - **Rule**: Break work into features small enough for the agent to execute reliably (one feature per cycle)
 
-**When to create `extras/design.md`:**
+**When to create `tmp/design.md`:**
 
 - Level 3–4 tasks (multi-module or architectural)
 - Any time there are multiple valid approaches with meaningful tradeoffs
@@ -171,10 +171,10 @@ Required Creative Phases:
 
 ## Context Management Templates
 
-Use these templates to maintain persistent context across sessions. Create files in `extras/` directory.
+Use these templates to maintain persistent context across sessions. Create files in `tmp/` directory.
 
 > [!TIP]
-> If you need a fuller “north star” doc, use `extras/prd.md`. If the task has real design tradeoffs, add `extras/design.md` too.
+> If you need a fuller “north star” doc, use `tmp/prd.md`. If the task has real design tradeoffs, add `tmp/design.md` too.
 
 ### tasks.md Template
 
@@ -395,10 +395,10 @@ Key commands + outputs (verbatim, minimal):
 
 ## Template Usage Guidelines
 
-1. **Create templates in `extras/` directory** - Keep them workspace-specific
+1. **Create templates in `tmp/` directory** - Keep them workspace-specific
 2. **Copy templates when starting new work** - Don't modify originals
 3. **Update templates as you progress** - Keep them current
-4. **Archive completed work** - Move to `extras/archive/` when done
+4. **Archive completed work** - Move to `tmp/archive/` when done
 5. **Use consistent naming** - `tasks.md`, `active-context.md`, `progress.md`, `creative-<feature>.md`, `reflect-<task>.md`
 
 ## Common Workflow Violations

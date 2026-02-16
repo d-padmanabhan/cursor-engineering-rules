@@ -21,7 +21,7 @@ It complements:
 
 - **Working context (volatile)**: what the model sees right now
 - **Repo context (retrievable)**: files, diffs, logs, docs that can be re-read on demand
-- **Durable context (portable)**: short summaries + decisions captured in `extras/`
+- **Durable context (portable)**: short summaries + decisions captured in `tmp/`
 
 > [!IMPORTANT]
 > If it matters later, it must be captured in **durable context**.
@@ -64,12 +64,12 @@ Use a tight loop:
 
 After any meaningful milestone (plan approved, module completed, bug fixed):
 
-- Update `extras/active-context.md` with:
+- Update `tmp/active-context.md` with:
   - Current focus
   - Key decisions (what/why)
   - Blockers (and next action)
   - Context from previous sessions (only what must persist)
-- Update `extras/progress.md` (if used) with “done/next”
+- Update `tmp/progress.md` (if used) with “done/next”
 - Add a **Handoff Bundle** for resuming work cleanly
 
 ### Handoff Bundle (copy/paste)
@@ -96,7 +96,7 @@ Prefer a fresh session when:
 
 When restarting, bring only:
 
-- The approved plan (or updated `extras/tasks.md`)
+- The approved plan (or updated `tmp/tasks.md`)
 - The Handoff Bundle
 - The minimal file references needed to continue
 

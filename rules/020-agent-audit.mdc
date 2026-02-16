@@ -132,8 +132,8 @@ Agents MUST resolve the absolute repository root path:
 - `export GIT_REPO_ROOT="$(git rev-parse --show-toplevel)"`
 
 ### Path rules
-- If `<GIT_REPO_ROOT>/extras/` exists **and** it is gitignored, write to:
-  - `<GIT_REPO_ROOT>/extras/agent_reports/$(date +%F)-agent-report-<repo>-<branch>.md`
+- If `<GIT_REPO_ROOT>/tmp/` exists **and** it is gitignored, write to:
+  - `<GIT_REPO_ROOT>/tmp/agent_reports/$(date +%F)-agent-report-<repo>-<branch>.md`
 - Otherwise write to:
   - `/tmp/$(date +%F)-agent-report-<repo>-<branch>.md`
 
@@ -166,13 +166,13 @@ For complex debugging sessions or demos, agents MAY create terminal recordings u
 - When user explicitly requests a recording
 
 **Recording path:**
-- Save to: `<GIT_REPO_ROOT>/extras/agent_reports/recordings/$(date +%F)-agent-recording-<repo>-<branch>-$(date +%H%M%S).cast`
+- Save to: `<GIT_REPO_ROOT>/tmp/agent_reports/recordings/$(date +%F)-agent-recording-<repo>-<branch>-$(date +%H%M%S).cast`
 - Reference the recording path in the markdown audit report
 
 **How to record:**
 ```bash
 # Start recording
-asciinema rec -q "<GIT_REPO_ROOT>/extras/agent_reports/recordings/session.cast"
+asciinema rec -q "<GIT_REPO_ROOT>/tmp/agent_reports/recordings/session.cast"
 
 # ... perform commands ...
 

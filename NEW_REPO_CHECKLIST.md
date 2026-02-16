@@ -24,31 +24,31 @@ readlink .cursor/rules
 
 ## Setup workspace context files
 
-- [ ] Create `extras/` (workspace-local, gitignored)
-- [ ] Create `extras/tasks.md` (minimum)
+- [ ] Create `tmp/` (workspace-local, gitignored)
+- [ ] Create `tmp/tasks.md` (minimum)
 
 ```bash
-mkdir -p extras
-cp .cursor/rules/templates/tasks.md.template extras/tasks.md
+mkdir -p tmp
+cp .cursor/rules/templates/tasks.md.template tmp/tasks.md
 ```
 
 Optional (for complex work):
 
-- [ ] `extras/project-brief.md`
-- [ ] `extras/active-context.md`
-- [ ] `extras/progress.md`
+- [ ] `tmp/project-brief.md`
+- [ ] `tmp/active-context.md`
+- [ ] `tmp/progress.md`
 
 ```bash
-cp .cursor/rules/templates/project-brief.md.template extras/project-brief.md
-cp .cursor/rules/templates/active-context.md.template extras/active-context.md
-cp .cursor/rules/templates/progress.md.template extras/progress.md
+cp .cursor/rules/templates/project-brief.md.template tmp/project-brief.md
+cp .cursor/rules/templates/active-context.md.template tmp/active-context.md
+cp .cursor/rules/templates/progress.md.template tmp/progress.md
 ```
 
 ## Git hygiene (recommended)
 
-- [ ] Ensure `extras/` is ignored (add to your repo’s `.gitignore`):
+- [ ] Ensure `tmp/` is ignored (add to your repo’s `.gitignore`):
 
 ```gitignore
 # Private/local documentation
-extras/
+tmp/
 ```

@@ -43,7 +43,7 @@ If you find yourself giving the same prompt more than twice, treat it as a workf
    - Scan project structure
    - Identify tech stack and patterns
    - Note existing conventions
-   - Check for existing context files (`extras/prd.md`, `extras/design.md`, `extras/project-brief.md`, `extras/tasks.md`, `extras/active-context.md`)
+   - Check for existing context files (`tmp/prd.md`, `tmp/design.md`, `tmp/project-brief.md`, `tmp/tasks.md`, `tmp/active-context.md`)
 
 2. **Understand the Request**
    - What is the user asking for?
@@ -60,8 +60,8 @@ If you find yourself giving the same prompt more than twice, treat it as a workf
    | 4 | Complex | Architectural, cross-cutting, multi-day | Plan → Creative → QA → Build → Review → Archive |
 
 4. **Set Up Context**
-   - Create/update `extras/tasks.md` if needed
-   - Create/update `extras/active-context.md` if needed
+   - Create/update `tmp/tasks.md` if needed
+   - Create/update `tmp/active-context.md` if needed
    - Note any existing progress
 
 5. **Route to Next Phase**
@@ -129,7 +129,7 @@ Proceed to Planning phase (or Build for Level 1 tasks).
    - Plan testing strategy
 
 4. **Document the Plan**
-   - Update `extras/tasks.md` or `extras/active-context.md` if they exist
+   - Update `tmp/tasks.md` or `tmp/active-context.md` if they exist
    - List files to be modified
    - Outline implementation steps
 
@@ -215,8 +215,8 @@ Proceed to Planning phase (or Build for Level 1 tasks).
    - Verification against requirements
 
 4. **Documentation**
-   - Create `extras/creative-*.md` with chosen approach
-   - Update `extras/tasks.md` with design decisions
+   - Create `tmp/creative-*.md` with chosen approach
+   - Update `tmp/tasks.md` with design decisions
    - Mark creative phase complete
 
 5. **Proceed to QA Validation** then Implementation
@@ -451,7 +451,7 @@ The following issues must be resolved before proceeding:
 
 1. **Follow the agreed plan** - Implement exactly what was discussed
 2. **Make incremental changes** - Small, testable commits
-3. **Update context files** - Track progress in `extras/progress.md` or `extras/tasks.md`
+3. **Update context files** - Track progress in `tmp/progress.md` or `tmp/tasks.md`
 4. **Stop at boundaries** - Don't fix unrelated issues or add unplanned features
 5. **Complete the agreed scope** - Then STOP and wait for review
 
@@ -486,7 +486,7 @@ The following issues must be resolved before proceeding:
 1. **Review implemented changes** - Verify they match the plan
 2. **Check for issues** - Security, bugs, edge cases, performance
 3. **Suggest improvements** - But DON'T implement them yet
-4. **Update context files** - Document findings in `extras/reflect-*.md` or `extras/tasks.md`
+4. **Update context files** - Document findings in `tmp/reflect-*.md` or `tmp/tasks.md`
 5. **Identify cleanup opportunities** - Can we remove/simplify existing code?
 6. **Propose next steps** - What should happen next?
 
@@ -821,7 +821,7 @@ Generate PR-ready report:
 **Process:**
 
 1. **Create Archive Document**
-   - Use `extras/reflect-*.md` template
+   - Use `tmp/reflect-*.md` template
    - Document what was done
    - Capture lessons learned
 

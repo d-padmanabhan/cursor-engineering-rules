@@ -5,7 +5,7 @@ description: Setup Cursor rules + workspace context templates using symlinks or 
 
 # Setup Guide
 
-This repo is designed to be used across many projects via a **shared rules directory** (symlink/submodule). Workspace context files stay **workspace-local** under `extras/` (gitignored).
+This repo is designed to be used across many projects via a **shared rules directory** (symlink/submodule). Workspace context files stay **workspace-local** under `tmp/` (gitignored).
 
 ## Recommended setup (team)
 
@@ -50,9 +50,9 @@ Templates live at:
 
 Workspace context files should live at:
 
-- `extras/tasks.md`
-- `extras/active-context.md`
-- `extras/progress.md`
-- `extras/project-brief.md`
+- `tmp/tasks.md`
+- `tmp/active-context.md`
+- `tmp/progress.md`
+- `tmp/project-brief.md`
 
 See `rules/050-workflow.mdc` for the workflow and file meanings.

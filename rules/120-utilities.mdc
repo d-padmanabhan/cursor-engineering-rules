@@ -103,7 +103,7 @@ Guidance for diagram prompting:
 
 Artifact handling (screenshots):
 
-- In a git repo: save screenshots under a gitignored folder (commonly `extras/` or `tmp/`) and include the local path in your response.
+- In a git repo: save screenshots under a gitignored folder (commonly `tmp/`) and include the local path in your response.
 - Outside a git repo: save to `$TMPDIR` (macOS) or `/tmp`.
 - Use descriptive filenames (include site + page/section + timestamp) so artifacts can be re-opened.
 - Never commit binary artifacts unless the user explicitly asks.

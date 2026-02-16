@@ -84,11 +84,11 @@ For every non-trivial task, write one report file:
 
 **Path rules:**
 
-- If `<GIT_REPO_ROOT>/extras/` exists and is gitignored: `<GIT_REPO_ROOT>/extras/agent_reports/agent_report_<repo>_<branch>_<timestamp>.md`
+- If `<GIT_REPO_ROOT>/tmp/` exists and is gitignored: `<GIT_REPO_ROOT>/tmp/agent_reports/agent_report_<repo>_<branch>_<timestamp>.md`
 - Otherwise: `/tmp/agent_report_<repo>_<branch>_<timestamp>.md`
 
 > [!IMPORTANT]
-> `extras/` is intended to be **gitignored**. Do not commit or push audit artifacts (or other files under `extras/`) unless explicitly requested.
+> `tmp/` is intended to be **gitignored**. Do not commit or push audit artifacts (or other files under `tmp/`) unless explicitly requested.
 
 **Required contents:**
 
@@ -113,14 +113,14 @@ For complex debugging sessions or demos, agents MAY create terminal recordings u
 
 **Recording path:**
 
-- Save to: `<GIT_REPO_ROOT>/extras/agent_reports/recordings/<repo>_<branch>_<yyyymmdd_HHMMSS>.cast`
+- Save to: `<GIT_REPO_ROOT>/tmp/agent_reports/recordings/<repo>_<branch>_<yyyymmdd_HHMMSS>.cast`
 - Reference the recording path in the markdown audit report
 
 **How to record:**
 
 ```bash
 # Start recording
-asciinema rec -q "<GIT_REPO_ROOT>/extras/agent_reports/recordings/session.cast"
+asciinema rec -q "<GIT_REPO_ROOT>/tmp/agent_reports/recordings/session.cast"
 
 # ... perform commands ...
 

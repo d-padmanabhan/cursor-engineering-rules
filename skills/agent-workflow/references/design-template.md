@@ -6,7 +6,7 @@
 
 ## Context
 
-- **Link to PRD**: `extras/prd.md`
+- **Link to PRD**: `tmp/prd.md`
 - **Current state**: [what exists today]
 - **Desired state**: [what will exist after]
 

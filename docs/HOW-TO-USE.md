@@ -85,7 +85,7 @@ rules:
 | Personal setup, all projects | Symlink to `~/.cursor/rules/` (Approach A) |
 | Team project, shared config | `.cursorrules` in git (Approach B) |
 | Project-specific subset | `.cursorrules` with explicit list (Approach B) |
-| Mixed (global + project) | Both: symlink globals + `.cursorrules` for extras |
+| Mixed (global + project) | Both: symlink globals + `.cursorrules` for project-specific additions |
 
 ---
 

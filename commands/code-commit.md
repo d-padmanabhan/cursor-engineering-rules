@@ -150,11 +150,11 @@ And ask:
 
 ---
 
-## Step 6: Write commit message file under `extras/commit_messages`
+## Step 6: Write commit message file under `tmp/commit_messages`
 
 Create the commit message file:
 
-- Directory: `extras/commit_messages` (create if missing)
+- Directory: `tmp/commit_messages` (create if missing)
 - Filename format:
   - `YYYYMMDD_HHMMSS_<repo>_<branch>_<last7sha>.md`
   - Example: `20251228_154700_cursor-engineering-rules_main_abcd123.md`
@@ -164,7 +164,7 @@ Notes:
 - Use repo name from `basename "$(git rev-parse --show-toplevel)"`
 - Use branch name from `git branch --show-current`
 - Use last 7 of current HEAD via `git rev-parse --short=7 HEAD`
-- Ensure `extras/` is gitignored before writing artifacts
+- Ensure `tmp/` is gitignored before writing artifacts
 
 > [!NOTE]
 > You cannot know the new commit hash until after committing. If desired, copy/rename the message file after commit to include the new commit short hash.
@@ -175,7 +175,7 @@ Notes:
 
 Commit:
 
-- `git commit -F extras/commit_messages/<filename>.md`
+- `git commit -F tmp/commit_messages/<filename>.md`
 
 Confirm:
 

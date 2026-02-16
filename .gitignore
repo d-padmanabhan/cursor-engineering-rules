@@ -60,4 +60,4 @@ htmlcov/
 .pytest_cache/
 
 # Private/local documentation
-extras/
+tmp/

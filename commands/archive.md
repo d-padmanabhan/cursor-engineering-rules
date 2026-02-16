@@ -36,9 +36,9 @@ Document the completed task, capture lessons learned, and update the knowledge b
    - Any gotchas or surprises?
 
 4. **Update Context Files**
-   - Update `extras/progress.md` with completion status
-   - Create `extras/reflect-<task>.md` if significant learnings
-   - Update `extras/tasks.md` to mark task complete
+   - Update `tmp/progress.md` with completion status
+   - Create `tmp/reflect-<task>.md` if significant learnings
+   - Update `tmp/tasks.md` to mark task complete
 
 5. **Identify Reusable Patterns**
    - Any patterns that should be standardized?
@@ -98,8 +98,8 @@ Document the completed task, capture lessons learned, and update the knowledge b
 
 Save archives to:
 
-- `extras/reflect-<task-name>.md` - For significant tasks
-- Or update `extras/progress.md` - For simpler summaries
+- `tmp/reflect-<task-name>.md` - For significant tasks
+- Or update `tmp/progress.md` - For simpler summaries
 
 ## Skip When
 

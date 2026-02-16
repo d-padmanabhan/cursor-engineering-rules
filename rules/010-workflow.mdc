@@ -86,13 +86,13 @@ You MUST follow this three-phase approach for all non-trivial changes:
 
 For non-trivial work, keep a single “north star” scope document and use it to drive small, sequential feature slices.
 
-- **Recommended file**: `extras/prd.md`
-- **Design doc (recommended when architecture/approach matters)**: `extras/design.md`
+- **Recommended file**: `tmp/prd.md`
+- **Design doc (recommended when architecture/approach matters)**: `tmp/design.md`
 - **Greenfield**: Define scope, non-goals, key flows, architecture, milestones
 - **Brownfield**: Capture current state + next desired state + constraints
 - **Rule**: Break work into features small enough for the agent to execute reliably (one feature per cycle)
 
-**When to create `extras/design.md`:**
+**When to create `tmp/design.md`:**
 - Level 3–4 tasks (multi-module or architectural)
 - Any time there are multiple valid approaches with meaningful tradeoffs
 - Any time interfaces, data models, or operational behaviors might change
@@ -108,7 +108,7 @@ For non-trivial work, keep a single “north star” scope document and use it t
 1. **Analyze the request** - Understand scope, constraints, and requirements
 2. **Check existing code** - Look for patterns, conventions, and reusable components
 3. **Design the solution** - Propose approach with alternatives considered
-4. **Create/update context files** - Document plan in `tasks.md` or `active-context.md` (in `extras/` directory)
+4. **Create/update context files** - Document plan in `tasks.md` or `active-context.md` (in `tmp/` directory)
 5. **WAIT FOR APPROVAL** - Present plan and await explicit confirmation before proceeding
 
 **Output:**
@@ -236,7 +236,7 @@ Treat recurring mistakes as a signal to improve the system, not just the code:
 
 - **If a bug recurs**: update the relevant rule(s), command(s), or reference docs so it doesn’t happen again
 - **If validation was missed**: update templates/commands to force the check (tests, lint, security scan)
-- **Capture learnings**: record patterns in `extras/reflect-*.md` (Level 3-4) and keep the guidance crisp
+- **Capture learnings**: record patterns in `tmp/reflect-*.md` (Level 3-4) and keep the guidance crisp
 
 **Review Checklist:**
 - [ ] Changes match the agreed plan
@@ -257,41 +257,41 @@ Treat recurring mistakes as a signal to improve the system, not just the code:
 
 ##  Context File Management
 
-**IMPORTANT**: Context files are **workspace-specific** and should be in the **extras/** directory in the project root, NOT in the rules directory. This allows each workspace to have its own context while sharing rules via symlinks.
+**IMPORTANT**: Context files are **workspace-specific** and should be in the **tmp/** directory in the project root, NOT in the rules directory. This allows each workspace to have its own context while sharing rules via symlinks.
 
 > [!IMPORTANT]
-> `extras/` is intended for **workspace-local context and artifacts** and should be **gitignored by default**.
+> `tmp/` is intended for **workspace-local context and artifacts** and should be **gitignored by default**.
 >
-> Do **not** commit or push files under `extras/` unless the user explicitly requests it (for example, promoting a draft document from `extras/` into the repo proper).
+> Do **not** commit or push files under `tmp/` unless the user explicitly requests it (for example, promoting a draft document from `tmp/` into the repo proper).
 
 > [!NOTE]
 > For prompt packing, retrieval, and “frequent intentional compaction” patterns, see `015-context-engineering.mdc`.
 
-**Templates:** Copy/paste-ready templates live alongside these rules under `templates/` (e.g., `.cursor/rules/templates/` when installed). In this repo, that path is `rules/templates/`. Copy them into `extras/` when you start a new workspace.
+**Templates:** Copy/paste-ready templates live alongside these rules under `templates/` (e.g., `.cursor/rules/templates/` when installed). In this repo, that path is `rules/templates/`. Copy them into `tmp/` when you start a new workspace.
 
-For complex projects, maintain context files in the `extras/` directory:
+For complex projects, maintain context files in the `tmp/` directory:
 
 ### `project-brief.md` - Project Overview (Optional, Recommended)
 Use this when starting work in a new repo/workspace (or when context resets) so the agent has stable, high-level grounding.
 - **Template:** `templates/project-brief.md.template`
-- **Workspace file:** `extras/project-brief.md`
+- **Workspace file:** `tmp/project-brief.md`
 
 ### `tasks.md` - Source of Truth
 - **Template:** `templates/tasks.md.template`
-- **Workspace file:** `extras/tasks.md`
+- **Workspace file:** `tmp/tasks.md`
 
 ### `active-context.md` - Current Focus
 - **Template:** `templates/active-context.md.template`
-- **Workspace file:** `extras/active-context.md`
+- **Workspace file:** `tmp/active-context.md`
 
 ### `progress.md` - Implementation Status
 - **Template:** `templates/progress.md.template`
-- **Workspace file:** `extras/progress.md`
+- **Workspace file:** `tmp/progress.md`
 
 ### `reflect-*.md` - Review Documents
 Create one per significant task:
 - **Template:** `templates/reflect-template.md.template`
-- **Workspace file:** `extras/reflect-<task>.md`
+- **Workspace file:** `tmp/reflect-<task>.md`
 
 ---
 
@@ -394,7 +394,7 @@ Implementation CANNOT proceed until all creative phases are completed.
 
 **Template:**
 - **Template:** `templates/creative-template.md.template`
-- **Workspace file:** `extras/creative-<component-or-feature>.md`
+- **Workspace file:** `tmp/creative-<component-or-feature>.md`
 
 ---
 
