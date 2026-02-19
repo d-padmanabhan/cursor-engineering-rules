@@ -342,6 +342,16 @@ Success!
 - Keep links up to date
 - Use relative links within docs
 
+### Links Must Be Clickable
+
+In documentation, prefer Markdown links so URLs render clickable in GitHub and common renderers.
+
+- **Preferred**: `[AWS Lambda docs](https://docs.aws.amazon.com/lambda/)`
+- **Avoid** (often non-clickable): `` `https://docs.aws.amazon.com/lambda/` ``
+
+> [!NOTE]
+> Wrap URLs in backticks only when the URL is being treated as a literal code value (for example, config, CLI output, or sample strings).
+
 ## API Documentation
 
 ### Function/Method Documentation
