@@ -78,6 +78,31 @@ func TestAdd(t *testing.T) {
 }
 ```
 
+### Mandatory Hardening Add-On (Go)
+
+For HTTP/API client code, always apply the hardening checks from
+`rules/210-go.mdc`:
+
+- Bound response reads before `io.ReadAll`
+- Cap `Retry-After` and server-derived delays
+- Avoid exported mutable policy/guardrail registries
+- Keep test helpers in `*_test.go`
+
+Use semgrep + pre-commit checks for these patterns because standard linting
+does not catch all of them reliably.
+
+### How To Maintain Rule/Skill Parity
+
+When you add a new Go hardening expectation:
+
+1. Add the requirement to `rules/210-go.mdc` under **HTTP Client Hardening (MUST)**.
+2. Add detection guidance (semgrep/pre-commit) in the same rule file.
+3. Mirror the short operational summary in this `SKILL.md` section.
+4. Update at least one concrete reference example under
+   `skills/go-rust-systems/references/`.
+
+This keeps policy (rules), agent behavior (skill), and examples in sync.
+
 ## Rust Quick Reference
 
 ### Essential Commands

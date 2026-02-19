@@ -38,12 +38,18 @@ func NewS3Client(ctx context.Context, region string) (*s3.Client, error) {
 
 ```go
 import (
+    "errors"
+    "fmt"
+    "io"
+    "github.com/aws/aws-sdk-go-v2/aws"
     "github.com/aws/aws-sdk-go-v2/service/s3"
     "github.com/aws/aws-sdk-go-v2/service/s3/types"
     "github.com/aws/smithy-go"
 )
 
 func GetObject(ctx context.Context, client *s3.Client, bucket, key string) ([]byte, error) {
+    const maxObjectReadBytes = 10 << 20 // 10 MiB safety bound
+
     result, err := client.GetObject(ctx, &s3.GetObjectInput{
         Bucket: aws.String(bucket),
         Key:    aws.String(key),
@@ -63,7 +69,14 @@ func GetObject(ctx context.Context, client *s3.Client, bucket, key string) ([]by
     }
     defer result.Body.Close()
 
-    return io.ReadAll(result.Body)
+    body, err := io.ReadAll(io.LimitReader(result.Body, maxObjectReadBytes+1))
+    if err != nil {
+        return nil, fmt.Errorf("read object body: %w", err)
+    }
+    if len(body) > maxObjectReadBytes {
+        return nil, fmt.Errorf("object body exceeds %d bytes", maxObjectReadBytes)
+    }
+    return body, nil
 }
 ```
 

@@ -41,6 +41,10 @@ func FuzzParseURL(f *testing.F) {
 
 **Test Helpers:**
 
+> [!IMPORTANT]
+> Keep helper utilities that import `testing`/`httptest` in `*_test.go` files.
+> This prevents test scaffolding from being compiled into production binaries.
+
 ```go
 func setupTestDB(t *testing.T) *sql.DB {
     t.Helper()  // Marks this as a test helper

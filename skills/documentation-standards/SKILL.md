@@ -12,6 +12,22 @@ description: Documentation best practices including Markdown formatting, Mermaid
 3. **Show, Don't Just Tell**: Use examples and diagrams
 4. **Consistent Format**: Follow established patterns
 
+## Voice
+
+Prefer neutral/imperative phrasing - avoid "you/your" in professional docs.
+Canonical guidance: `rules/810-documentation.mdc`.
+
+## Diataxis Quick Guide
+
+Use one primary documentation mode per page:
+
+- **Tutorial** - learning by doing
+- **How-to guide** - task completion
+- **Reference** - factual lookup
+- **Explanation** - concepts and rationale
+
+Canonical Diataxis guidance lives in `rules/810-documentation.mdc`. Keep this skill concise and link back to the rule instead of duplicating detailed standards.
+
 ## README Structure
 
 ```markdown

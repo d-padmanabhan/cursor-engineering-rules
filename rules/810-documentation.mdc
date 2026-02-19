@@ -18,6 +18,93 @@ files:
 
 ## Documentation Strategy
 
+### Diataxis Framework (Recommended)
+
+Use Diataxis to keep documentation purpose-specific. Each document should have one primary mode.
+
+| Mode | Primary user need | Typical question it answers |
+|---|---|---|
+| Tutorial | Learn by doing | "How do I get started?" |
+| How-to guide | Complete a specific task | "How do I configure X in Y?" |
+| Reference | Look up facts quickly | "What are all flags/options?" |
+| Explanation | Understand concepts and tradeoffs | "Why is this designed this way?" |
+
+> [!IMPORTANT]
+> Do not mix documentation modes in one page unless there is a strong reason. If a page starts combining step-by-step onboarding with API option listings and architectural rationale, split it into separate pages and cross-link them.
+
+### Diataxis Decision Guide
+
+Before writing or editing docs, choose one mode first:
+
+- If the reader is learning from scratch, write a **Tutorial**
+- If the reader is trying to finish a concrete task, write a **How-to guide**
+- If the reader needs authoritative details, write a **Reference**
+- If the reader needs understanding and rationale, write an **Explanation**
+
+### Diataxis Templates (Lightweight)
+
+#### Tutorial template
+
+```markdown
+# <Goal-oriented tutorial title>
+
+## What you will build
+
+## Prerequisites
+
+## Step-by-step walkthrough
+1. ...
+2. ...
+
+## Verify success
+
+## Next steps
+```
+
+#### How-to guide template
+
+```markdown
+# How to <specific task>
+
+## Prerequisites
+
+## Steps
+1. ...
+2. ...
+
+## Validation
+
+## Troubleshooting
+```
+
+#### Reference template
+
+```markdown
+# <Feature/API> reference
+
+## Syntax / schema
+
+## Parameters / fields
+
+## Defaults and limits
+
+## Examples
+```
+
+#### Explanation template
+
+```markdown
+# <Concept> explained
+
+## Context
+
+## Mental model
+
+## Tradeoffs
+
+## Related decisions and alternatives
+```
+
 ### When to Use Documentation Websites
 
 **Use documentation websites** when:
@@ -146,6 +233,16 @@ docs/
 - Avoid jargon when possible
 - Define technical terms
 - Use examples liberally
+
+### Voice (Avoid "you/your")
+
+Prefer **neutral** or **imperative** phrasing over second-person voice.
+
+- **Preferred**: "Run `make test`", "Set `ENV=prod`", "The operator should rotate keys weekly"
+- **Avoid**: "You should run `make test`", "Make sure your environment is set to prod"
+
+> [!NOTE]
+> This improves consistency across audiences (end-users, operators, reviewers) and makes docs read less like a conversation.
 
 ### Punctuation
 

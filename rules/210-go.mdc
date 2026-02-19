@@ -333,6 +333,58 @@ tlsConfig := &tls.Config{
 _, err := db.ExecContext(ctx, "INSERT INTO users (email) VALUES ($1)", email)
 ```
 
+### HTTP Client Hardening (MUST)
+
+When calling network APIs (internal or external), apply these non-negotiable checks:
+
+- **MUST** bound response body reads before `io.ReadAll` / decode.
+- **MUST** cap server-provided retry hints (for example `Retry-After`) to a configured maximum.
+- **MUST** keep "raw"/"escape hatch" API naming and docs aligned with actual behavior.
+- **MUST NOT** expose exported mutable global registries (maps/slices) used in policy/guardrails.
+- **MUST** keep test-only helpers in `*_test.go` so they do not compile into production binaries.
+
+```go
+//  GOOD: Bound network body reads
+const maxResponseBodyBytes = 10 << 20 // 10 MiB
+
+func readBodySafe(r io.Reader) ([]byte, error) {
+    limited := io.LimitReader(r, maxResponseBodyBytes+1)
+    body, err := io.ReadAll(limited)
+    if err != nil {
+        return nil, fmt.Errorf("read response body: %w", err)
+    }
+    if len(body) > maxResponseBodyBytes {
+        return nil, fmt.Errorf("response body exceeds %d bytes", maxResponseBodyBytes)
+    }
+    return body, nil
+}
+
+//  GOOD: Cap Retry-After-derived delays
+func retryDelay(attempt int, retryAfter string, maxDelay time.Duration) time.Duration {
+    if d, ok := parseRetryAfter(retryAfter); ok {
+        if d > maxDelay {
+            return maxDelay
+        }
+        return d
+    }
+    return backoff(attempt, maxDelay)
+}
+
+//  BAD: Exported mutable global policy registry
+var KnownAccounts = map[string]Account{} // External packages can mutate this
+
+//  GOOD: Unexported registry + copy accessor
+var knownAccounts = map[string]Account{}
+
+func KnownAccounts() map[string]Account {
+    out := make(map[string]Account, len(knownAccounts))
+    for k, v := range knownAccounts {
+        out[k] = v
+    }
+    return out
+}
+```
+
 ---
 
 ## 2. Simplicity & Idiomatic Go
@@ -1353,6 +1405,90 @@ golangci-lint run
 go test -race ./...
 govulncheck ./...
 ```
+
+### CI Gates (Hardening Extension - Recommended)
+
+Add semantic checks for rules that standard linters miss.
+
+```bash
+# Semgrep policy checks (custom)
+semgrep --config .semgrep/go-hardening.yaml ./...
+```
+
+**Sample pre-commit hook:**
+
+```yaml
+repos:
+  - repo: https://github.com/returntocorp/semgrep
+    rev: v1.129.0
+    hooks:
+      - id: semgrep
+        name: semgrep-go-hardening
+        args: ["--config", ".semgrep/go-hardening.yaml"]
+        files: "\\.go$"
+```
+
+**Sample `.semgrep/go-hardening.yaml`:**
+
+```yaml
+rules:
+  - id: go-unbounded-network-readall
+    message: "Bound network body reads with io.LimitReader or MaxBytesReader"
+    severity: ERROR
+    languages: [go]
+    patterns:
+      - pattern: io.ReadAll($BODY)
+      - pattern-not: io.ReadAll(io.LimitReader($BODY, ...))
+
+  - id: go-retry-after-without-cap
+    message: "Cap Retry-After derived delay to configured max delay"
+    severity: WARNING
+    languages: [go]
+    patterns:
+      - pattern: |
+          if $DELAY, $OK := parseRetryAfter(...); $OK {
+            return $DELAY
+          }
+
+  - id: go-exported-mutable-registry
+    message: "Avoid exported mutable map/slice globals for policy/guardrail registries"
+    severity: WARNING
+    languages: [go]
+    patterns:
+      - pattern-either:
+          - pattern: var $X = map[$K]$V{...}
+          - pattern: var $X = []$T{...}
+      - metavariable-regex:
+          metavariable: $X
+          regex: "^[A-Z].*"
+
+  - id: go-testing-helper-in-non-test-file
+    message: "Move test helpers/imports into *_test.go files"
+    severity: WARNING
+    languages: [go]
+    paths:
+      exclude:
+        - "*_test.go"
+    patterns:
+      - pattern-either:
+          - pattern: import "testing"
+          - pattern: import "net/http/httptest"
+```
+
+### How To Add New Hardening Checks (Rules + Skills)
+
+When adding a new Go hardening guardrail, update both the rule and skill
+layers so guidance and enforcement stay aligned:
+
+1. Add the normative requirement under **HTTP Client Hardening (MUST)** in this
+   file (`rules/210-go.mdc`).
+2. Add/extend a detection rule in the sample semgrep section (and in your repo's
+   actual `.semgrep/go-hardening.yaml` if present).
+3. Add an anti-pattern bullet under **Anti-Patterns (Automatic Rejection)**.
+4. Mirror the operator-facing summary in
+   `skills/go-rust-systems/SKILL.md` under **Mandatory Hardening Add-On (Go)**.
+5. Update at least one concrete example in `skills/go-rust-systems/references/`
+   so the new requirement is demonstrated in runnable code.
 
 ---
 
@@ -2985,8 +3121,11 @@ func setupLogger(level string) *slog.Logger {
 -  Goroutines without lifecycle management
 -  Swallowed errors ("Don't just check errors, handle them gracefully")
 -  Global mutable state
+-  Unbounded network body reads (`io.ReadAll` without limit on response bodies)
+-  Uncapped server-derived retry/sleep delays (`Retry-After` without max cap)
 -  Logging secrets/PII
 -  Zero values that require initialization to be safe ("Make the zero value useful")
+-  Test-only helper code in non-`*_test.go` files
 
 ### Code Smells
 -  Channels for simple mutual exclusion (use mutexes)
