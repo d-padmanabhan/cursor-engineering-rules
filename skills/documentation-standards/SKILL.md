@@ -12,6 +12,11 @@ description: Documentation best practices including Markdown formatting, Mermaid
 3. **Show, Don't Just Tell**: Use examples and diagrams
 4. **Consistent Format**: Follow established patterns
 
+## Hard Requirements (Writing)
+
+- **No AI slop** - remove filler, keep docs concrete and task-oriented
+- **No em dashes/en dashes** - use hyphens (`-`) instead
+
 ## Voice
 
 Prefer neutral/imperative phrasing - avoid "you/your" in professional docs.

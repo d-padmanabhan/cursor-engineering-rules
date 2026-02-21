@@ -234,6 +234,10 @@ docs/
 - Define technical terms
 - Use examples liberally
 
+### Anti-Slop (Required)
+
+**No AI slop.** Keep documentation concise, specific, and grounded. Prefer deleting filler over adding more text.
+
 ### Voice (Avoid "you/your")
 
 Prefer **neutral** or **imperative** phrasing over second-person voice.
