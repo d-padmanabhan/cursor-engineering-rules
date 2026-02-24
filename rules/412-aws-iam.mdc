@@ -190,6 +190,43 @@ If a vendor assumes a role in your account, require an `ExternalId` and lock to 
 > [!NOTE]
 > Use `ExternalId` when you are protecting against the **confused deputy** problem (common in SaaS integrations).
 
+#### Cross-service confused deputy prevention (resource policies): `aws:SourceAccount` / `aws:SourceArn`
+
+When a **resource-based policy** grants access to an **AWS service principal** (for example,
+`cloudtrail.amazonaws.com`, `events.amazonaws.com`, `sns.amazonaws.com`), the policy is trusting the
+service principal — not the human/role that configured the calling service.
+
+To reduce confused-deputy risk, restrict the service principal with global condition keys:
+
+- `aws:SourceAccount` (allow only when acting on behalf of a specific AWS account)
+- `aws:SourceArn` (allow only when acting on behalf of a specific AWS resource ARN)
+
+AWS guidance: `https://docs.aws.amazon.com/IAM/latest/UserGuide/confused-deputy.html`
+
+Example (CloudTrail writing to S3; restrict by source account):
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "CloudTrailAclCheck",
+      "Effect": "Allow",
+      "Principal": { "Service": "cloudtrail.amazonaws.com" },
+      "Action": "s3:GetBucketAcl",
+      "Resource": "arn:aws:s3:::amzn-s3-demo-bucket1",
+      "Condition": {
+        "StringEquals": { "aws:SourceAccount": "111122223333" }
+      }
+    }
+  ]
+}
+```
+
+> [!IMPORTANT]
+> Prefer **both** `aws:SourceAccount` and `aws:SourceArn` where supported by the calling service.
+> Check the specific service’s docs for supported keys.
+
 ## Identity-based vs resource-based policies (quick rules)
 
 - **Identity-based** policies generally do **not** specify `Principal` (it's implicit: the attached user/role)

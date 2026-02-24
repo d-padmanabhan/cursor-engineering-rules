@@ -38,5 +38,6 @@ Use this skill when you are working on:
 
 - `references/iam-authorization-model.md`
 - `references/cross-account-and-externalid.md`
+- `references/cross-service-confused-deputy.md`
 - `references/kms-key-policy-and-grants.md`
 - `references/eks-pod-identity-abac-and-lattice.md`
