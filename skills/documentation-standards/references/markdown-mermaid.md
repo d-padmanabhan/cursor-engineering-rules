@@ -67,6 +67,33 @@ flowchart TD
     D --> E
 ```
 
+### GitHub Mermaid rendering pitfalls (common fixes)
+
+#### Quote node labels that contain punctuation or `<br/>`
+
+GitHub's Mermaid renderer can fail to parse some node labels containing characters like `(`, `)`, `,`, or HTML line breaks (`<br/>`) unless the label is quoted.
+
+**Bad (can trigger parse errors on GitHub):**
+
+```mermaid
+flowchart TD
+  A[Need to access an HTTP endpoint<br/>(web app, API, A2A, MCP)] --> B{Caller identity type?}
+```
+
+**Good (quote the label):**
+
+```mermaid
+flowchart TD
+  A["Need to access an HTTP endpoint<br/>(web app, API, A2A, MCP)"] --> B{Caller identity type?}
+```
+
+#### Use Markdown links (not backticks) for clickable URLs
+
+In documentation, backticks render URLs as code and they are often **not clickable**.
+
+- **Preferred**: `[AWS doc](https://docs.aws.amazon.com/vpc-lattice/latest/ug/auth-policies.html)`
+- **Avoid**: `` `https://docs.aws.amazon.com/vpc-lattice/latest/ug/auth-policies.html` ``
+
 ### Sequence Diagram
 
 ```mermaid

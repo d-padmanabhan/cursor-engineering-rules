@@ -81,6 +81,9 @@ flowchart TD
     Error --> End
 ```
 
+> [!TIP]
+> If GitHub fails to render a Mermaid flowchart with a parse error, quote node labels that contain punctuation or HTML line breaks. Example: use `A["Label<br/>(API, A2A, MCP)"]` instead of `A[Label<br/>(API, A2A, MCP)]`.
+
 **Key Features:**
 - Directions: `TD` (Top-Down), `LR` (Left-Right), `BT`, `RL`
 - Node shapes: `[]` rectangle, `()` rounded, `{}` diamond, `[()]` stadium, `[[]]` subroutine, `[/Input/]` parallelogram
