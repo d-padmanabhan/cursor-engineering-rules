@@ -32,6 +32,47 @@ files:
 - **"Observability built-in"** - Metrics, logs, events for debugging
 - **"No retries on conflicts"** - Conflicts indicate architectural problems
 
+## Container Health Checks (Readiness and Liveness Probes)
+
+Readiness and liveness probes are health checks used by Kubernetes to manage the lifecycle and traffic flow of your containers.
+
+- **Liveness Probe**: Determines if a container is still running correctly. If it fails, Kubernetes kills the container and starts a new one based on the restart policy
+- **Readiness Probe**: Determines if a container is ready to start accepting network traffic. If it fails, the Pod's IP address is removed from the Endpoints of all Services, ensuring no requests are sent to an unready application
+
+### Key Implementation Methods
+
+Both probes can be configured using three main mechanisms:
+
+- **HTTP GET**: Kubernetes sends an HTTP request to a specific endpoint (for example `/healthz`). A status code between 200-399 indicates success
+- **TCP Socket**: Kubernetes attempts to open a TCP connection to a specified port. If the connection is established, the probe is successful
+- **Exec Action**: Kubernetes executes a command inside the container. If the command returns an exit code of 0, the probe is successful
+
+## EKS Traffic Routing (ALB/NLB and VPC Lattice - Pod IP Targets)
+
+On EKS, AWS controllers can route traffic to Kubernetes workloads using either **node targets** or **pod IP targets**.
+
+### AWS Load Balancer Controller (ALB/NLB)
+
+The AWS Load Balancer Controller manages ALBs/NLBs for Kubernetes and supports two common target registration patterns:
+
+- **Instance targets**: registers **worker nodes** (instance IDs) in the AWS target group. Traffic reaches a node (often via NodePort) and is then forwarded to a pod by kube-proxy
+- **IP targets**: registers **pod IPs** in the AWS target group. Traffic is routed directly to pods, avoiding the NodePort + kube-proxy hop
+
+Key points:
+
+- **IP targets require pod IP reachability** from the load balancer data plane (routing + security groups). On EKS this commonly implies AWS VPC CNI-based pod networking
+- **ALB Ingress IP targets** are enabled via `alb.ingress.kubernetes.io/target-type: ip` (instance targets use `instance`)
+- **NLB Service IP targets** are enabled via `service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"`
+
+### Amazon VPC Lattice Gateway API Controller
+
+When using VPC Lattice with Kubernetes (Gateway API), the controller can register **pod IPs** into VPC Lattice target groups and route requests directly to pods.
+
+Key points:
+
+- **Pod registration**: pod IPs are registered as targets (no node-level hop)
+- **Readiness gates**: the controller can use Kubernetes Pod readiness gates so pods are not considered ready until they are registered and healthy in the Lattice target group, reducing 5XX during rollouts
+
 **Applying Kubernetes Principles:**
 
 ```go

@@ -268,6 +268,15 @@ resource "aws_iam_role" "app_role" {
 - Works across accounts and regions
 - No VPC peering or transit gateway required
 
+### Kubernetes integration (Gateway API controller - pod IP targets)
+
+When using VPC Lattice from Kubernetes via the Gateway API controller, traffic can be routed to **pod IP targets** (pods are registered as targets in Lattice target groups).
+
+Key points:
+
+- **Direct-to-pod routing**: reduces node-level hops compared to node-target patterns
+- **Readiness gates**: pods can be gated until registration and target health are established, reducing rollout 5XX
+
 ### Service Network Setup
 
 ```hcl

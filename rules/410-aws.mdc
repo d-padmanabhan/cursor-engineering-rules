@@ -534,7 +534,7 @@ resource "aws_vpclattice_service_network" "main" {
 
 **EKS Integration:**
 ```yaml
-# Kubernetes Service for VPC Lattice
+# Kubernetes Service for NLB (pod IP targets)
 apiVersion: v1
 kind: Service
 metadata:
