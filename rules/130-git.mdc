@@ -577,6 +577,31 @@ git pull origin main && git checkout -b feat/your-feature
 - No `--ff-only` protection (could create merge commit)
 - Uses `checkout` (works on older Git but less clear than `switch`)
 
+## Sync with remote, then push (branch-agnostic)
+
+When pushing after a local commit, sync with the remote first so the push is not rejected. Use **pull with rebase** so your commits are replayed on top of the remote branch (no merge commit). Use the **current branch** explicitly so the same commands work on `main` or any feature branch.
+
+**Two-step (recommended for clarity):**
+
+```bash
+git pull origin $(git branch --show-current) --rebase
+git push origin $(git branch --show-current)
+```
+
+**One-liner (e.g. in scripts or agent workflows):**
+
+```bash
+git pull origin $(git branch --show-current) --rebase; git push origin $(git branch --show-current)
+```
+
+| Element | Purpose |
+| --- | --- |
+| `$(git branch --show-current)` | Current branch name (e.g. `main`, `feat/foo`); avoids hardcoding. |
+| `--rebase` | Replay your local commits on top of remote; avoids merge commits and keeps history linear. |
+
+> [!NOTE]
+> In PowerShell, `$(git branch --show-current)` works. In POSIX shells, backticks `` `git branch --show-current` `` are equivalent. Agents and scripts that run "sync then push" after an approved commit should use this pattern so it works on any branch.
+
 ---
 
 # Modern Git Commands
