@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": "python3 ./hooks/guard_before_shell.py",
+        "timeout": 20,
+        "failClosed": false
+      }
+    ],
+    "beforeReadFile": [
+      {
+        "command": "python3 ./hooks/guard_before_read_file.py",
+        "timeout": 10,
+        "failClosed": false
+      }
+    ],
+    "preToolUse": [
+      {
+        "command": "python3 ./hooks/audit_log.py",
+        "timeout": 5,
+        "failClosed": false,
+        "matcher": "Shell|Read|Write|Edit|Delete|^mcp__"
+      }
+    ]
+  }
+}

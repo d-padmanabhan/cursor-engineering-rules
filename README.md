@@ -78,6 +78,7 @@ Comprehensive, battle-tested Cursor IDE rules for professional software engineer
 Utility scripts for Cursor maintenance:
 
 - **[cursor-maintenance.sh](scripts/cursor-maintenance.sh)** - Clean cache, logs, and temp files to reclaim disk space
+- **[cursor-hooks-install.sh](scripts/cursor-hooks-install.sh)** - Install optional deterministic Cursor hooks (guardrails + audit)
 
 ```bash
 # Preview cleanup
@@ -88,6 +89,13 @@ Utility scripts for Cursor maintenance:
 ```
 
 See [scripts/README.md](scripts/README.md) for details.
+
+### Hooks (optional)
+
+Deterministic lifecycle hooks to observe/control agent behavior (for example: gate destructive shell commands, block reading `.env` files).
+
+- Docs: **[`docs/HOOKS.md`](docs/HOOKS.md)**
+- Cursor hook pack: **[`hooks/cursor/`](hooks/cursor/)**
 
 ---
 

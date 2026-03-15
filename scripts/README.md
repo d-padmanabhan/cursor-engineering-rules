@@ -54,6 +54,28 @@ Cleans Cursor cache, logs, and temporary files to reclaim disk space.
 > [!TIP]
 > Run weekly or when Cursor feels sluggish. Close Cursor before running for best results.
 
+### `cursor-hooks-install.sh`
+
+Installs the optional Cursor hooks pack from this repo into either:
+
+- `~/.cursor/` (user hooks), or
+- a specific project’s `.cursor/` directory (project hooks)
+
+This script is idempotent and merges into an existing `hooks.json` by default (with a timestamped backup).
+
+**Usage:**
+
+```bash
+# Install globally (user hooks)
+./scripts/cursor-hooks-install.sh --user
+
+# Install into a specific repo (project hooks)
+./scripts/cursor-hooks-install.sh --project /path/to/repo
+
+# Preview actions
+./scripts/cursor-hooks-install.sh --user --dry-run
+```
+
 ## Installation
 
 The scripts are ready to use from this repository:
