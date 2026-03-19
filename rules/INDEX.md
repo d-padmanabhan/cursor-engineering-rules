@@ -65,6 +65,11 @@ Quick lookup table for all Cursor rules files in `rules/`.
 | [460-helm.mdc](460-helm.mdc) | Helm charts, best practices, templating, values management, and GitOps deployment patterns | 460 | No |
 | [470-postgresql.mdc](470-postgresql.mdc) | Database naming conventions, schema patterns, and PostgreSQL best practices. | 470 | No |
 | [475-sql.mdc](475-sql.mdc) | Safe, maintainable SQL patterns for analysts and engineers - command categories (DQL/DML/DDL/DCL/TCL), transactions, and destructive-operation guardrails. | 475 | No |
+| [480-data-engineering.mdc](480-data-engineering.mdc) | Cross-platform data engineering standards (batch + streaming): data contracts, backfills, quality, governance, cost, and observability. | 480 | No |
+| [481-databricks.mdc](481-databricks.mdc) | Databricks (Spark/Delta/Unity Catalog/DLT) patterns for safe, performant, governable data pipelines. | 481 | No |
+| [482-snowflake.mdc](482-snowflake.mdc) | Snowflake warehouse, security, and query patterns (RBAC, cost/perf, streams/tasks, loading) for production data systems. | 482 | No |
+| [483-kafka.mdc](483-kafka.mdc) | Confluent Kafka patterns for topics, schemas, producers/consumers, reliability, security, and operability. | 483 | No |
+| [484-teradata.mdc](484-teradata.mdc) | Teradata-specific SQL and performance patterns (indexes, stats, spool, joins, QUALIFY) for safe and efficient workloads. | 484 | No |
 
 ## AI & MCP (500-599)
 

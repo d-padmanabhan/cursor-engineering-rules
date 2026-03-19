@@ -63,6 +63,12 @@ Comprehensive, battle-tested Cursor IDE rules for professional software engineer
 - **[320-api-design.mdc](rules/320-api-design.mdc)** - REST API design patterns
 - **[330-observability.mdc](rules/330-observability.mdc)** - Logging, metrics, tracing
 - **[470-postgresql.mdc](rules/470-postgresql.mdc)** - PostgreSQL patterns
+- **[475-sql.mdc](rules/475-sql.mdc)** - Safe SQL patterns (transactions, destructive guardrails)
+- **[480-data-engineering.mdc](rules/480-data-engineering.mdc)** - Data engineering core (contracts, backfills, DQ, governance)
+- **[481-databricks.mdc](rules/481-databricks.mdc)** - Databricks (Spark/Delta/Unity Catalog/DLT)
+- **[482-snowflake.mdc](rules/482-snowflake.mdc)** - Snowflake (RBAC, cost/perf, ingestion, tasks)
+- **[483-kafka.mdc](rules/483-kafka.mdc)** - Kafka / Confluent (schemas, semantics, DLQ, ops)
+- **[484-teradata.mdc](rules/484-teradata.mdc)** - Teradata SQL and performance patterns
 - **[810-documentation.mdc](rules/810-documentation.mdc)** - Documentation standards
 - **[820-open-source.mdc](rules/820-open-source.mdc)** - Open source project patterns
 - **[250-cli.mdc](rules/250-cli.mdc)** - CLI application patterns

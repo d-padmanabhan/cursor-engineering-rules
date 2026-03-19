@@ -20,6 +20,9 @@ files:
 > [!IMPORTANT]
 > This rule is intentionally database-agnostic. For PostgreSQL specifics, also follow `470-postgresql.mdc`.
 
+> [!NOTE]
+> For data-platform specifics, also see `480-data-engineering.mdc` and the platform rules (`481-databricks.mdc`, `482-snowflake.mdc`, `483-kafka.mdc`, `484-teradata.mdc`).
+
 ---
 
 ## SQL command categories (mental model)

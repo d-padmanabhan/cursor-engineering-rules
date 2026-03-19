@@ -1,0 +1,190 @@
+---
+title: Data Engineering Ruleset
+description: Cross-platform data engineering standards (batch + streaming): data contracts, backfills, quality, governance, cost, and observability.
+priority: 480
+alwaysApply: false
+files:
+  include:
+    - "**/*.sql"
+    - "**/*.py"
+    - "**/*.scala"
+    - "**/*.java"
+    - "**/*.kt"
+    - "**/*.yaml"
+    - "**/*.yml"
+    - "**/*.json"
+    - "**/*.proto"
+    - "**/*.avsc"
+    - "**/dbt/**/*"
+    - "**/dlt/**/*"
+    - "**/kafka/**/*"
+    - "**/databricks/**/*"
+    - "**/snowflake/**/*"
+    - "**/teradata/**/*"
+---
+
+# Data Engineering Ruleset
+
+**Audience**: data engineers and platform engineers building batch + streaming pipelines
+
+**Goal**: make data systems safe-by-default, reproducible, observable, and cost-aware across engines (Databricks, Snowflake, Kafka, Teradata)
+
+> [!NOTE]
+> This rule is cross-platform. Pair it with engine-specific rules:
+> - `481-databricks.mdc`
+> - `482-snowflake.mdc`
+> - `483-kafka.mdc`
+> - `484-teradata.mdc`
+
+---
+
+## Non-negotiables (defaults)
+
+- **Idempotency**: re-running the same job for the same input window must not duplicate or corrupt outputs.
+- **Deterministic replays**: backfills and replays must be reproducible from inputs + code + config.
+- **Schema contracts**: define and enforce what changes are allowed (additive vs breaking).
+- **Data quality**: validate critical invariants close to ingestion and before publishing.
+- **Governance**: treat PII and secrets as production incidents; enforce least privilege.
+- **Observability**: every pipeline run emits enough signals to debug quickly.
+- **Cost discipline**: design for pruning/incremental processing; avoid full scans by default.
+
+---
+
+## Data contracts and schema evolution
+
+### Contract basics
+
+- Publish a **stable contract** per dataset/topic (schema + semantics + SLA).
+- Include:
+  - **keys** (natural/business keys and/or surrogate keys)
+  - **event time vs processing time** meaning
+  - **nullability and defaults**
+  - **allowed late-arrival window**
+  - **dedupe strategy** (if any)
+
+### Schema evolution rules of thumb
+
+- **Prefer additive changes** (new nullable column) over destructive changes.
+- **Breaking changes** require an explicit migration plan:
+  - dual-write/dual-read window
+  - versioned outputs (`v1`, `v2`) or compatibility mode
+  - clear rollback strategy
+
+> [!WARNING]
+> Changing meaning without changing schema is still a breaking change (for example: units, currency, time zone, enums).
+
+---
+
+## Idempotency patterns (batch + streaming)
+
+### “Prove then publish” pattern
+
+- Write to a staging location/table.
+- Validate row counts and invariants.
+- Publish via an atomic swap/merge (engine-specific).
+
+### Dedupe and upsert rules
+
+- If data can arrive twice, decide where you dedupe:
+  - **at ingestion** (recommended when duplicates are common)
+  - **at publish** (acceptable when upstream is mostly clean)
+- Dedupe must be based on stable identifiers:
+  - event id + source + event time (preferred)
+  - business key + event time + source version
+
+### Watermarks and incremental processing
+
+- Track and persist a **watermark** (and its semantics) for incremental runs:
+  - high-water mark (max event time processed)
+  - processing cursor (offsets/sequence ids)
+- Handle late arrivals explicitly (bounded by policy).
+
+---
+
+## Backfills and replays (runbook-quality)
+
+Backfills should be runnable as an explicit, reviewable workflow.
+
+**Minimum requirements:**
+
+- **Scope**: time range, partitions, topics/tables
+- **Blast radius**: which downstream datasets will change
+- **Safety**: how you prevent duplicates and partial publish
+- **Validation**: pre/post checks with expected deltas
+- **Rollback**: how to revert outputs (time travel/clones/versioned outputs)
+
+> [!IMPORTANT]
+> Backfills are production changes. Treat them like migrations: plan, run, verify, and document outcomes.
+
+---
+
+## Data quality (DQ) and reconciliation
+
+### Pick a small set of “must-not-break” checks
+
+- **Freshness**: data is arriving within SLA
+- **Volume**: counts within expected bounds
+- **Uniqueness**: keys are unique (where required)
+- **Referential integrity**: foreign keys exist (where relevant)
+- **Distribution**: basic stats sanity (min/max/percentiles) for critical measures
+
+### Where to enforce checks
+
+- **Near ingestion**: catch upstream changes early
+- **Before publish**: block bad data from becoming “official”
+- **Post publish**: monitor drift and alert
+
+---
+
+## Security and privacy
+
+- **Never log raw PII or secrets**. If you must sample, sample non-sensitive columns only.
+- Prefer **masking policies / secure views / row filters** over ad-hoc filtering in queries.
+- Prefer **service principals** over user credentials for automation.
+- Use **least privilege** on data objects (tables, schemas, topics, external locations).
+
+> [!CAUTION]
+> Treat “anyone can read the raw zone” as a security bug, not a convenience.
+
+---
+
+## Observability and operability
+
+### Minimum telemetry per pipeline run
+
+- run id, code version, config version
+- input window (time range/offsets)
+- row counts in/out (and rejects)
+- latency (end-to-end + stage timings)
+- watermark updates
+
+### Error handling
+
+- categorize errors:
+  - **data errors** (bad records) → quarantine + metrics
+  - **system errors** (timeouts, auth, quota) → retry with backoff, alert
+  - **logic errors** (bugs) → fail fast, alert
+
+---
+
+## Cost and performance (design defaults)
+
+- Prefer **incremental** over full refresh.
+- Use **partition pruning** (time + high-cardinality keys only when justified).
+- Avoid:
+  - `SELECT *` on wide fact tables
+  - unbounded joins without filters
+  - cross joins unless proven safe
+
+---
+
+## Review checklist (quick)
+
+- [ ] Contract is explicit (schema + semantics + SLA)
+- [ ] Idempotency strategy is clear (upsert/dedupe/watermark)
+- [ ] Backfill plan exists (scope, validation, rollback)
+- [ ] DQ checks cover the critical invariants
+- [ ] PII handling is safe (no leaks, least privilege, masking where appropriate)
+- [ ] Observability signals exist (counts, timings, watermark, run id)
+- [ ] Cost guardrails present (pruning/incremental; no accidental full scans)
+

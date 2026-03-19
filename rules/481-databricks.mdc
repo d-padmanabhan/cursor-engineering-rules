@@ -1,0 +1,129 @@
+---
+title: Databricks Engineering Ruleset
+description: Databricks (Spark/Delta/Unity Catalog/DLT) patterns for safe, performant, governable data pipelines.
+priority: 481
+alwaysApply: false
+files:
+  include:
+    - "**/*.py"
+    - "**/*.scala"
+    - "**/*.sql"
+    - "**/*.ipynb"
+    - "**/databricks/**/*"
+    - "**/dlt/**/*"
+---
+
+# Databricks Engineering Ruleset
+
+**Audience**: engineers building Databricks jobs, notebooks, and Delta Lake tables
+
+**Goal**: reliable pipelines with predictable performance, governed access, and safe maintenance
+
+> [!IMPORTANT]
+> Default to a **Lakehouse** mental model: bronze/silver/gold (or raw/curated/serving), with explicit contracts between layers.
+
+---
+
+## Table format and governance defaults
+
+### Delta Lake defaults
+
+- Prefer **Delta tables** for managed datasets.
+- Keep table properties explicit:
+  - enable/disable schema evolution intentionally
+  - define `checkpoint`/streaming semantics in code
+
+### Unity Catalog
+
+- Use Unity Catalog for governed objects:
+  - **catalog.schema.table** naming
+  - least-privilege grants to groups/service principals
+  - managed/external locations with clear ownership
+
+> [!CAUTION]
+> Avoid “workspace-local” permissions for production data. Use UC grants and auditable groups.
+
+---
+
+## Spark performance essentials (don’t fight the engine)
+
+- Avoid collecting large datasets to the driver (`collect()`, `toPandas()`).
+- Prefer built-in functions over Python UDFs; UDFs often block optimizations.
+- Make joins intentional:
+  - prefer broadcast joins only when the small side is truly small
+  - watch skew; consider salting or adaptive strategies
+- Cache/persist only when reused and memory pressure is understood.
+
+### Partitioning and pruning
+
+- Partition only when it materially improves pruning (typically by date).
+- Too many small partitions hurts performance (small files + task overhead).
+
+---
+
+## Delta maintenance: OPTIMIZE / ZORDER / VACUUM
+
+### OPTIMIZE / file sizing
+
+- Use `OPTIMIZE` when you observe small-file issues and/or slow scans.
+- Choose file size targets appropriate to workload (don’t blindly optimize everything).
+
+### ZORDER
+
+- Use `ZORDER BY` only for columns frequently used in selective predicates.
+
+### VACUUM
+
+- Treat `VACUUM` as a destructive operation:
+  - confirm retention policy
+  - ensure no readers rely on older versions
+
+> [!WARNING]
+> Misconfigured `VACUUM` can delete data needed for time travel / replay. Validate retention and governance requirements first.
+
+---
+
+## Streaming and DLT
+
+### Streaming correctness
+
+- Define semantics explicitly:
+  - event-time column
+  - watermark policy
+  - dedupe strategy (if applicable)
+
+### DLT expectations (data quality)
+
+- Encode critical invariants as DLT expectations (drop/quarantine/fail).
+
+> [!TIP]
+> Prefer “quarantine and alert” for non-critical issues; “fail pipeline” for contract violations that would corrupt downstream truth.
+
+---
+
+## Secrets and connectivity
+
+- Use Databricks secret scopes (or external secret managers) for credentials.
+- Never hardcode secrets in notebooks or repos.
+- For external systems (Kafka, Snowflake, APIs), prefer service principals and short-lived credentials where possible.
+
+---
+
+## Code organization
+
+- Prefer **jobs** + version-controlled code over ad-hoc notebooks for production.
+- If notebooks are used:
+  - keep them thin (orchestration/visualization) and call shared libraries
+  - externalize config (widgets/env) and make runs reproducible
+
+---
+
+## Review checklist (quick)
+
+- [ ] Delta/UC choices are explicit (catalog/schema/table; grants)
+- [ ] Idempotency and replay strategy is clear (upsert/dedupe/watermark)
+- [ ] No driver blowups (`collect/toPandas` on big data)
+- [ ] Joins and partitioning are intentional (pruning likely)
+- [ ] Maintenance ops are safe (`VACUUM` policy validated)
+- [ ] Secrets are handled via scopes / managed auth
+

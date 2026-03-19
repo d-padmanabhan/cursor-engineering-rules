@@ -1,0 +1,103 @@
+---
+title: Teradata Engineering Ruleset
+description: Teradata-specific SQL and performance patterns (indexes, stats, spool, joins, QUALIFY) for safe and efficient workloads.
+priority: 484
+alwaysApply: false
+files:
+  include:
+    - "**/*.sql"
+    - "**/teradata/**/*"
+    - "**/td/**/*"
+---
+
+# Teradata Engineering Ruleset
+
+**Audience**: engineers writing Teradata SQL for analytics and batch processing
+
+**Goal**: predictable performance (spool + joins), safe change management, and explainable query plans
+
+---
+
+## Planning and performance basics
+
+- Always start from the data shape:
+  - expected row counts at each stage
+  - join cardinalities
+  - whether filters can be applied early
+- Use `EXPLAIN` (or plan tooling) on queries that will run at scale.
+
+---
+
+## Primary Index and data distribution (PI)
+
+- PI choice affects distribution and join performance.
+- Avoid PI choices that cause skew (hot values).
+- For large joins, align distribution keys where it materially reduces redistribution.
+
+> [!NOTE]
+> PI strategy is workload-specific. Choose based on the dominant access patterns, not “what feels right”.
+
+---
+
+## Statistics (collect stats intentionally)
+
+- Collect statistics on:
+  - join keys
+  - highly selective predicates
+  - columns used in partitioning/range filters
+- Re-collect stats after significant data volume shifts.
+
+> [!IMPORTANT]
+> Bad/missing stats are a common root cause of unstable Teradata performance.
+
+---
+
+## Spool safety
+
+- Watch for operations that explode spool:
+  - many-to-many joins without pre-aggregation
+  - cross joins
+  - large intermediate sorts
+- Prefer pre-filtering and pre-aggregation before joining large tables.
+
+> [!WARNING]
+> Spool blowups are outages. If a query shape can blow up, make that risk explicit and mitigate it.
+
+---
+
+## Teradata SQL idioms
+
+### QUALIFY (analytic filtering)
+
+Use `QUALIFY` to filter analytic function results without extra subqueries:
+
+```sql
+SELECT
+  user_id,
+  event_ts,
+  ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY event_ts DESC) AS rn
+FROM events
+QUALIFY rn = 1;
+```
+
+---
+
+## Change safety (DDL/DML)
+
+Follow `475-sql.mdc` destructive-operation guardrails:
+
+- prove rowsets before `UPDATE`/`DELETE`
+- use transactions when supported by your execution environment
+- treat `DROP`/`TRUNCATE` as high-risk operations with rollback plans
+
+---
+
+## Review checklist (quick)
+
+- [ ] Expected row counts and join cardinalities are understood
+- [ ] `EXPLAIN` considered for large queries / new query shapes
+- [ ] PI and distribution choices avoid skew for dominant access patterns
+- [ ] Stats plan exists (join keys + selective predicates)
+- [ ] Spool risk is mitigated (filters/aggregation before large joins)
+- [ ] DML/DDL follows safety guardrails (`475-sql.mdc`)
+

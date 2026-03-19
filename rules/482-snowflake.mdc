@@ -1,0 +1,113 @@
+---
+title: Snowflake Engineering Ruleset
+description: Snowflake warehouse, security, and query patterns (RBAC, cost/perf, streams/tasks, loading) for production data systems.
+priority: 482
+alwaysApply: false
+files:
+  include:
+    - "**/*.sql"
+    - "**/*.py"
+    - "**/*.js"
+    - "**/*.yaml"
+    - "**/*.yml"
+    - "**/snowflake/**/*"
+---
+
+# Snowflake Engineering Ruleset
+
+**Audience**: engineers building datasets and pipelines on Snowflake
+
+**Goal**: secure, cost-aware, high-performance analytics with predictable operations
+
+---
+
+## Warehouses (compute) and cost defaults
+
+- Enable **auto-suspend** and set an explicit low idle timeout.
+- Prefer **right-sized warehouses**; scale out (multi-cluster) only for concurrency needs.
+- Use **resource monitors** (account/object) to prevent runaway spend.
+
+> [!IMPORTANT]
+> Warehouse size is a performance lever and a cost lever. Treat sizing as an explicit decision, not a default.
+
+---
+
+## Security and governance (RBAC-first)
+
+- Prefer roles over users; assign users/service principals to roles.
+- Use **least privilege**:
+  - separate read roles from write/admin roles
+  - separate raw vs curated vs serving schemas
+- Use platform features for sensitive data:
+  - masking policies
+  - row access policies
+  - secure views
+  - network policies (where applicable)
+
+> [!CAUTION]
+> “Just grant on the database” is usually a governance smell. Scope grants to schemas/tables needed.
+
+---
+
+## Query performance: design for pruning
+
+- Avoid `SELECT *` on wide tables in production queries.
+- Make filters selective and prune-friendly (for example, time ranges).
+- Prefer joins on properly typed keys; avoid string casting in join predicates.
+- Use clustering keys only when there is evidence of persistent pruning issues.
+
+### Anti-patterns to avoid
+
+- Leading-wildcard pattern matching (`ILIKE '%foo'`) on large datasets.
+- Unbounded joins across huge tables without predicates.
+
+---
+
+## Data modeling and change management
+
+- Use clear layering (raw/bronze, curated/silver, serving/gold).
+- Treat breaking schema changes as migrations:
+  - dual write / dual read
+  - versioned objects when needed
+  - clear rollback plan
+
+---
+
+## Loading data (stages, COPY, Snowpipe)
+
+- Prefer `COPY INTO` with explicit file formats and error handling policies.
+- For continuous ingestion, use Snowpipe with monitoring/alerting on lag and errors.
+- Keep ingestion idempotent:
+  - stable file naming
+  - load history checks
+  - merge/upsert downstream if duplicates possible
+
+---
+
+## Streams and tasks (incremental processing)
+
+- Use streams/tasks for incremental transformations where they fit your pipeline model.
+- Validate task schedules and dependencies; ensure a run cannot overlap unexpectedly.
+
+> [!WARNING]
+> Tasks can silently fail or lag if compute is not available or privileges drift. Monitor task history and failures.
+
+---
+
+## Operational hygiene
+
+- Ensure every pipeline has:
+  - run id, config version, and input window tracked
+  - row counts in/out (and rejected records)
+  - alerting on freshness + volume drift
+
+---
+
+## Review checklist (quick)
+
+- [ ] Warehouse sizing and auto-suspend are explicit
+- [ ] RBAC is least privilege; sensitive data uses masking/row policies/secure views
+- [ ] Queries are pruning-friendly; no accidental `SELECT *` scans
+- [ ] Ingestion is idempotent; errors are handled/monitored
+- [ ] Streams/tasks are monitored (history, failures, lag)
+

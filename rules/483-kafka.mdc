@@ -1,0 +1,123 @@
+---
+title: Kafka Engineering Ruleset (Confluent)
+description: Confluent Kafka patterns for topics, schemas, producers/consumers, reliability, security, and operability.
+priority: 483
+alwaysApply: false
+files:
+  include:
+    - "**/*.proto"
+    - "**/*.avsc"
+    - "**/*.json"
+    - "**/*.yaml"
+    - "**/*.yml"
+    - "**/*.java"
+    - "**/*.kt"
+    - "**/*.go"
+    - "**/*.py"
+    - "**/kafka/**/*"
+    - "**/confluent/**/*"
+---
+
+# Kafka Engineering Ruleset (Confluent)
+
+**Audience**: engineers building Kafka-backed streaming systems and event-driven pipelines
+
+**Goal**: predictable delivery semantics, governed schemas, safe retries, and observable operations
+
+---
+
+## Delivery semantics (be explicit)
+
+- Default is **at-least-once**. Design consumers to be idempotent.
+- If you truly need “exactly-once”, define what that means end-to-end (Kafka transactions alone may not be sufficient).
+
+### Consumer idempotency (default expectation)
+
+- Use stable event identifiers and de-dup at the sink or state store.
+- Avoid side effects before commit unless you can safely retry.
+
+---
+
+## Topic design
+
+- Partitioning is an API contract:
+  - key choice determines ordering guarantees
+  - partition count affects parallelism and rebalancing
+- Set retention intentionally:
+  - time-based retention for event history
+  - compaction for “latest state by key”
+- Keep message size bounded; large payloads increase latency and cost.
+
+> [!IMPORTANT]
+> Changing topic key semantics is a breaking change for consumers.
+
+---
+
+## Schema governance (Schema Registry)
+
+- Prefer strongly-defined schemas (Avro/Protobuf/JSON Schema) over “schemaless JSON”.
+- Enforce compatibility mode per subject (backward/forward/full) aligned to your evolution policy.
+- Treat breaking schema changes like migrations:
+  - versioned subjects or dual-publish
+  - coordinated consumer rollout
+
+---
+
+## Producer patterns
+
+- Prefer idempotent producers when duplicates are harmful.
+- Treat retries and timeouts as first-class configuration; define limits.
+- If ordering matters, ensure keying and partition strategy preserve it.
+
+---
+
+## Consumer patterns
+
+- Choose commit strategy explicitly:
+  - commit after processing (common)
+  - commit with transactional/outbox patterns when needed
+- Retry strategy must avoid infinite poison-pill loops:
+  - bounded retries with backoff
+  - dead-letter topic (DLT/DLQ) for quarantining
+- Rebalancing and lag must be monitored.
+
+> [!WARNING]
+> “Retry forever” is not resilience. It’s an outage with extra steps.
+
+---
+
+## Connectors (Kafka Connect)
+
+- Prefer managed/standard connectors where possible.
+- Make connector configs version-controlled.
+- Ensure DLQ settings are configured for sink/source failures.
+
+---
+
+## Security
+
+- Enforce TLS in transit; use managed auth (SASL/OAuth/mTLS) per org standards.
+- Use ACLs for least privilege on topics and consumer groups.
+- Avoid embedding secrets in configs; use secret managers/integration.
+
+---
+
+## Observability
+
+- Track:
+  - consumer lag by group/topic/partition
+  - processing latency
+  - DLQ volume + reasons
+  - rebalances, commit failures, deserialization errors
+
+---
+
+## Review checklist (quick)
+
+- [ ] Semantics are explicit (at-least-once vs stronger) and consumer is idempotent
+- [ ] Topic key/partition/retention choices are intentional
+- [ ] Schemas are governed and compatibility policy is set
+- [ ] Retry + DLQ strategy prevents poison-pill loops
+- [ ] Security is least privilege (ACLs, TLS, secret handling)
+- [ ] Lag and failures are monitored with alerting
+
