@@ -262,18 +262,13 @@ CMD ["python", "-m", "src.main"]
 
 ### Scan for Vulnerabilities
 ```bash
-# Trivy - scan for vulnerabilities
-trivy image myapp:latest
-
-# Trivy - fail on HIGH and CRITICAL
-trivy image --severity HIGH,CRITICAL --exit-code 1 myapp:latest
-
-# Snyk - scan and monitor
-snyk container test myapp:latest
-snyk container monitor myapp:latest
-
-# Docker Scout
-docker scout cves myapp:latest
+## Prefer registry-native scanning gates
+#
+# For container image vulnerability scanning, rely on a centralized scanner that
+# runs in your registry / artifact-promotion pipeline (not ad-hoc on laptops):
+#
+# - JFrog Artifactory: JFrog Xray policies (block promotion/deploy on HIGH/CRITICAL)
+# - AWS ECR: Enhanced scanning (Amazon Inspector) policies (block deploy on findings)
 ```
 
 ### Sign Images
@@ -684,18 +679,9 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Scan with Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ghcr.io/${{ github.repository }}:${{ steps.meta.outputs.version }}
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-
-      - name: Upload Trivy results
-        uses: github/codeql-action/upload-sarif@v2
-        if: always()
-        with:
-          sarif_file: 'trivy-results.sarif'
+      # Vulnerability scanning should be enforced centrally in the registry:
+      # - JFrog Artifactory: JFrog Xray policies (block promotion/deploy)
+      # - AWS ECR: Enhanced scanning (Amazon Inspector) findings (block deploy)
 ```
 
 ---

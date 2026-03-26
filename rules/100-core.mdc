@@ -782,7 +782,7 @@ func processFile(filename string) error {
 - Run as non-root user (avoid `USER root`).
 - Pin base image versions (`python:3.12.1-slim`, not `python:latest`).
 - Use `.dockerignore` to exclude unnecessary files.
-- Scan images for vulnerabilities (`docker scout`, `trivy`).
+- Scan images for vulnerabilities via centralized scanning gates (JFrog Xray / AWS ECR enhanced scanning).
 - Minimize layers (combine `RUN` commands with `&&`).
 
 **JavaScript/TypeScript:**

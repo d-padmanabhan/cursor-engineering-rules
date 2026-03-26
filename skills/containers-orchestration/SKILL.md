@@ -20,7 +20,7 @@ description: Docker and container orchestration best practices for production-re
 | **Multi-Stage** | Required for compiled languages (Go, Rust, C++) |
 | **User** | Run as non-root (use `USER node` or create user) |
 | **Health Checks** | Always include `HEALTHCHECK` instruction |
-| **Scanning** | Trivy or Snyk before production |
+| **Scanning** | Registry-native scanning gates (JFrog Xray / AWS ECR enhanced scanning) |
 | **Signing** | Sign images with cosign or Docker Content Trust |
 
 ## Dockerfile Best Practices
@@ -183,18 +183,13 @@ CMD ["python", "-m", "src.main"]
 ### Scan for Vulnerabilities
 
 ```bash
-# Trivy - scan for vulnerabilities
-trivy image myapp:latest
-
-# Trivy - fail on HIGH and CRITICAL
-trivy image --severity HIGH,CRITICAL --exit-code 1 myapp:latest
-
-# Snyk - scan and monitor
-snyk container test myapp:latest
-snyk container monitor myapp:latest
-
-# Docker Scout
-docker scout cves myapp:latest
+## Prefer registry-native scanning gates
+#
+# For container image vulnerability scanning, rely on a centralized scanner that
+# runs in your registry / artifact-promotion pipeline (not ad-hoc on laptops):
+#
+# - JFrog Artifactory: JFrog Xray policies (block promotion/deploy on HIGH/CRITICAL)
+# - AWS ECR: Enhanced scanning (Amazon Inspector) policies (block deploy on findings)
 ```
 
 ## Health Checks

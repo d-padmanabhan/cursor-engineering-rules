@@ -431,7 +431,13 @@ updates:
 **Lock File Scanning:**
 
 ```yaml
-# GitHub Actions - Vulnerability scanning
+# GitHub Actions - Vulnerability scanning (example pattern)
+#
+# Prefer registry-native scanning/enforcement for container images:
+# - JFrog Artifactory: JFrog Xray policies (block promotion/deploy on HIGH/CRITICAL)
+# - AWS ECR: Enhanced scanning (Amazon Inspector) findings (block deploy on findings)
+#
+# Keep language/package native scanning in CI (example: npm audit) as appropriate.
 name: Security Scan
 
 on: [push, pull_request]
@@ -441,22 +447,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Run Snyk
-        uses: snyk/actions/node@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-
       - name: Run npm audit
         run: npm audit --audit-level=high
-
-      - name: Run Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
 ```
 
 ---
@@ -845,18 +837,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-
-      - name: Run Snyk
-        uses: snyk/actions/node@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      # Container image vulnerability scanning should be enforced centrally:
+      # - JFrog Artifactory: JFrog Xray policies (block promotion/deploy)
+      # - AWS ECR: Enhanced scanning (Amazon Inspector) findings (block deploy)
 
       - name: Run Bandit (Python)
         run: |

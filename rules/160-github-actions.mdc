@@ -1044,21 +1044,12 @@ jobs:
   uses: github/codeql-action/analyze@v3
 ```
 
-**Dependency Scanning:**
-```yaml
-- name: Run Trivy vulnerability scanner
-  uses: aquasecurity/trivy-action@master
-  with:
-    scan-type: 'fs'
-    scan-ref: '.'
-    format: 'sarif'
-    output: 'trivy-results.sarif'
+**Dependency / artifact vulnerability scanning:**
 
-- name: Upload to Security tab
-  uses: github/codeql-action/upload-sarif@v3
-  with:
-    sarif_file: 'trivy-results.sarif'
-```
+Prefer centralized, registry-native scanning and enforcement rather than ad-hoc CI scanners:
+
+- **JFrog Artifactory**: enforce vulnerability policies with **JFrog Xray** (block promotion/deploy on HIGH/CRITICAL)
+- **AWS ECR**: enforce **Enhanced scanning (Amazon Inspector)** findings (block deploy on findings)
 
 ---
 

@@ -162,9 +162,13 @@ LABEL org.opencontainers.image.revision="${GIT_SHA}"
 ## Security Scanning
 
 ```bash
-# Scan for vulnerabilities
-docker scout cves myimage:latest
-trivy image myimage:latest
+## Prefer registry-native scanning gates
+#
+# For container image vulnerability scanning, rely on a centralized scanner that
+# runs in your registry / artifact-promotion pipeline (not ad-hoc on laptops):
+#
+# - JFrog Artifactory: JFrog Xray policies (block promotion/deploy on HIGH/CRITICAL)
+# - AWS ECR: Enhanced scanning (Amazon Inspector) policies (block deploy on findings)
 
 # Lint Dockerfile
 hadolint Dockerfile

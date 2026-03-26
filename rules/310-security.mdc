@@ -465,34 +465,10 @@ updates:
 
 **Lock File Scanning**
 
-```yaml
-# GitHub Actions - Vulnerability scanning
-name: Security Scan
+Use language/package-ecosystem native tools (example: `npm audit`) and enforce container image vulnerability scanning in the registry:
 
-on: [push, pull_request]
-
-jobs:
-  scan:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Run Snyk
-        uses: snyk/actions/node@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-
-      - name: Run npm audit
-        run: npm audit --audit-level=high
-
-      - name: Run Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-```
+- **JFrog Artifactory**: enforce vulnerability policies with **JFrog Xray** (block promotion/deploy on HIGH/CRITICAL)
+- **AWS ECR**: enforce **Enhanced scanning (Amazon Inspector)** findings (block deploy on findings)
 
 ---
 
@@ -931,18 +907,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-
-      - name: Run Snyk
-        uses: snyk/actions/node@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      # Container image vulnerability scanning should be enforced centrally:
+      # - JFrog Artifactory: JFrog Xray policies (block promotion/deploy)
+      # - AWS ECR: Enhanced scanning (Amazon Inspector) findings (block deploy)
 
       - name: Run GitGuardian
         uses: GitGuardian/ggshield-action@master
