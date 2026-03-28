@@ -92,7 +92,7 @@ flowchart TD
 In documentation, backticks render URLs as code and they are often **not clickable**.
 
 - **Preferred**: `[AWS doc](https://docs.aws.amazon.com/vpc-lattice/latest/ug/auth-policies.html)`
-- **Avoid**: `` `https://docs.aws.amazon.com/vpc-lattice/latest/ug/auth-policies.html` ``
+- **NEVER USE** backticks for links that should be clickable: `` `https://docs.aws.amazon.com/vpc-lattice/latest/ug/auth-policies.html` ``
 
 ### Sequence Diagram
 
