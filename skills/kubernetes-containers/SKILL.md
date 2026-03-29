@@ -1,6 +1,6 @@
 ---
 name: kubernetes-containers
-description: Kubernetes and Helm best practices for container orchestration. Covers deployments, services, RBAC, resource management, Helm charts, and production patterns. Use when working with Kubernetes manifests, Helm charts, kubectl commands, or when asking about container orchestration, pod configuration, or cluster management.
+description: Kubernetes and Helm best practices for container orchestration. Covers deployments, services, RBAC, resource management, Helm charts, Podtrace runtime debugging, and production patterns. Use when working with Kubernetes manifests, Helm charts, kubectl commands, Podtrace, or when asking about container orchestration, pod configuration, or cluster management.
 ---
 
 # Kubernetes & Containers
@@ -41,7 +41,20 @@ kubectl apply -k overlays/dev
 kubectl get events --sort-by='.lastTimestamp'
 kubectl top pods
 kubectl port-forward svc/my-service 8080:80
+
+# Podtrace runtime diagnostics
+podtrace -n my-namespace my-pod
+podtrace -n my-namespace my-pod --diagnose 20s
+podtrace -n my-namespace my-pod --metrics
 ```
+
+## Podtrace
+
+Use `podtrace` for on-demand eBPF diagnostics when `kubectl describe`, logs, and standard metrics do not explain pod behavior.
+
+- Prefer short runs such as `--diagnose 20s`
+- Treat captured application-layer fields as sensitive
+- See [references/podtrace.md](references/podtrace.md) for workflow, prerequisites, and command examples
 
 ## Deployment Pattern
 
@@ -207,3 +220,4 @@ helm diff upgrade my-app ./chart
 
 - **Kubernetes Patterns**: See [references/kubernetes-patterns.md](references/kubernetes-patterns.md)
 - **Helm Charts**: See [references/helm-charts.md](references/helm-charts.md)
+- **Podtrace**: See [references/podtrace.md](references/podtrace.md) for runtime diagnostics in Kubernetes

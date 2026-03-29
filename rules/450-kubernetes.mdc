@@ -1,6 +1,6 @@
 ---
 title: Kubernetes & EKS Engineering Ruleset
-description: Best practices for Kubernetes development, EKS operations, CRD development, and concurrency patterns.
+description: Best practices for Kubernetes development, EKS operations, CRD development, concurrency patterns, and Podtrace-based runtime debugging.
 priority: 450
 alwaysApply: false
 files:
@@ -559,6 +559,24 @@ func (r *Reconciler) recordConflict(ctx context.Context, obj client.Object) {
 }
 ```
 
+### Podtrace (On-Demand eBPF Diagnostics)
+
+Use `podtrace` when logs, metrics, `kubectl top`, and application tracing do not explain pod behavior. `podtrace` attaches eBPF programs to a target container and surfaces runtime signals such as TCP and UDP latency, DNS lookups, file I/O, page faults, OOM events, HTTP activity, and database calls.
+
+**Good fits:**
+
+- Unexplained pod latency or intermittent 5XX responses
+- DNS failures, TCP retransmits, or RTT spikes
+- File-system stalls, CPU blocking, page faults, or OOM symptoms
+- Incident response when adding sidecars or code instrumentation is not practical
+
+**Operational guardrails:**
+
+- Verify Linux kernel 5.8+ with BTF support before relying on `podtrace`
+- Run bounded capture windows such as `--diagnose 20s` before using a longer live session
+- Treat captured HTTP, SQL, Redis, Kafka, header, and query fields as sensitive data
+- Correlate findings with Kubernetes events, container logs, and existing metrics before changing workloads
+
 ## EKS Cluster Configuration
 
 ### Cluster Endpoint Access
@@ -822,6 +840,27 @@ kubectl diff -k overlays/dev
 # Apply an overlay
 kubectl apply -k overlays/dev
 ```
+
+### Podtrace for Runtime Diagnostics
+
+Examples below use `podtrace`. If running from the upstream source tree, use `./bin/podtrace`.
+
+```bash
+# Live runtime stream for a pod
+podtrace -n production my-pod
+
+# Short bounded diagnosis report
+podtrace -n production my-pod --diagnose 20s
+
+# Export Podtrace runtime metrics locally
+podtrace -n production my-pod --metrics
+
+# Forward distributed traces to an OTLP collector
+podtrace -n production my-pod --tracing \
+  --tracing-otlp-endpoint http://otel-collector:4318
+```
+
+Start with `--diagnose` for incident triage. Move to live mode only when the shorter report does not isolate the issue, then compare Podtrace output with `kubectl describe pod`, `kubectl logs`, and service-level metrics.
 
 **Controller Not Reconciling:**
 

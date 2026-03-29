@@ -46,7 +46,7 @@ Comprehensive, battle-tested Cursor IDE rules for professional software engineer
 
 - **[180-terraform.mdc](rules/180-terraform.mdc)** - Terraform (modules, state, validation)
 - **[170-cloudformation.mdc](rules/170-cloudformation.mdc)** - CloudFormation templates
-- **[450-kubernetes.mdc](rules/450-kubernetes.mdc)** - Kubernetes & EKS patterns
+- **[450-kubernetes.mdc](rules/450-kubernetes.mdc)** - Kubernetes & EKS patterns, including Podtrace runtime debugging
 - **[160-github-actions.mdc](rules/160-github-actions.mdc)** - GitHub Actions (workflows, security, OIDC)
 - **[190-ansible.mdc](rules/190-ansible.mdc)** - Ansible (playbooks, roles, idempotency)
 - **[460-helm.mdc](rules/460-helm.mdc)** - Helm charts and templating

@@ -61,7 +61,7 @@ Quick lookup table for all Cursor rules files in `rules/`.
 | [420-gcp.mdc](420-gcp.mdc) | GCP platform engineering patterns, Cloud Build, Terraform for GCP, and cloud architecture best practices | 420 | No |
 | [430-azure.mdc](430-azure.mdc) | Azure platform engineering patterns, ARM/Bicep templates, Azure DevOps, and cloud architecture best practices | 430 | No |
 | [440-docker.mdc](440-docker.mdc) | Production-ready Docker patterns, multi-stage builds, security scanning, and compose orchestration | 440 | No |
-| [450-kubernetes.mdc](450-kubernetes.mdc) | Best practices for Kubernetes development, EKS operations, CRD development, and concurrency patterns. | 450 | No |
+| [450-kubernetes.mdc](450-kubernetes.mdc) | Best practices for Kubernetes development, EKS operations, CRD development, concurrency patterns, and Podtrace-based runtime debugging. | 450 | No |
 | [460-helm.mdc](460-helm.mdc) | Helm charts, best practices, templating, values management, and GitOps deployment patterns | 460 | No |
 | [470-postgresql.mdc](470-postgresql.mdc) | Database naming conventions, schema patterns, and PostgreSQL best practices. | 470 | No |
 | [475-sql.mdc](475-sql.mdc) | Safe, maintainable SQL patterns for analysts and engineers - command categories (DQL/DML/DDL/DCL/TCL), transactions, and destructive-operation guardrails. | 475 | No |
