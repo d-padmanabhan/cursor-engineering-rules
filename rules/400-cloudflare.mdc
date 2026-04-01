@@ -22,6 +22,7 @@ files:
 
 - **Naming Consistency**: Never use `CloudFlare` anywhere (code/documentation). If any existing docs contain it, flag and fix to `Cloudflare`
 - **Terminology Consistency**: Do not use the word `Domain` for Cloudflare. Always use `Zone`. If any existing docs mention “Cloudflare Domain”, flag and fix to “Cloudflare Zone”
+- **Environment Variable Prefixing**: Never use `CF_` for Cloudflare-related environment variables, secret names, or examples. Always use `CLOUDFLARE_` (for example `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ZONE_ID`, `CLOUDFLARE_RULESET_ID`)
 - **Performance First**: Order conditions from fast to slow (IP/host/method → path/headers → body/regex)
 - **Security by Default**: Assume hostile intent; validate and sanitize all inputs
 - **Fail Securely**: Block by default, allow explicitly; log everything
@@ -83,9 +84,9 @@ terraform apply                                   # Deploy
 terraform state list                              # List resources
 
 # Cloudflare API
-export CF_API_TOKEN="your_token"
-curl -X GET "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/rulesets" \
-  -H "Authorization: Bearer $CF_API_TOKEN"
+export CLOUDFLARE_API_TOKEN="your_token"
+curl -X GET "https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_ID/rulesets" \
+  -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN"
 
 # Workers
 wrangler dev                                      # Test locally
@@ -513,8 +514,8 @@ jobs:
       - name: Validate rule effectiveness
         run: |
           python scripts/validate_rules.py \
-            --zone-id ${{ secrets.CF_STAGING_ZONE_ID }} \
-            --ruleset-id ${{ secrets.CF_STAGING_RULESET_ID }}
+            --zone-id ${{ secrets.CLOUDFLARE_STAGING_ZONE_ID }} \
+            --ruleset-id ${{ secrets.CLOUDFLARE_STAGING_RULESET_ID }}
 ```
 
 ### Performance Testing
@@ -558,16 +559,16 @@ curl -H "X-Forwarded-For: 1.1.1.1\r\nX-Admin: true" https://api.acme.com/
    ```bash
    # List rules in order
    curl -X GET \
-     "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/rulesets/phases/http_request_firewall_custom/entrypoint" \
-     -H "Authorization: Bearer $CF_API_TOKEN" | jq '.result.rules[] | {id, description, enabled, action}'
+     "https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_ID/rulesets/phases/http_request_firewall_custom/entrypoint" \
+     -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | jq '.result.rules[] | {id, description, enabled, action}'
    ```
 
 2. **Verify rule is enabled:**
    ```bash
    # Check specific rule
    curl -X GET \
-     "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/rulesets/$RULESET_ID/rules/$RULE_ID" \
-     -H "Authorization: Bearer $CF_API_TOKEN"
+     "https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_ID/rulesets/$CLOUDFLARE_RULESET_ID/rules/$CLOUDFLARE_RULE_ID" \
+     -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN"
    ```
 
 3. **Test with simpler expression:**
@@ -811,8 +812,8 @@ resource "cloudflare_ruleset" "waf_custom" {
 **API:**
 ```bash
 curl -X POST \
-  "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/rulesets" \
-  -H "Authorization: Bearer $CF_API_TOKEN" \
+  "https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_ID/rulesets" \
+  -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
   -d '{"action":"block","expression":"...","description":"Admin block"}'
 ```
 
@@ -950,7 +951,7 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
       - run: terraform plan -no-color
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
   deploy:
     needs: plan
@@ -962,7 +963,7 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
       - run: terraform apply -auto-approve
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN_PROD }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_PROD }}
 ```
 
 ---
@@ -1028,8 +1029,8 @@ jobs:
 EXPRESSION='(http.request.uri.path eq "/api/login" and cf.threat_score gt 30)'
 
 curl -X POST \
-  "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/rulesets/phases/http_request_firewall_custom/entrypoint" \
-  -H "Authorization: Bearer $CF_API_TOKEN" \
+  "https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_ID/rulesets/phases/http_request_firewall_custom/entrypoint" \
+  -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
   -d "{\"rules\":[{\"expression\":\"$EXPRESSION\",\"action\":\"managed_challenge\"}]}"
 
 # Monitor effectiveness
@@ -1040,14 +1041,14 @@ curl -X POST \
 ```bash
 # Disable rule immediately
 curl -X PATCH \
-  "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/rulesets/$RULESET_ID/rules/$RULE_ID" \
-  -H "Authorization: Bearer $CF_API_TOKEN" \
+  "https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_ID/rulesets/$CLOUDFLARE_RULESET_ID/rules/$CLOUDFLARE_RULE_ID" \
+  -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
   -d '{"enabled": false}'
 
 # Or change to log mode
 curl -X PATCH \
-  "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/rulesets/$RULESET_ID/rules/$RULE_ID" \
-  -H "Authorization: Bearer $CF_API_TOKEN" \
+  "https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_ID/rulesets/$CLOUDFLARE_RULESET_ID/rules/$CLOUDFLARE_RULE_ID" \
+  -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
   -d '{"action": "log"}'
 ```
 
@@ -1473,7 +1474,7 @@ jobs:
           cd terraform/cloudflare-rulesets
           terraform plan -out=tfplan
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
   deploy-staging:
     needs: plan
@@ -1489,7 +1490,7 @@ jobs:
           cd terraform/cloudflare-rulesets
           terraform apply -auto-approve -var-file=staging.tfvars
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_STAGING_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_STAGING_API_TOKEN }}
 
       - name: Run Tests
         run: ./scripts/test-rules.sh staging
@@ -1508,7 +1509,7 @@ jobs:
           cd terraform/cloudflare-rulesets
           terraform apply -auto-approve -var-file=production.tfvars
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_PROD_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PROD_API_TOKEN }}
 ```
 
 ### Runbook
