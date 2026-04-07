@@ -89,10 +89,12 @@ flowchart TD
 
 #### Use Markdown links (not backticks) for clickable URLs
 
+Canonical guidance: **800-markdown.mdc** → **Links and URLs** (global rule for all `.md` / `.mdx`).
+
 In documentation, backticks render URLs as code and they are often **not clickable**.
 
 - **Preferred**: `[AWS doc](https://docs.aws.amazon.com/vpc-lattice/latest/ug/auth-policies.html)`
-- **NEVER USE** backticks for links that should be clickable: `` `https://docs.aws.amazon.com/vpc-lattice/latest/ug/auth-policies.html` ``
+- **Do not** wrap navigational URLs in backticks: `` `https://docs.aws.amazon.com/vpc-lattice/latest/ug/auth-policies.html` ``
 
 ### Sequence Diagram
 

@@ -82,7 +82,7 @@ Quick lookup table for all Cursor rules files in `rules/`.
 
 | File | Description | Priority | Always Apply |
 |------|-------------|----------|--------------|
-| [800-markdown.mdc](800-markdown.mdc) | Standardized rules for generating Markdown files using GitHub-flavored alerts and Mermaid diagrams for visual documentation. | 800 | Yes |
+| [800-markdown.mdc](800-markdown.mdc) | Markdown/MDX style: GitHub alerts, **clickable Markdown links** (no backticks on navigational URLs), and Mermaid diagrams. | 800 | Yes |
 | [810-documentation.mdc](810-documentation.mdc) | Patterns for creating effective documentation including documentation websites and markdown best practices. | 810 | No |
 | [820-open-source.mdc](820-open-source.mdc) | Best practices for open source projects including contribution guidelines, documentation, and community management. | 820 | No |
 

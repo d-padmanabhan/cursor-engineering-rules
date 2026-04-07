@@ -1,6 +1,6 @@
 ---
 title: Markdown & Diagramming Style Guide
-description: Standardized rules for generating Markdown files using GitHub-flavored alerts and Mermaid diagrams for visual documentation.
+description: Standardized rules for generating Markdown files using GitHub-flavored alerts, clickable links, and Mermaid diagrams for visual documentation.
 priority: 800
 alwaysApply: true
 files:
@@ -470,9 +470,32 @@ All documents should follow this structure:
 4. Use logical heading hierarchy (H2, H3, etc.)
 5. Incorporate **GitHub alerts** where they add value
 6. Use **Mermaid diagrams** to visualize complex concepts
-7. Use proper markdown formatting (lists, code blocks, links, emphasis)
+7. Use proper markdown formatting (lists, code blocks, links, emphasis); navigational URLs must be Markdown links, not backticks (see **Links and URLs** below)
 8. **Avoid decorative emojis** - use professional, clean formatting
 9. End with conclusion or next steps if applicable
+
+---
+
+## Links and URLs
+
+This applies to **all** Markdown and MDX in the workspace (READMEs, rules, docs, ADRs, PR bodies when using Markdown, etc.).
+
+### Navigational links must be clickable
+
+Use standard Markdown links so URLs render as clickable in GitHub, IDEs, and common static-site renderers. Prefer descriptive link text.
+
+- **Preferred**: `[AWS Lambda documentation](https://docs.aws.amazon.com/lambda/)`
+- **Avoid for navigation**: bare URLs in running text when a short label reads better (still use `https://...` in link target)
+- **Do not** wrap URLs that readers should **click** in backticks: `` `https://docs.aws.amazon.com/lambda/` `` — inline code styling often prevents click-through and copies poorly.
+
+### When backticks around a URL are correct
+
+Wrap a URL in backticks only when it is a **literal value**, not a navigation affordance—for example: configuration samples, CLI transcripts, log lines, schema defaults, or strings inside code-oriented examples.
+
+### Paths and anchors
+
+- Use relative paths for same-repo docs when practical: `[Contributing](../CONTRIBUTING.md)`
+- For file paths shown as literals (not links), backticks remain appropriate: `` `src/app.ts` ``
 
 ---
 
@@ -564,7 +587,7 @@ Emojis MAY be used in:
 
 ### General Markdown
 - Use code blocks with syntax highlighting
-- Include links to external resources
+- Use Markdown links for external resources and internal docs (**Links and URLs**)
 - Use tables for structured data
 - Add horizontal rules (`---`) to separate sections
 - Maintain consistent formatting
