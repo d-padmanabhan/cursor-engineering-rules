@@ -189,10 +189,11 @@ asciinema rec -q "<GIT_REPO_ROOT>/tmp/agent_reports/recordings/session.cast"
 ## 6) If Commits Are Authorized Later
 
 Only after the user explicitly authorizes commits:
-- Commit **locally** with the agreed messages.
+- Commit **locally** with the agreed messages. Respect **commit signing** (`130-git.mdc`, **Commit signing**): do not bypass signing (for example `--no-gpg-sign`) unless the user explicitly requested an unsigned commit and the reason is recorded.
 - Append to the audit report:
   - commit SHAs and commit messages
   - `git log --date=iso-strict -n <N>` output (where `<N>` covers the new commits)
+  - signature verification output, e.g. `git log -n <N> --show-signature`, or an explicit note if commits are unsigned and why
 
 ---
 

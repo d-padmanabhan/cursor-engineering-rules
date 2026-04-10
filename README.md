@@ -19,7 +19,7 @@ Comprehensive, battle-tested Cursor IDE rules for professional software engineer
 - **[015-context-engineering.mdc](rules/015-context-engineering.mdc)** - Context engineering (prompt packing, retrieval, compaction)
 - **[010-workflow.mdc](rules/010-workflow.mdc)** - Development workflow patterns
 - **[020-agent-audit.mdc](rules/020-agent-audit.mdc)** - Agent audit requirements
-- **[130-git.mdc](rules/130-git.mdc)** - Git conventions and commit standards
+- **[130-git.mdc](rules/130-git.mdc)** - Git conventions, commit standards, and mandatory commit signing (with documented exceptions)
 
 ### Programming Languages
 
@@ -206,7 +206,7 @@ ln -s /path/to/cursor-engineering-rules/rules .cursor/rules
 | `100-core.mdc` | Core coding standards |
 | `110-configuration.mdc` | Configuration management |
 | `120-utilities.mdc` | CLI tools |
-| `130-git.mdc` | Git conventions |
+| `130-git.mdc` | Git conventions and signed commits |
 | `310-security.mdc` | Security best practices |
 | `800-markdown.mdc` | Markdown formatting |
 

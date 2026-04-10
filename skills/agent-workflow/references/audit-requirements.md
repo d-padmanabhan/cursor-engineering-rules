@@ -137,10 +137,11 @@ asciinema rec -q "<GIT_REPO_ROOT>/tmp/agent_reports/recordings/session.cast"
 
 Only after the user explicitly authorizes commits:
 
-1. **Commit locally** with the agreed messages
+1. **Commit locally** with the agreed messages (respect **commit signing**: do not bypass signing unless the user explicitly requested an unsigned commit and the reason is recorded; see rule `130-git.mdc`, **Commit signing**)
 2. **Append to the audit report:**
    - Commit SHAs and commit messages
    - Output from: `git log --date=iso-strict -n <N>` (where `<N>` covers the new commits)
+   - Signature status: e.g. `git log -n <N> --show-signature` (or note explicitly if commits are unsigned and why)
    - Confirmation that commits match the proposed plan
 3. **Do NOT push** to remote unless explicitly authorized separately
 4. **Record the authorization** in the audit report with timestamp

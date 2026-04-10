@@ -96,6 +96,16 @@ docs/upgrade-guide-3-8
 - Rebase onto `main` before merge (unless policy forbids)
 - Separate mechanical formatting from logical changes
 
+## Commit signing
+
+**Strict default (repos using dp-cursor-engineering-rules):** commits must be cryptographically signed (SSH, GPG, or S/MIME per Git/GitHub), unless `CONTRIBUTING.md` documents an approved exception.
+
+- Prefer **repo-local** `git config` for `commit.gpgsign`, signing key, and `tag.gpgsign` for releases
+- Verify with `git log -1 --show-signature`; enable **Require signed commits** on protected branches when policy allows
+- **Agents:** never use `--no-gpg-sign` unless the user explicitly requests it and the reason is recorded; if signing fails, stop and fix config—do not silently create unsigned commits
+
+Full detail: workspace rule `130-git.mdc` (section **Commit signing**).
+
 ## Pull Request Standards
 
 **PR Title** mirrors commit header:
@@ -141,8 +151,8 @@ Every repo must contain:
 
 ## Sign-off & Security
 
-- Signed commits if mandated by project
-- DCO sign-off if required
+- Signed commits required unless documented exception in `CONTRIBUTING.md` (see **Commit signing** above)
+- DCO sign-off if required by project
 - No secrets in commits, diffs, PRs, or screenshots
 - Large binaries → artifacts, not git
 
@@ -153,6 +163,7 @@ Every repo must contain:
 - [ ] Codeowners enforce mandatory reviews
 - [ ] PR template references testing + security checks
 - [ ] Dependabot and automation enabled
+- [ ] Commit signing documented (or exception in `CONTRIBUTING.md`); protected branches require signed commits when possible
 - [ ] No secrets or credentials in history
 
 ## Additional Git Resources

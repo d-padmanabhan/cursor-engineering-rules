@@ -1,6 +1,6 @@
 ---
 title: Git & Commit Standards
-description: Conventional commits, PR hygiene, branch naming, release notes, and foundational GitHub repository scaffolding requirements.
+description: Conventional commits, signed commits, PR hygiene, branch naming, release notes, and foundational GitHub repository scaffolding requirements.
 alwaysApply: true
 priority: 130
 ---
@@ -388,6 +388,51 @@ perf(python): cache IAM role lookups
 
 ---
 
+#  Commit signing
+
+> [!IMPORTANT]
+> **Cryptographic commit signing is mandatory** for repositories that adopt this ruleset, unless the repository documents an explicit exception in `CONTRIBUTING.md` (for example, ephemeral sandboxes or environments where signing keys are prohibited). Exceptions must state scope, rationale, and review/approval owner.
+
+**Why:** Signed commits tie authorship to a key you control, improve supply-chain traceability, and pair with GitHub **verified** commit status and branch protection ([about commit signature verification](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification)).
+
+## Human contributors
+
+1. **Choose a signing method** supported by your Git version and GitHub: **SSH**, **GPG**, or **S/MIME** (see GitHub docs for the current matrix).
+2. **Prefer repository-local configuration** so machine-wide defaults stay minimal:
+
+```bash
+cd "$(git rev-parse --show-toplevel)"
+git config commit.gpgsign true
+# SSH signing example (Git 2.34+); use gpg.* settings instead if using GPG
+git config gpg.format ssh
+git config user.signingkey ~/.ssh/id_ed25519.pub   # or your SSH signing key path
+```
+
+3. **Sign tags** used for releases:
+
+```bash
+git config tag.gpgsign true
+```
+
+4. **Verify before pushing:**
+
+```bash
+git log -1 --show-signature
+```
+
+5. **Repository policy:** Enable **Require signed commits** (or equivalent) on protected branches when your GitHub plan and org policy allow it.
+
+> [!NOTE]
+> Do not instruct agents or automation to change a user’s **global** Git identity or signing settings unless the user explicitly asked for that. Document team setup in `CONTRIBUTING.md` instead.
+
+## AI agents
+
+- **Do not** pass `--no-gpg-sign` (or any flag that skips signing) unless the user **explicitly** requests an unsigned commit and the reason is recorded (audit report or ticket).
+- If signing fails, **stop**: show the error, suggest fixing key/agent/config, and do not silently create unsigned commits.
+- After authorized commits, confirm signatures when applicable: `git log -n <N> --show-signature` and note in the audit report whether commits are **signed** or **unsigned** (and why, if unsigned).
+
+---
+
 #  Commit Approval & User Confirmation
 
 **CRITICAL:** AI agents must **NEVER** commit code without explicit user approval.
@@ -429,7 +474,7 @@ Files to be committed:
 Should I proceed with this commit? (yes/no)
 ```
 
-4. **Only execute** after receiving explicit user approval
+4. **Only execute** after receiving explicit user approval. When running `git commit`, honor **Commit signing** (do not use `--no-gpg-sign` unless the user explicitly requested an unsigned commit). If signing fails, stop and report instead of creating an unsigned commit.
 
 ## Forbidden trailers (Cursor attribution)
 
@@ -737,8 +782,8 @@ pre-commit autoupdate
 
 #  Sign-off & Security
 
-* Signed commits if mandated by project
-* DCO sign-off if required
+* **Signed commits:** required for repos using this ruleset unless documented exception (see **Commit signing** above); enforce via branch protection when possible
+* **DCO sign-off** if required by project (`git commit -s` / `Signed-off-by` trailer per project policy)
 * No secrets in commits, diffs, PRs, or screenshots
 * Large binaries -> artifacts, not git
 
@@ -888,6 +933,7 @@ jobs:
 * [ ] `.pre-commit-config.yaml` has `name:` on each hook
 * [ ] `.markdownlint.yaml` configured
 * [ ] `.commitlintrc.yaml` enforces commit conventions
+* [ ] Commit signing documented in `CONTRIBUTING.md` (or exception recorded); protected branches require signed commits when policy allows
 * [ ] No secrets or credentials in history
 
 ---
@@ -1016,6 +1062,7 @@ phantom create --issue 456
 * [ ] Bulleted change list included
 * [ ] Rationale paragraph provided if non-obvious change
 * [ ] Security reviewed; no secrets exposed
+* [ ] Commits are signed (or exception documented); verify with `git log --show-signature` / GitHub **Verified** where applicable
 * [ ] Tests updated/added
 * [ ] Repo scaffolding is compliant (for new repos)
 

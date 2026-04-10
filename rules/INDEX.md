@@ -17,7 +17,7 @@ Quick lookup table for all Cursor rules files in `rules/`.
 | [100-core.mdc](100-core.mdc) | Repo-wide engineering guardrails for review & generation. | 100 | Yes |
 | [110-configuration.mdc](110-configuration.mdc) | Patterns for managing configuration with proper precedence, environment variables, and validation. | 110 | Yes |
 | [120-utilities.mdc](120-utilities.mdc) | Practical tool selection for agents reading docs, blogs, logs, and diagrams (curl, lynx, jq, httpie, ripgrep, Playwright, OCR, VLM) | 120 | Yes |
-| [130-git.mdc](130-git.mdc) | Conventional commits, PR hygiene, branch naming, release notes, and foundational GitHub repository scaffolding requirements. | 130 | Yes |
+| [130-git.mdc](130-git.mdc) | Conventional commits, signed commits, PR hygiene, branch naming, and foundational GitHub repository scaffolding requirements. | 130 | Yes |
 | [140-bash.mdc](140-bash.mdc) | Production-grade Bash standards for portability, safety, performance, and maintainability. | 140 | No |
 | [150-justfile.mdc](150-justfile.mdc) | Standardized justfile patterns for consistent project commands across platforms and languages. | 150 | No |
 | [160-github-actions.mdc](160-github-actions.mdc) | Secure, fast, maintainable workflows for this repo. | 160 | No |

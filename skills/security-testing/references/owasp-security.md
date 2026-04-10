@@ -562,8 +562,8 @@ cosign sign --key cosign.key acme.com/app:v1.0.0
 # Verify signature
 cosign verify --key cosign.pub acme.com/app:v1.0.0
 
-# Sign Git commits and tags
-git config user.signingkey YOUR_GPG_KEY
+# Sign Git commits and tags (repo-local; strict policy: rule 130-git.mdc **Commit signing**)
+git config user.signingkey YOUR_GPG_OR_SSH_SIGNING_KEY
 git config commit.gpgsign true
 git config tag.gpgsign true
 ```
