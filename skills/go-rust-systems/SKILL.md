@@ -78,6 +78,10 @@ func TestAdd(t *testing.T) {
 }
 ```
 
+### Control flow: `switch` vs `if` / `else`
+
+Prefer **`switch`** for multi-way dispatch on one expression (and type switches); keep **`if`** for errors, booleans, guards, and two-branch logic. Do not rewrite `errors.Is` / `errors.As` chains just to use `switch`. Detail: `rules/210-go.mdc` (Simplicity & Idiomatic Go) and `references/go-idioms.md`.
+
 ### Mandatory Hardening Add-On (Go)
 
 For HTTP/API client code, always apply the hardening checks from

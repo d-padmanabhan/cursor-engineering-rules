@@ -164,6 +164,25 @@ func FindItem(items []Item, predicate func(Item) bool) *Item {
 }
 ```
 
+## Switch vs if / else
+
+**When to use `switch`**
+
+- One expression, many discrete values (HTTP method, command name, format string, enum-like int).
+- Dynamic types on an interface: `switch v := x.(type)`.
+
+**When to keep `if`**
+
+- Error handling (`if err != nil`, `errors.Is`, `errors.As`).
+- Two branches, boolean guards, early returns, or unrelated predicates.
+
+**Other**
+
+- `switch {` with `case cond:` is idiomatic when it reads cleaner than `else if`; choose clarity.
+- Prefer methods on interfaces or a small handler map when that scales better than a growing `switch`.
+
+See [Effective Go — Switch](https://go.dev/doc/effective_go#switch) and `rules/210-go.mdc` (Simplicity & Idiomatic Go).
+
 ## Avoid interface{} When Possible
 
 **Proverb**: "interface{} says nothing"

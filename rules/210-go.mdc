@@ -398,6 +398,37 @@ func KnownAccounts() map[string]Account {
 - **Make the Zero Value Useful**: Types should work correctly when zero-initialized
 - **A Little Copying is Better Than a Little Dependency**: Prefer copying small, stable code over adding dependencies
 
+### Switch vs if / else (control flow)
+
+- **Prefer `switch`** when branching on **one** expression with **several discrete outcomes** (for example `r.Method`, CLI subcommand name, enum-like string or int) or when using a **type switch** (`switch v := x.(type)`).
+- **Prefer `if`** for **`if err != nil`** and error shaping (`errors.Is` / `errors.As`), **early returns**, **boolean** guards, **two** clear branches, or when conditions are **not** the same discriminant.
+- **`switch {` … `case cond:`** is fine when a flat list of conditions reads better than a long `else if` ladder; pick whichever is **clearer**.
+- **Do not** force `switch` where a **method on an interface** or a **small registry** (for example map of handlers) is the simpler extension point.
+
+```go
+//  BAD: Same discriminant repeated in else-if chain
+func handleVerb(verb string) error {
+    if verb == "GET" {
+        return nil
+    } else if verb == "POST" {
+        return nil
+    } else if verb == "DELETE" {
+        return nil
+    }
+    return fmt.Errorf("unknown verb")
+}
+
+//  GOOD: switch on one expression
+func handleVerb(verb string) error {
+    switch verb {
+    case "GET", "POST", "DELETE":
+        return nil
+    default:
+        return fmt.Errorf("unknown verb")
+    }
+}
+```
+
 ### Dependency Management
 
 **Proverb**: "A little copying is better than a little dependency"
