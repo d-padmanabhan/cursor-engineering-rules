@@ -1,6 +1,12 @@
 ---
 name: documentation-standards
-description: Documentation best practices including Markdown formatting, Mermaid diagrams, technical writing, ADRs, and open source standards. Use when writing documentation, README files, markdown content, creating diagrams, or when asking about documentation structure, technical writing, or open source project setup.
+description: >-
+  Documentation best practices including Markdown formatting, Mermaid diagrams,
+  technical writing, ADRs, and open source standards. Use when writing
+  documentation, README files, markdown content, creating static diagrams in
+  Markdown, or when asking about documentation structure, technical writing, or
+  open source project setup. For interactive React Flow canvases in a SPA, use
+  the reactflow-architecture-diagrams skill instead.
 ---
 
 # Documentation Standards
@@ -113,6 +119,11 @@ def hello():
 | Cell 1   | Cell 2   |
 ```
 
+## Interactive vs static diagrams
+
+- **Static (Markdown):** Mermaid in this skill and in `rules/800-markdown.mdc`.
+- **Interactive (React SPA):** `@xyflow/react` patterns, playbook, and rule **`rules/815-reactflow-diagrams.mdc`** - use skill **`skills/reactflow-architecture-diagrams/`**. See [references/static-vs-interactive.md](../reactflow-architecture-diagrams/references/static-vs-interactive.md) for a short comparison table.
+
 ## Mermaid Diagrams
 
 ### Flowchart
@@ -167,6 +178,7 @@ graph LR
 
 ## Detailed References
 
+- **React Flow (interactive canvases)**: See `skills/reactflow-architecture-diagrams/SKILL.md` and `rules/815-reactflow-diagrams.mdc`
 - **Markdown & Mermaid**: See [references/markdown-mermaid.md](references/markdown-mermaid.md)
 - **Technical Writing**: See [references/technical-writing.md](references/technical-writing.md)
 - **Open Source**: See [references/open-source.md](references/open-source.md)

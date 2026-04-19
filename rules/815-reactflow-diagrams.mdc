@@ -1,0 +1,78 @@
+---
+title: Interactive architecture diagrams (React Flow)
+description: >-
+  Conventions for narrative @xyflow/react canvases: custom nodes and edges,
+  semantic stroke colors, Cloudflare orange shell grouping, readability inside
+  tinted frames, handles, and verification before merge.
+priority: 815
+alwaysApply: false
+files:
+  include:
+    - "**/*Diagram.tsx"
+    - "**/components/diagrams/**/*.tsx"
+---
+
+# Interactive architecture diagrams (React Flow)
+
+**Goal:** Ship readable, consistent **narrative** diagrams in a React SPA using [`@xyflow/react`](https://reactflow.dev/) (React Flow): fixed layout, animated edges where they help, and prose on a sibling page that explains scope (what is in-band vs out-of-band).
+
+This rule complements **[800-markdown.mdc](800-markdown.mdc)** (Mermaid in Markdown). Use **800** for static docs diagrams; use **815** when the diagram is **TypeScript + React Flow**.
+
+## When this rule applies
+
+Use for **interactive** canvases (not image-only figures). Typical stack: React, TypeScript, Vite, Tailwind, optional React Router. Package manager may be Bun or npm per project.
+
+## File and route layout (SPA)
+
+Adapt paths to your repo, but keep separation of concerns:
+
+- **Diagram**: `**/components/diagrams/<Name>Diagram.tsx` (or your agreed folder) exporting `<Name>Diagram`.
+- **Page**: route-level view that wraps copy + `<Name />` (figure, legend, diagram).
+- **Router and index**: register the path and add a card or link from the app home so deep links are discoverable.
+- **README**: document new routes and any `public/` reference assets.
+
+## React Flow defaults (narrative mode)
+
+- Outer container: bordered, dark background, bounded height (for example `min(88dvh, …)`).
+- `fitView` with tuned `fitViewOptions` (`padding`, `maxZoom`) and sensible `minZoom` / `maxZoom` for the graph size.
+- `proOptions={{ hideAttribution: true }}` where license allows.
+- Read-only story: `nodesDraggable={false}`, `nodesConnectable={false}` unless the product is an editor.
+- Canvas chrome: `react-flow dark` base, `!bg-slate-950`, `[&_.react-flow__node]:overflow-visible` when handles or labels extend past node boxes.
+- **Dots** `Background` and **Controls** styled to match the app (slate theme is common).
+- Wrap custom node and edge components in **`memo()`**; pass stable **`nodeTypes`** / **`edgeTypes`** objects (module scope), not new literals each render.
+- Prefer **`buildNodesAndEdges()`** returning `{ nodes, edges }` at module scope for static graphs so types and data stay stable.
+
+## Cloudflare orange shell (optional)
+
+When the story includes **traffic inside Cloudflare**:
+
+- Reuse a shared **shell** node component (rounded orange border, subtle inner glow, optional header row with logo + title).
+- Parent node: explicit `style.width` / `style.height`, `overflow: 'visible'`, explicit `zIndex`. Insert the **parent before children** in the `nodes` array.
+- Children: `parentId`, `extent: 'parent'`, positions **relative to the parent** (subtract parent world position).
+- **`showHeader: false`** on the shell when an inner banner or grid already titles the zone (avoids double headers).
+
+## Readability inside tinted frames
+
+- Avoid **orange-on-orange** (or any tint-on-same-tint) for primary labels.
+- Prefer an **opaque inner card** (slate background, strong border, light ring) for nodes that must stay legible on an orange or warm shell.
+
+## Edges and meaning
+
+- **Semantic colors**: assign meaning (for example sky = client request path, orange = Cloudflare-internal hop, violet = IdP/JWKS, slate = cache return).
+- Match **arrow head** color to the edge stroke.
+- **Dashed** `strokeDasharray` for secondary, cached, or **out-of-band** flows (for example OIDC token issuance vs JWKS fetch) so readers do not merge stories.
+- Short **edge labels** with `labelStyle` / `labelBgStyle` / `labelBgPadding` for legibility on dark backgrounds.
+- Multiple edges from one side: use **`sourceHandle` / `targetHandle`** and stable **`id`s** on each `Handle`.
+
+## Assets
+
+- Icons: keep under **`public/`** and reference with absolute web paths (for example `/logos/cloudflare.svg`).
+- Large reference PNGs: same; document ownership and usage in README.
+
+## Verification
+
+Run the project's **lint** and **production build** (or typecheck) for the SPA before merge. For Bun-first apps: `bun run lint` and `bun run build` from the app root.
+
+## Agent skill
+
+For a step-by-step playbook (new diagram page, shell, legend copy), use the **`reactflow-architecture-diagrams`** skill under `skills/reactflow-architecture-diagrams/`.

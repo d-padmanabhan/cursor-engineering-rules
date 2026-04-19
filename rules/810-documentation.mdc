@@ -631,6 +631,12 @@ Include in PR checklist:
 -  Skip the basics
 -  Use unclear language
 
+## Interactive canvases (@xyflow/react)
+
+For **live** architecture diagrams in a React SPA (custom nodes, animated edges, optional Cloudflare orange shell grouping), use **[815-reactflow-diagrams.mdc](815-reactflow-diagrams.mdc)** and the **`reactflow-architecture-diagrams`** skill under `skills/reactflow-architecture-diagrams/`.
+
+Static diagrams in Markdown still use **[800-markdown.mdc](800-markdown.mdc)** (Mermaid). Pick one primary medium per page and cross-link when both exist.
+
 ## Review Checklist
 
 When reviewing documentation, check:
