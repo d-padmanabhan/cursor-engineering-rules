@@ -963,11 +963,11 @@ jobs:
 
 ## Related Files
 
-- `160-python.mdc` - Python security patterns
-- `170-javascript.mdc` - JavaScript security patterns
-- `180-go.mdc` - Go security patterns
-- `155-docker.mdc` - Container security
-- `280-aws.mdc` - AWS security best practices
+- `200-python.mdc` - Python security patterns
+- `230-javascript.mdc` - JavaScript security patterns
+- `210-go.mdc` - Go security patterns
+- `440-docker.mdc` - Container security
+- `410-aws.mdc` - AWS security best practices
 
 ---
 

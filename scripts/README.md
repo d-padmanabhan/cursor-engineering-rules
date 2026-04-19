@@ -93,7 +93,7 @@ cursor-maintenance.sh
 
 When adding new scripts:
 
-1. Follow [130-bash.mdc](../rules/130-bash.mdc) standards
+1. Follow [140-bash.mdc](../rules/140-bash.mdc) standards
 2. Include `--help` documentation
 3. Support `--dry-run` for destructive operations
 4. Pass `shellcheck` validation

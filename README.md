@@ -56,6 +56,7 @@ Comprehensive, battle-tested Cursor IDE rules for professional software engineer
 ### Security & Testing
 
 - **[310-security.mdc](rules/310-security.mdc)** - OWASP Top 10, secret management
+- **[316-zero-trust.mdc](rules/316-zero-trust.mdc)** - Distinguished Engineer - Zero Trust (identity, network, data, workload, AI/agents)
 - **[300-testing.mdc](rules/300-testing.mdc)** - Unit/Integration/E2E testing strategies
 
 ### Patterns & Best Practices
@@ -70,6 +71,7 @@ Comprehensive, battle-tested Cursor IDE rules for professional software engineer
 - **[483-kafka.mdc](rules/483-kafka.mdc)** - Kafka / Confluent (schemas, semantics, DLQ, ops)
 - **[484-teradata.mdc](rules/484-teradata.mdc)** - Teradata SQL and performance patterns
 - **[810-documentation.mdc](rules/810-documentation.mdc)** - Documentation standards
+- **[815-reactflow-diagrams.mdc](rules/815-reactflow-diagrams.mdc)** - Interactive architecture diagrams (@xyflow/react / React Flow); playbook: [skills/reactflow-architecture-diagrams/SKILL.md](skills/reactflow-architecture-diagrams/SKILL.md) (symlink into `.cursor/skills/` in consumer projects)
 - **[820-open-source.mdc](rules/820-open-source.mdc)** - Open source project patterns
 - **[250-cli.mdc](rules/250-cli.mdc)** - CLI application patterns
 - **[110-configuration.mdc](rules/110-configuration.mdc)** - Configuration management
@@ -201,13 +203,15 @@ ln -s /path/to/cursor-engineering-rules/rules .cursor/rules
 
 | Rule | Purpose |
 | --- | --- |
-| `010-workflow.mdc` | Plan/Build/Review workflow |
+| `010-workflow.mdc` | Plan/Implement/Review workflow |
+| `015-context-engineering.mdc` | Prompt packing, retrieval, compaction |
 | `020-agent-audit.mdc` | Agent audit requirements |
 | `100-core.mdc` | Core coding standards |
 | `110-configuration.mdc` | Configuration management |
 | `120-utilities.mdc` | CLI tools |
 | `130-git.mdc` | Git conventions and signed commits |
 | `310-security.mdc` | Security best practices |
+| `316-zero-trust.mdc` | Distinguished Engineer - Zero Trust |
 | `800-markdown.mdc` | Markdown formatting |
 
 Other rules load based on file patterns or explicit request.
@@ -354,7 +358,7 @@ See [rules/INDEX.md](rules/INDEX.md) for complete categorization.
 
 ### Modern Standards
 
-- **Latest versions** (Python 3.12+, Go 1.25+, Node 22+)
+- **Latest versions** (Python 3.14+, Go 1.25+, Node 22+)
 - **Modern patterns** (async/await, generics, type safety)
 - **Current tools** (ripgrep, fd, fzf, just, jq)
 

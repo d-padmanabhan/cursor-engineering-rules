@@ -764,12 +764,12 @@ docker port <container_id>
 
 ## Related Files
 
-- `130-bash.mdc` - Shell scripting in Docker entrypoints
-- `160-python.mdc` - Python-specific Docker patterns
-- `170-javascript.mdc` - Node.js-specific Docker patterns
-- `180-go.mdc` - Go-specific Docker patterns
-- `260-kubernetes.mdc` - Container orchestration with Kubernetes
-- `280-aws.mdc` - AWS ECS/EKS container deployment
+- `140-bash.mdc` - Shell scripting in Docker entrypoints
+- `200-python.mdc` - Python-specific Docker patterns
+- `230-javascript.mdc` - Node.js-specific Docker patterns
+- `210-go.mdc` - Go-specific Docker patterns
+- `450-kubernetes.mdc` - Container orchestration with Kubernetes
+- `410-aws.mdc` - AWS ECS/EKS container deployment
 
 ---
 

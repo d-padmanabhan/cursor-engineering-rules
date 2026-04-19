@@ -370,7 +370,7 @@ app.get('/health', async (req, res) => {
 
 - `310-security.mdc` - Security logging and monitoring
 - `320-api-design.mdc` - API metrics and monitoring
-- `260-kubernetes.mdc` - Kubernetes observability
+- `450-kubernetes.mdc` - Kubernetes observability
 
 ---
 

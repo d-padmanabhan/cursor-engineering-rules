@@ -1441,10 +1441,10 @@ describe('UserService', () => {
 
 ## Related Files
 
-- `160-python.mdc` - Python-specific testing with pytest
-- `170-javascript.mdc` - JavaScript testing with Jest/Vitest
-- `180-go.mdc` - Go testing patterns
-- `120-gha.mdc` - CI/CD integration for tests
+- `200-python.mdc` - Python-specific testing with pytest
+- `230-javascript.mdc` - JavaScript testing with Jest/Vitest
+- `210-go.mdc` - Go testing patterns
+- `160-github-actions.mdc` - CI/CD integration for tests
 - `250-api-design.mdc` - API testing strategies
 
 ---

@@ -160,7 +160,7 @@ Verify `CURSOR_RULES_PATH` points to the correct directory:
 ls /path/to/cursor-engineering-rules/rules/
 ```
 
-Should list `.mdc` files like `050-workflow.mdc`, `160-python.mdc`, etc.
+Should list `.mdc` files like `010-workflow.mdc`, `200-python.mdc`, etc.
 
 ## Development Mode
 

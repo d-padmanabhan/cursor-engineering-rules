@@ -4,7 +4,7 @@ description: Fix issues, summarize progress, run pre-commit, propose commit mess
 
 # CHECK PROGRESS MODE ACTIVATED
 
-Review current work progress without staging or committing. Fix issues, run quality checks, and propose commit messages following `100-core.mdc` and `110-git.mdc` standards.
+Review current work progress without staging or committing. Fix issues, run quality checks, and propose commit messages following `100-core.mdc` and `130-git.mdc` standards.
 
 > [!IMPORTANT]
 > **Fix mode.** Fix errors and formatting issues, then report what was fixed.
@@ -143,7 +143,7 @@ Provide a structured summary:
 
 **Only if no Critical issues found after fixes:**
 
-Propose **one primary commit message** following `110-git.mdc` format:
+Propose **one primary commit message** following `130-git.mdc` format:
 
 ```
 <type>(<scope>): <short summary>
@@ -242,6 +242,6 @@ If CodeRabbit is available and configured:
 **Integration:** This workflow aligns with:
 
 - `100-core.mdc` Coding standards and Priority Framework
-- `110-git.mdc` Commit message standards
-- `050-workflow.mdc` Review phase patterns
+- `130-git.mdc` Commit message standards
+- `010-workflow.mdc` Review phase patterns
 - Tooling baseline for all supported languages

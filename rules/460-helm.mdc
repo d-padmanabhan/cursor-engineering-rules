@@ -258,9 +258,9 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 
 ## Related Files
 
-- `260-kubernetes.mdc` - Kubernetes patterns
-- `140-terraform.mdc` - Infrastructure as Code
-- `120-gha.mdc` - CI/CD for Helm deployments
+- `450-kubernetes.mdc` - Kubernetes patterns
+- `180-terraform.mdc` - Infrastructure as Code
+- `160-github-actions.mdc` - CI/CD for Helm deployments
 
 ---
 

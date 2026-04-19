@@ -112,14 +112,15 @@ fetch_rule({
 
 **Available Categories:**
 
-- `core`: workflow, core-principles, git, utilities
-- `languages`: python, go, rust, typescript, javascript, bash
-- `infrastructure`: terraform, cloudformation, docker, kubernetes, ansible, helm
-- `cloud`: aws, azure, gcp, cloudflare
-- `devops`: github-actions, makefile, cli
-- `patterns`: documentation, mcp-servers, configuration, open-source, testing, security, api-design, observability
-- `databases`: postgresql
-- `other`: ai-ml, markdown
+- `core`: workflow, context-engineering, agent-audit, core-principles, configuration, utilities, git
+- `languages`: bash, python, go, rust, javascript, typescript
+- `infrastructure`: justfile, cloudformation, terraform, ansible, docker, kubernetes, helm
+- `cloud`: cloudflare, aws, aws-iam, gcp, azure
+- `devops`: github-actions, cli
+- `patterns`: testing, security, iam, zero-trust, api-design, observability
+- `data`: postgresql, sql, data-engineering, databricks, snowflake, kafka, teradata
+- `ai`: ai-ml, mcp-servers
+- `docs`: markdown, documentation, reactflow, open-source
 
 ### 3. `list_available_rules`
 
@@ -159,63 +160,78 @@ list_available_rules()
 
 ## Rule Categories
 
-### Core (Priority 50-115)
+### Core (Priority 10-130)
 
-- **Workflow** (50): Plan/Implement/Review approach with Golden Rules
+- **Workflow** (10): Plan/Implement/Review approach with Golden Rules
+- **Context Engineering** (15): Prompt packing, retrieval, compaction
+- **Agent Audit** (20): No remote writes, checkpoints, audit reports
 - **Core Principles** (100): SOLID, DRY, KISS, YAGNI, Fail Fast
-- **Git** (110): Conventional commits, branching, commit approval
-- **Utilities** (115): Ripgrep, fzf, jq, yq, CLI tools
+- **Configuration** (110): Config management, secrets, environments
+- **Utilities** (120): Ripgrep, fzf, jq, yq, CLI tools
+- **Git** (130): Conventional commits, branching, commit approval
 
-### Languages (Priority 130-185)
+### Languages (Priority 140-240)
 
-- **Bash** (130): POSIX compliance, ShellCheck, safety patterns
-- **Python** (160): Python 3.14+, type hints, AWS Lambda patterns
-- **TypeScript** (165): Strict mode, ESM, modern patterns
-- **JavaScript** (170): ES modules, async/await, Node.js
-- **Go** (180): Idiomatic Go, error handling, concurrency
-- **Rust** (185): Ownership, lifetimes, async patterns
+- **Bash** (140): POSIX compliance, ShellCheck, safety patterns
+- **Python** (200): Python 3.14+, type hints, AWS Lambda patterns
+- **Go** (210): Idiomatic Go, error handling, concurrency
+- **Rust** (220): Ownership, lifetimes, async patterns
+- **JavaScript** (230): ES modules, async/await, Node.js
+- **TypeScript** (240): Strict mode, ESM, modern patterns
 
-### Infrastructure (Priority 140-260)
+### Infrastructure (Priority 150-460)
 
-- **Terraform** (140): Modules, state management, workspaces
-- **Ansible** (145): Playbooks, roles, idempotency
-- **CloudFormation** (150): Templates, stacks, nested stacks
-- **Docker** (155): Multi-stage builds, security, optimization
-- **Helm** (195): Charts, templating, releases
-- **Kubernetes** (260): Manifests, operators, CRDs, security
+- **Justfile** (150): Modern command runner patterns
+- **CloudFormation** (170): Templates, stacks, nested stacks
+- **Terraform** (180): Modules, state management, workspaces
+- **Ansible** (190): Playbooks, roles, idempotency
+- **Docker** (440): Multi-stage builds, security, optimization
+- **Kubernetes** (450): Manifests, operators, CRDs, security
+- **Helm** (460): Charts, templating, releases
 
-### Cloud (Priority 250-290)
+### Cloud (Priority 400-430)
 
-- **Cloudflare** (250): Workers, Rules Engine, DNS, security
-- **AWS** (280): EKS, VPC Lattice, Lambda, IAM
-- **Azure** (285): Bicep, Key Vault, App Service
-- **GCP** (290): GKE, Cloud Run, Secret Manager
+- **Cloudflare** (400): Workers, Rules Engine, DNS, security
+- **AWS** (410): EKS, VPC Lattice, Lambda, Zero Trust
+- **AWS IAM** (412): Principals, SCPs, KMS, AccessDenied debugging
+- **GCP** (420): GKE, Cloud Run, Secret Manager
+- **Azure** (430): Bicep, Key Vault, App Service
 
-### DevOps (Priority 120-200)
+### DevOps (Priority 160-250)
 
-- **GitHub Actions** (120): Workflows, OIDC, security
-- **Makefile** (190): Phony targets, recipes, conventions
-- **CLI** (200): argparse, typer, rich, user experience
+- **GitHub Actions** (160): Workflows, OIDC, security
+- **CLI** (250): argparse, typer, rich, user experience
 
-### Patterns (Priority 210-330)
+### Patterns (Priority 300-330)
 
-- **Open Source** (210): Contributing, licensing, community
-- **Documentation** (220): MkDocs, Docusaurus, API docs
-- **MCP Servers** (230): Model Context Protocol patterns
-- **Configuration** (240): Config management, secrets
 - **Testing** (300): Unit, integration, E2E testing
-- **Security** (310): OWASP, secrets, IAM, least privilege
+- **Security** (310): OWASP, secrets, vulnerability scanning
+- **IAM & Identity** (315): OIDC/OAuth2/PKCE, SAML, PKI, PAM
+- **Zero Trust** (316): Distinguished-engineer Zero Trust for identity, network, data, workload, AI/agents
 - **API Design** (320): REST, GraphQL, gRPC patterns
 - **Observability** (330): Logging, metrics, tracing
 
-### Databases (Priority 270)
+### Data (Priority 470-484)
 
-- **PostgreSQL** (270): Performance, replication, security
+- **PostgreSQL** (470): Schema design, migrations, performance, RLS
+- **SQL** (475): DQL/DML/DDL/DCL/TCL, transactions, guardrails
+- **Data Engineering** (480): Contracts, backfills, quality, governance
+- **Databricks** (481): Spark, Delta, Unity Catalog, DLT
+- **Snowflake** (482): RBAC, cost/perf, streams/tasks, loading
+- **Kafka** (483): Topics, schemas, producers/consumers, DLQ
+- **Teradata** (484): Indexes, stats, spool, joins, QUALIFY
 
-### Other (Priority 295-800)
+### AI (Priority 500-510)
 
-- **AI/ML** (295): Machine learning patterns
+- **AI/ML** (500): LLM APIs, Bedrock, Vertex AI, prompt engineering, RAG
+- **MCP Servers** (510): Model Context Protocol patterns
+
+### Docs (Priority 800-820)
+
 - **Markdown** (800): GFM, Mermaid diagrams
+- **Documentation** (810): Docs sites, API docs, technical writing
+- **React Flow diagrams** (815): Interactive architecture canvases
+- **Open Source** (820): Contributing, licensing, community
 
 ## Development
 

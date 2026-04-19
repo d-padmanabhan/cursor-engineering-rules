@@ -53,7 +53,7 @@ Thank you for your interest in contributing!
 6. Push and open a pull request
 
 > [!NOTE]
-> **Agents:** remote writes (push/PR creation) are default-deny and require explicit authorization (see `060-agent-audit.mdc`).
+> **Agents:** remote writes (push/PR creation) are default-deny and require explicit authorization (see `020-agent-audit.mdc`).
 
 ## Code Style
 

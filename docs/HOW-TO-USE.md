@@ -43,16 +43,18 @@ priority: 100
 
 | Rule | Purpose |
 |------|---------|
-| `050-workflow.mdc` | Plan/Build/Review workflow |
-| `060-agent-audit.mdc` | Agent audit requirements |
+| `010-workflow.mdc` | Plan/Implement/Review workflow |
+| `015-context-engineering.mdc` | Prompt packing, retrieval, compaction |
+| `020-agent-audit.mdc` | Agent audit requirements |
 | `100-core.mdc` | Core coding standards |
-| `110-git.mdc` | Git conventions |
-| `115-utilities.mdc` | CLI tools |
-| `240-configuration.mdc` | Configuration management |
+| `130-git.mdc` | Git conventions |
+| `120-utilities.mdc` | CLI tools |
+| `110-configuration.mdc` | Configuration management |
 | `310-security.mdc` | Security best practices |
+| `316-zero-trust.mdc` | Distinguished Engineer - Zero Trust |
 | `800-markdown.mdc` | Markdown formatting |
 
-Rules without `alwaysApply: true` load based on file patterns (e.g., `160-python.mdc` loads when editing `.py` files) or when explicitly requested.
+Rules without `alwaysApply: true` load based on file patterns (e.g., `200-python.mdc` loads when editing `.py` files) or when explicitly requested.
 
 ### Approach B: Explicit `.cursorrules` File
 
@@ -65,8 +67,8 @@ rulesDirectory: .cursor/rules
 # Option 2: Explicit list of rules
 rules:
   - .cursor/rules/100-core.mdc
-  - .cursor/rules/160-python.mdc
-  - .cursor/rules/280-aws.mdc
+  - .cursor/rules/200-python.mdc
+  - .cursor/rules/410-aws.mdc
 ```
 
 **When to use:**
@@ -148,8 +150,8 @@ mkdir -p .cursor/rules
 cp /path/to/cursor-engineering-rules/rules/*.mdc .cursor/rules/
 
 # Or copy specific rules
-cp /path/to/cursor-engineering-rules/rules/160-python.mdc .cursor/rules/
-cp /path/to/cursor-engineering-rules/rules/280-aws.mdc .cursor/rules/
+cp /path/to/cursor-engineering-rules/rules/200-python.mdc .cursor/rules/
+cp /path/to/cursor-engineering-rules/rules/410-aws.mdc .cursor/rules/
 
 # (Optional) Copy workflow templates (tasks, active-context, etc.)
 mkdir -p .cursor/rules/templates
@@ -163,8 +165,8 @@ Rules with `alwaysApply: true` load automatically.
 ```yaml
 rules:
   - .cursor/rules/100-core.mdc
-  - .cursor/rules/160-python.mdc
-  - .cursor/rules/280-aws.mdc
+  - .cursor/rules/200-python.mdc
+  - .cursor/rules/410-aws.mdc
 ```
 
 ---
@@ -255,17 +257,17 @@ rulesDirectory: .cursor/rules
 rules:
   # Core (always include)
   - .cursor/rules/100-core.mdc
-  - .cursor/rules/110-git.mdc
+  - .cursor/rules/130-git.mdc
   - .cursor/rules/310-security.mdc
   
   # Your stack
-  - .cursor/rules/160-python.mdc
-  - .cursor/rules/280-aws.mdc
-  - .cursor/rules/140-terraform.mdc
+  - .cursor/rules/200-python.mdc
+  - .cursor/rules/410-aws.mdc
+  - .cursor/rules/180-terraform.mdc
   
   # Optional
   - .cursor/rules/300-testing.mdc
-  - .cursor/rules/220-documentation.mdc
+  - .cursor/rules/810-documentation.mdc
 ```
 
 **Pros:**
@@ -294,7 +296,7 @@ rules:
 ```yaml
 rules:
   - .cursor/rules/100-core.mdc
-  - .cursor/rules/110-git.mdc
+  - .cursor/rules/130-git.mdc
 ```
 
 **Phase 2: Add Language**
@@ -302,8 +304,8 @@ rules:
 ```yaml
 rules:
   - .cursor/rules/100-core.mdc
-  - .cursor/rules/110-git.mdc
-  - .cursor/rules/160-python.mdc  # Your primary language
+  - .cursor/rules/130-git.mdc
+  - .cursor/rules/200-python.mdc  # Your primary language
 ```
 
 **Phase 3: Add Platform**
@@ -311,9 +313,9 @@ rules:
 ```yaml
 rules:
   - .cursor/rules/100-core.mdc
-  - .cursor/rules/110-git.mdc
-  - .cursor/rules/160-python.mdc
-  - .cursor/rules/280-aws.mdc     # Your cloud platform
+  - .cursor/rules/130-git.mdc
+  - .cursor/rules/200-python.mdc
+  - .cursor/rules/410-aws.mdc     # Your cloud platform
 ```
 
 **Phase 4: Add Patterns**
@@ -321,9 +323,9 @@ rules:
 ```yaml
 rules:
   - .cursor/rules/100-core.mdc
-  - .cursor/rules/110-git.mdc
-  - .cursor/rules/160-python.mdc
-  - .cursor/rules/280-aws.mdc
+  - .cursor/rules/130-git.mdc
+  - .cursor/rules/200-python.mdc
+  - .cursor/rules/410-aws.mdc
   - .cursor/rules/310-security.mdc
   - .cursor/rules/300-testing.mdc
 ```
@@ -339,10 +341,10 @@ rules:
 ```yaml
 rules:
   - .cursor/rules/100-core.mdc
-  - .cursor/rules/110-git.mdc
-  - .cursor/rules/165-typescript.mdc     # Frontend
-  - .cursor/rules/160-python.mdc         # Backend
-  - .cursor/rules/270-postgresql.mdc     # Database
+  - .cursor/rules/130-git.mdc
+  - .cursor/rules/240-typescript.mdc     # Frontend
+  - .cursor/rules/200-python.mdc         # Backend
+  - .cursor/rules/470-postgresql.mdc     # Database
   - .cursor/rules/320-api-design.mdc     # API patterns
   - .cursor/rules/310-security.mdc       # Security
   - .cursor/rules/300-testing.mdc        # Testing
@@ -353,10 +355,10 @@ rules:
 ```yaml
 rules:
   - .cursor/rules/100-core.mdc
-  - .cursor/rules/110-git.mdc
-  - .cursor/rules/180-go.mdc
-  - .cursor/rules/260-kubernetes.mdc
-  - .cursor/rules/155-docker.mdc
+  - .cursor/rules/130-git.mdc
+  - .cursor/rules/210-go.mdc
+  - .cursor/rules/450-kubernetes.mdc
+  - .cursor/rules/440-docker.mdc
   - .cursor/rules/330-observability.mdc
   - .cursor/rules/310-security.mdc
   - .cursor/rules/300-testing.mdc
@@ -367,11 +369,11 @@ rules:
 ```yaml
 rules:
   - .cursor/rules/100-core.mdc
-  - .cursor/rules/110-git.mdc
-  - .cursor/rules/130-bash.mdc
-  - .cursor/rules/140-terraform.mdc
-  - .cursor/rules/260-kubernetes.mdc
-  - .cursor/rules/120-gha.mdc
+  - .cursor/rules/130-git.mdc
+  - .cursor/rules/140-bash.mdc
+  - .cursor/rules/180-terraform.mdc
+  - .cursor/rules/450-kubernetes.mdc
+  - .cursor/rules/160-github-actions.mdc
   - .cursor/rules/310-security.mdc
 ```
 
@@ -380,10 +382,10 @@ rules:
 ```yaml
 rules:
   - .cursor/rules/100-core.mdc
-  - .cursor/rules/110-git.mdc
-  - .cursor/rules/160-python.mdc
-  - .cursor/rules/270-postgresql.mdc
-  - .cursor/rules/280-aws.mdc           # or 290-gcp.mdc
+  - .cursor/rules/130-git.mdc
+  - .cursor/rules/200-python.mdc
+  - .cursor/rules/470-postgresql.mdc
+  - .cursor/rules/410-aws.mdc           # or 420-gcp.mdc
   - .cursor/rules/300-testing.mdc
 ```
 
@@ -392,11 +394,11 @@ rules:
 ```yaml
 rules:
   - .cursor/rules/100-core.mdc
-  - .cursor/rules/110-git.mdc
-  - .cursor/rules/160-python.mdc
-  - .cursor/rules/295-ai-ml.mdc
-  - .cursor/rules/230-mcp-servers.mdc
-  - .cursor/rules/280-aws.mdc           # Bedrock
+  - .cursor/rules/130-git.mdc
+  - .cursor/rules/200-python.mdc
+  - .cursor/rules/500-ai-ml.mdc
+  - .cursor/rules/510-mcp-servers.mdc
+  - .cursor/rules/410-aws.mdc           # Bedrock
   - .cursor/rules/310-security.mdc
 ```
 
@@ -557,13 +559,15 @@ Rules with `alwaysApply: true` load for **every** repository:
 
 | Rule | Purpose |
 |------|---------|
-| `050-workflow.mdc` | Plan/Build/Review workflow |
-| `060-agent-audit.mdc` | Agent audit requirements |
+| `010-workflow.mdc` | Plan/Implement/Review workflow |
+| `015-context-engineering.mdc` | Prompt packing, retrieval, compaction |
+| `020-agent-audit.mdc` | Agent audit requirements |
 | `100-core.mdc` | Core coding standards |
-| `110-git.mdc` | Git conventions |
-| `115-utilities.mdc` | CLI tools |
-| `240-configuration.mdc` | Configuration management |
+| `130-git.mdc` | Git conventions |
+| `120-utilities.mdc` | CLI tools |
+| `110-configuration.mdc` | Configuration management |
 | `310-security.mdc` | Security best practices |
+| `316-zero-trust.mdc` | Distinguished Engineer - Zero Trust |
 | `800-markdown.mdc` | Markdown formatting |
 
 These cannot be disabled per-repo.
@@ -573,7 +577,7 @@ These cannot be disabled per-repo.
 Other rules use file patterns in their frontmatter and load automatically when you open matching files:
 
 ```yaml
-# Example frontmatter from 160-python.mdc
+# Example frontmatter from 200-python.mdc
 ---
 title: Python Best Practices
 alwaysApply: false
@@ -586,13 +590,13 @@ files:
 
 | You open... | Rules that auto-load |
 |-------------|---------------------|
-| `*.py`, `pyproject.toml` | `160-python.mdc` |
-| `*.tf`, `*.tfvars` | `140-terraform.mdc` |
-| `*.go`, `go.mod` | `180-go.mdc` |
-| `*.ts`, `*.tsx` | `165-typescript.mdc` |
-| `*.js`, `*.jsx` | `170-javascript.mdc` |
-| `Dockerfile`, `docker-compose.yml` | `155-docker.mdc` |
-| `*.yaml` in `.github/workflows/` | `120-gha.mdc` |
+| `*.py`, `pyproject.toml` | `200-python.mdc` |
+| `*.tf`, `*.tfvars` | `180-terraform.mdc` |
+| `*.go`, `go.mod` | `210-go.mdc` |
+| `*.ts`, `*.tsx` | `240-typescript.mdc` |
+| `*.js`, `*.jsx` | `230-javascript.mdc` |
+| `Dockerfile`, `docker-compose.yml` | `440-docker.mdc` |
+| `*.yaml` in `.github/workflows/` | `160-github-actions.mdc` |
 
 **This means most repos need zero configuration.** Open a Python file, Python rules load. Open a Go file, Go rules load.
 
@@ -603,17 +607,17 @@ For repos that need specific rule combinations, add a `.cursorrules` file:
 ```yaml
 # python-aws-repo/.cursorrules
 rules:
-  - ~/.cursor/rules/160-python.mdc
-  - ~/.cursor/rules/280-aws.mdc
-  - ~/.cursor/rules/140-terraform.mdc
+  - ~/.cursor/rules/200-python.mdc
+  - ~/.cursor/rules/410-aws.mdc
+  - ~/.cursor/rules/180-terraform.mdc
 ```
 
 ```yaml
 # go-k8s-repo/.cursorrules
 rules:
-  - ~/.cursor/rules/180-go.mdc
-  - ~/.cursor/rules/260-kubernetes.mdc
-  - ~/.cursor/rules/155-docker.mdc
+  - ~/.cursor/rules/210-go.mdc
+  - ~/.cursor/rules/450-kubernetes.mdc
+  - ~/.cursor/rules/440-docker.mdc
 ```
 
 #### Per-Repo Overrides
@@ -643,8 +647,8 @@ EOF
 ```
 ~/.cursor/rules/              <- Global (symlink to cursor-engineering-rules)
   ├── 100-core.mdc            <- alwaysApply: true (all repos)
-  ├── 160-python.mdc          <- loads when *.py opened
-  ├── 180-go.mdc              <- loads when *.go opened
+  ├── 200-python.mdc          <- loads when *.py opened
+  ├── 210-go.mdc              <- loads when *.go opened
   └── ...
 
 ~/code/

@@ -1474,8 +1474,8 @@ impl IntoResponse for AppError {
 
 ## Related Files
 
-- `160-python.mdc` - Python patterns (similar async/await)
-- `180-go.mdc` - Go patterns (comparison)
+- `200-python.mdc` - Python patterns (similar async/await)
+- `210-go.mdc` - Go patterns (comparison)
 - `300-testing.mdc` - Testing strategies
 - `310-security.mdc` - Security best practices
 

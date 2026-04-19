@@ -1,0 +1,381 @@
+---
+title: Distinguished Engineer - Zero Trust
+description: Principles-first Zero Trust for identity, network, data, workload, and AI/agent systems. Opinionated, threat-model-driven, always-on.
+priority: 316
+alwaysApply: true
+---
+
+# Distinguished Engineer - Zero Trust
+
+**Audience:** engineers designing, reviewing, or operating any system that processes data, serves users, or runs autonomously (including AI agents and MCP servers).
+
+**Voice:** this rule speaks as a Distinguished Engineer in design review. It is opinionated. It prefers principles over recipes, threat models over checklists, and reversibility over cleverness. It will tell you "no" and explain why.
+
+> [!IMPORTANT]
+> This rule complements, it does not replace:
+>
+> - `310-security.mdc` - OWASP and secure coding (the *what*)
+> - `315-iam.mdc` - identity protocols reference (the *how for identity*)
+> - `412-aws-iam.mdc` - AWS-specific IAM (the *how for AWS*)
+> - `020-agent-audit.mdc` - agent-local guardrails (the *how for AI runs*)
+>
+> Use this rule when designing systems, reviewing architectures, scoping tools for agents, or arguing about trust boundaries.
+
+---
+
+## Golden Rules (read first)
+
+These are non-negotiable. Violations require an explicit, documented, time-boxed waiver with an owner.
+
+1. **Never trust, always verify.** Treat every request - from humans, services, models, tool outputs, and RAG content - as untrusted input until it passes explicit verification. Perimeter is not a control.
+2. **Least privilege, per call, per session.** Short-lived, scoped, purpose-bound credentials. No long-lived keys in code, config, env vars, or agent memory. No "admin for convenience".
+3. **Assume breach.** Segment aggressively. Log immutably. Rotate frequently. Contain blast radius before you need to. Every secret *will* leak; design so leaking one costs you little.
+4. **Deterministic guardrails before LLM decisions.** Anything consequential - money, data changes, deploys, messages, deletions - passes a deterministic policy check *before* the model gets a vote. LLMs advise; policy decides.
+5. **Auditability for every trust decision.** Every tool call, secret access, privilege escalation, and data egress is logged with `who/what/when/why/result` to an append-only store. If you cannot answer "who did this and why" in under 5 minutes, you do not have Zero Trust.
+
+---
+
+## Mental Model
+
+```mermaid
+flowchart LR
+    subgraph principal [Principal]
+        user[User or Service or Agent]
+    end
+    subgraph trust [Trust Decision - Every Request]
+        verify["Verify: identity, device, posture, context"]
+        authz["Authorize: policy vs request"]
+        audit["Audit: structured event"]
+    end
+    subgraph resource [Resource]
+        data[Data, API, Tool, Action]
+    end
+    user --> verify --> authz --> data
+    authz -. deny .-> rej[Reject + audit]
+    verify --> audit
+    authz --> audit
+    data --> audit
+```
+
+Three properties make this Zero Trust and not "IAM with extra steps":
+
+1. **The trust decision runs on every request**, not once at session start.
+2. **The decision considers context** (device posture, time, location, anomaly score, recent behavior) - not just `userId`.
+3. **The decision is independent of the network location** of either party.
+
+---
+
+## 1. Identity and Access
+
+**Principles**
+
+- Identity is the new perimeter. Every workload, service, human, and agent has a verifiable identity with cryptographic proof.
+- No shared identities. Service accounts are per-workload, not per-team.
+- Credentials are short-lived by default (minutes, not months). If you find yourself writing a rotation cron, you picked the wrong credential type.
+- Authentication answers "who", authorization answers "what", and they are separate decisions logged separately.
+
+**Do**
+
+- Workload identity (IRSA on EKS, Workload Identity on GKE, Managed Identities on Azure, SPIFFE/SPIRE for multi-cloud).
+- OIDC + PKCE for user flows. OIDC federation for CI (GitHub Actions -> cloud) - no static deploy keys.
+- mTLS between services where feasible; otherwise signed JWTs with short TTLs and audience binding.
+- Step-up auth for sensitive operations (WebAuthn, hardware keys).
+
+**Don't**
+
+- Long-lived IAM users / access keys for humans or CI.
+- Bearer tokens without audience, issuer, and expiration validation.
+- `AssumeRole` without `ExternalId` across accounts.
+- Service accounts reused across environments.
+
+See `315-iam.mdc` and `412-aws-iam.mdc` for protocol-level detail.
+
+---
+
+## 2. Network
+
+**Principles**
+
+- Default-deny egress. Most data breaches exfiltrate through egress you never audited.
+- Private-by-default. Public endpoints are an explicit, reviewed decision with a business reason.
+- Network identity (IP, VPC, subnet) is a *hint*, never a *grant*. Policy still decides.
+- Service-to-service calls carry identity, not network provenance.
+
+**Do**
+
+- Private subnets for all workloads; public subnets only for ingress appliances.
+- VPC endpoints / Private Service Connect / Private Endpoints for cloud APIs - model, storage, secrets, logging.
+- Service mesh (Istio/Linkerd) or VPC Lattice for mTLS + per-service authorization policies.
+- DNS filtering and allow-listed egress domains for workloads that call external APIs.
+- Deny by default between microservices; explicitly allow expected callers.
+
+**Don't**
+
+- `0.0.0.0/0` egress for compute, ever. You don't need it; you've been getting away with it.
+- Security groups as your primary authorization control.
+- "Internal" APIs without authentication because "it's behind the VPC".
+
+Cross-refs: `410-aws.mdc`, `420-gcp.mdc`, `430-azure.mdc`, `400-cloudflare.mdc`, `450-kubernetes.mdc`.
+
+---
+
+## 3. Data
+
+**Principles**
+
+- Data has a classification, an owner, a retention, and a lawful basis. If you don't know any one of these, you are not allowed to store it.
+- Encryption is table stakes; key custody is the control.
+- Tokenization and field-level encryption beat bulk encryption for PII/PCI/PHI.
+- Egress is a first-class policy decision.
+
+**Do**
+
+- Encrypt in transit (TLS 1.2+ minimum, prefer 1.3) and at rest (KMS/CMK with per-tenant or per-purpose keys where the blast radius demands it).
+- Envelope encryption for large objects; DEK per object, KEK in KMS.
+- Field-level or column-level encryption for high-sensitivity PII; tokenization for card data.
+- DLP scanning on egress (email, cloud storage, model APIs).
+- Per-tenant isolation for multi-tenant data: separate keys, separate indexes, separate prefixes - `tenant_id` in the WHERE clause is not isolation.
+
+**Don't**
+
+- Share a single KMS key for all environments ("convenience").
+- Log raw request/response bodies containing PII.
+- Send production data to staging/dev environments or to model providers without DPA + redaction.
+
+---
+
+## 4. Workload
+
+**Principles**
+
+- The code running in production is the code you signed and the config you reviewed. Prove it.
+- Containers and functions run with the fewest capabilities that make them work.
+- Admission is a policy gate, not a vibe check.
+
+**Do**
+
+- Signed container images (Cosign, Sigstore). Admission policy rejects unsigned images.
+- Policy-as-code at admission (OPA/Kyverno/AWS CloudFormation Guard/Azure Policy/GCP Policy).
+- Read-only root filesystems, non-root users, dropped capabilities, seccomp/AppArmor profiles.
+- Runtime security (Falco, GuardDuty Runtime Monitoring, Defender for Cloud) with tuned rules, not defaults.
+- SBOM generated at build time, stored with the artifact, scanned continuously.
+
+**Don't**
+
+- `privileged: true` in production pods.
+- Base images without a known, pinned digest.
+- "Temporary" SSH/bastion access that becomes permanent.
+
+Cross-refs: `440-docker.mdc`, `450-kubernetes.mdc`, `160-github-actions.mdc`.
+
+---
+
+## 5. AI, Agents, and MCP (the differentiated content)
+
+Zero Trust for AI systems is not an extension of Zero Trust - it is the same principles applied to an adversary the organization has voluntarily embedded inside its own control plane. Treat the LLM, the agent harness, the RAG corpus, and every tool output as **untrusted, persuasive user input**.
+
+### 5.1 Tool allow-lists and capability tokens
+
+**Principle:** agents get capabilities, not credentials.
+
+- Every tool an agent can invoke is explicitly enumerated in an allow-list per agent/role/session.
+- Tools accept capability tokens (short-lived, scoped to resource + action + caller) - never raw credentials, never broad cloud roles.
+- Destructive tools (`delete_*`, `send_money`, `deploy_*`, `email_*`, `grant_*`) require HITL approval or a policy check that a human configured offline.
+- MCP servers expose the *narrowest* useful tool surface. A tool called `run_sql` is a disaster; `query_customer_orders(customer_id, limit)` is a design.
+
+### 5.2 Prompt injection is always in scope
+
+**Principle:** any string the model sees is adversarial.
+
+- Tool outputs, retrieved documents, page content, email bodies, file contents - all are prompt-injection vectors.
+- Defense is defense in depth: canonicalize inputs, strip control tokens, sandbox rendering, separate instruction and data channels (system vs tool message), and - critically - never let model output alone trigger a side effect.
+- For RAG: tag every chunk with provenance (source, tenant, classification) and enforce at retrieval time. Cross-tenant leakage in a vector index is the new SQL injection.
+
+### 5.3 Secret isolation
+
+**Principle:** models must not see raw secrets - ever.
+
+- Agents hold *references* (e.g., "use the Stripe tool") not *values* (e.g., `sk_live_...`).
+- The tool layer brokers secrets from a vault, attaches them to outbound calls, and returns scrubbed results.
+- Scrub model inputs and outputs for accidental secrets before logging.
+
+### 5.4 Egress and model isolation
+
+**Principle:** pin the provider, pin the endpoint, allow-list the domain.
+
+- Outbound model calls go to pinned endpoints (specific region/project) with egress policy.
+- Fetch-arbitrary-URL tools are a misuse pattern. Replace with `fetch_from_allowlist(url)` and a curated list.
+- Route model traffic through a proxy you control: it logs, redacts, rate-limits, and enforces per-tenant policy.
+
+### 5.5 Human-in-the-loop gates
+
+**Principle:** irreversible actions require a human.
+
+Destructive, irreversible, or high-blast-radius actions - delete, deploy, pay, grant, publish, message, commit, push - always pass through a HITL gate:
+
+- Gate shows: what will happen, to what, as whom, with what authority, and the diff/preview.
+- Gate is time-bounded (auto-reject on timeout).
+- Approval is audited (`approver_id`, timestamp, request hash).
+- Gates cannot be bypassed by the model saying "the user approved". Approval is a signed receipt from the gate, not a string in a conversation.
+
+### 5.6 Context and memory isolation
+
+**Principle:** tenants never share a context window.
+
+- Per-tenant system prompts, per-tenant retrieval indexes, per-tenant conversation memory.
+- No global "knowledge base" for tenant data. A global corpus must be public-equivalent.
+- Clear memory on logout, on role change, on tenant switch.
+
+### 5.7 Structured output and validation
+
+**Principle:** parse, then trust - a little.
+
+- Force structured output (JSON schema / tool-call format) for anything that drives a side effect.
+- Validate against schema *and* against a deterministic policy before execution.
+- Reject-and-retry on invalid output with a bounded retry budget. Unbounded retry is a DoS and a cost incident.
+
+### 5.8 Rate, cost, and quota as security controls
+
+**Principle:** availability and cost are safety properties.
+
+- Per-principal rate limits on the model, per-tool, per-endpoint.
+- Cost caps per session, per user, per tenant - with hard stops, not warnings.
+- Alert on cost anomalies; they are frequently the first signal of abuse or loop bugs.
+
+Cross-refs: `500-ai-ml.mdc`, `510-mcp-servers.mdc`, `020-agent-audit.mdc`.
+
+---
+
+## 6. Telemetry and Audit
+
+**Principles**
+
+- If it's not logged, it didn't happen defensibly.
+- Logs for trust decisions are not application logs. Store them differently.
+- Mean Time To Answer (MTTA) "who did this and why?" is the audit system's benchmark, not the mean time to ingest.
+
+**Do**
+
+- Append-only / WORM audit store (e.g., S3 Object Lock, Azure immutable blob, GCS bucket lock) for:
+  - Authentication events
+  - Authorization decisions (allow *and* deny)
+  - Secret access
+  - Tool calls from agents (request, result, identity, policy version)
+  - Data egress to external services and model providers
+- Structured events (JSON) with trace/correlation IDs; no free-form strings for critical fields.
+- Retention aligned with legal/regulatory requirements, not convenience.
+- Alerting on: sensitive-tool use, failed-then-succeeded auth, privilege escalation, anomalous egress volume, cost spikes.
+
+**Don't**
+
+- Mix audit logs with application logs in a mutable store.
+- Log secrets (yes, still happening).
+- Rely on CloudTrail / Activity Log *alone* for application-level Zero Trust audit - you also need in-app events.
+
+Cross-refs: `330-observability.mdc`, `020-agent-audit.mdc`.
+
+---
+
+## Do / Don't (cheat sheet)
+
+| Area | Do | Don't |
+|---|---|---|
+| Identity | Short-lived workload identity | Long-lived static keys |
+| Network | Default-deny egress; private endpoints | Rely on VPC as authz |
+| Data | Per-tenant keys; DLP on egress | Shared keys "for convenience" |
+| Workload | Signed images; OPA admission | `privileged: true`; `latest` tags |
+| AI tools | Narrow tools + capability tokens | `run_arbitrary_code` or raw SQL |
+| AI memory | Per-tenant indexes and memory | Global RAG for tenant data |
+| Destructive actions | HITL gate with signed receipt | Model-as-approver |
+| Audit | Append-only WORM store | Mutable app logs as audit |
+
+---
+
+## Reviewer Checklist (copy into PRs that touch trust boundaries)
+
+Identity and access:
+
+- [ ] No long-lived credentials introduced; workload identity used
+- [ ] OIDC federation for CI; no static deploy keys
+- [ ] Token validation includes issuer, audience, expiration, and signature
+- [ ] Cross-account assume role uses `ExternalId` + condition keys
+
+Network:
+
+- [ ] Egress is default-deny or has an explicit allow-list with business justification
+- [ ] Private endpoints used for cloud services in scope
+- [ ] mTLS or signed JWTs for service-to-service; no "internal trust"
+
+Data:
+
+- [ ] Classification and owner documented for new data
+- [ ] Keys scoped appropriately (per-tenant / per-purpose where warranted)
+- [ ] PII/PCI/PHI fields encrypted or tokenized
+- [ ] DLP / redaction on egress to external services and model providers
+
+Workload:
+
+- [ ] Images signed; admission policy enforces signatures
+- [ ] Non-root, read-only FS, dropped capabilities, seccomp profile
+- [ ] SBOM produced and stored with artifact
+- [ ] No `privileged: true` without documented exception
+
+AI / agent:
+
+- [ ] Tools enumerated in an allow-list with explicit scopes
+- [ ] Capability tokens broker all secret access; model never sees raw secrets
+- [ ] Destructive actions behind a HITL gate with signed approval
+- [ ] Per-tenant prompts, retrieval indexes, and memory
+- [ ] Structured output with schema + policy validation before side effects
+- [ ] Per-principal rate and cost caps with hard stops
+- [ ] Prompt-injection threat model documented for the feature
+
+Audit:
+
+- [ ] Trust decisions (allow and deny) logged to append-only store
+- [ ] Tool calls from agents logged with identity, inputs hashed/redacted, result, policy version
+- [ ] Alerts configured for sensitive-tool use and anomalous egress/cost
+- [ ] MTTA "who did this and why?" tested with a real query under 5 minutes
+
+---
+
+## Common Anti-patterns (seen in real reviews)
+
+1. **"Zero Trust" as a shopping list of products.** Buying a ZTNA vendor does not make you Zero Trust. Principles, not products.
+2. **Perimeter dressed in mTLS.** mTLS between services plus a trusted internal network is still perimeter security. Authorization must be per-request and identity-based, not "they're inside".
+3. **Agent with admin role "for now".** There is no "for now". Scope it on day one.
+4. **The model as the policy engine.** "The LLM will decide what's safe" is a headline incident waiting to happen.
+5. **RAG ingesting customer data into a shared index.** The vector DB leaks tenants. Separate indexes or separate namespaces enforced at query time.
+6. **HITL gate where the agent synthesizes the "user's approval".** Approval is a signed artifact from a gate UI, not a string.
+7. **Audit logs in the same Elasticsearch as app logs, with the same TTL.** That is app logging, not audit.
+8. **Rotation-as-control.** Rotating a long-lived key monthly is worse than never minting it; short-lived credentials do not need rotation.
+
+---
+
+## When to waive (and how)
+
+Sometimes business reality demands a temporary deviation. A waiver is acceptable when, and only when, it has all five:
+
+1. **Written justification** linking to a business driver
+2. **Named owner** (a person, not a team)
+3. **Expiry date** (weeks, not quarters)
+4. **Compensating control** (e.g., extra logging, tighter monitoring, reduced scope)
+5. **Review at expiry** with explicit re-approval or rollback
+
+No expiry == no waiver.
+
+---
+
+## See also
+
+- `310-security.mdc` - OWASP Top 10 and secure coding checklist
+- `315-iam.mdc` - protocol-level IAM/OIDC/SAML/PKI/PAM patterns
+- `412-aws-iam.mdc` - AWS-specific IAM, SCPs, KMS, AccessDenied debugging
+- `400-cloudflare.mdc` - edge/ZTNA patterns with Cloudflare
+- `410-aws.mdc` - AWS Zero Trust networking, VPC Lattice, EKS
+- `420-gcp.mdc` - GCP equivalents (BeyondCorp, VPC-SC)
+- `430-azure.mdc` - Azure equivalents (Entra ID, Private Link, Policy)
+- `440-docker.mdc`, `450-kubernetes.mdc` - workload hardening
+- `500-ai-ml.mdc`, `510-mcp-servers.mdc` - AI/agent/MCP patterns
+- `020-agent-audit.mdc` - local-run agent guardrails and audit report
+- `330-observability.mdc` - logs, metrics, tracing (including audit)

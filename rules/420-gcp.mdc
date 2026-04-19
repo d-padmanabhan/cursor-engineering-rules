@@ -847,10 +847,10 @@ resource "google_monitoring_alert_policy" "high_error_rate" {
 
 ## Related Files
 
-- `280-aws.mdc` - AWS patterns for comparison
-- `285-azure.mdc` - Azure patterns for comparison
-- `140-terraform.mdc` - Terraform best practices
-- `260-kubernetes.mdc` - Kubernetes patterns (for GKE)
+- `410-aws.mdc` - AWS patterns for comparison
+- `430-azure.mdc` - Azure patterns for comparison
+- `180-terraform.mdc` - Terraform best practices
+- `450-kubernetes.mdc` - Kubernetes patterns (for GKE)
 - `310-security.mdc` - Security best practices
 
 ---

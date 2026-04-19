@@ -17,7 +17,7 @@ priority: 10
 3. **REVIEW** -> Verify results -> Suggest improvements -> Return to PLAN phase
 
 **AGENT AUDIT REQUIREMENTS (ADDITIONAL):**
-- Follow `060-agent-audit.mdc` for **no remote writes**, **local branch discipline**, **mandatory checkpoints**, **local verification**, and a **verifiable audit report**.
+- Follow `020-agent-audit.mdc` for **no remote writes**, **local branch discipline**, **mandatory checkpoints**, **local verification**, and a **verifiable audit report**.
 
 ** CRITICAL VIOLATIONS TO AVOID:**
 
@@ -58,12 +58,12 @@ AI: "Let me design a solution first. Key decisions needed:
 
 | Working on... | Read these rules |
 |--------------|------------------|
-| **Python code** | `160-python.mdc` |
-| **AWS infrastructure** | `280-aws.mdc` |
-| **Terraform modules** | `140-terraform.mdc` |
-| **Documentation** | `220-documentation.mdc`, `800-markdown.mdc` |
-| **Creating PR** | `110-git.mdc` |
-| **GitHub Actions** | `120-gha.mdc` |
+| **Python code** | `200-python.mdc` |
+| **AWS infrastructure** | `410-aws.mdc` |
+| **Terraform modules** | `180-terraform.mdc` |
+| **Documentation** | `810-documentation.mdc`, `800-markdown.mdc` |
+| **Creating PR** | `130-git.mdc` |
+| **GitHub Actions** | `160-github-actions.mdc` |
 | **Security review** | `310-security.mdc` |
 
 **This prevents information overload and keeps you focused.**
@@ -635,9 +635,9 @@ Users can trigger phases explicitly:
 This workflow rule integrates with:
 
 - **`100-core.mdc`**: Coding standards apply during Implementation
-- **Language-specific rules** (`160-python.mdc`, etc.): Language patterns apply during Implementation
-- **`110-git.mdc`**: Commit standards apply when creating commits
-- **`120-gha.mdc`**: CI/CD considerations during Planning
+- **Language-specific rules** (`200-python.mdc`, etc.): Language patterns apply during Implementation
+- **`130-git.mdc`**: Commit standards apply when creating commits
+- **`160-github-actions.mdc`**: CI/CD considerations during Planning
 
 ---
 

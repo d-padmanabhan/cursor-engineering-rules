@@ -97,4 +97,4 @@ You are now in **REVIEW** phase.
 
 ## After Review
 
-If ready to commit, prepare commit message following 110-git.mdc standards.
+If ready to commit, prepare commit message following 130-git.mdc standards.

@@ -870,11 +870,11 @@ resource autoScaleSettings 'Microsoft.Insights/autoscalesettings@2022-10-01' = {
 
 ## Related Files
 
-- `280-aws.mdc` - AWS patterns for comparison
-- `140-terraform.mdc` - Multi-cloud Terraform patterns
-- `120-gha.mdc` - GitHub Actions (alternative to Azure DevOps)
+- `410-aws.mdc` - AWS patterns for comparison
+- `180-terraform.mdc` - Multi-cloud Terraform patterns
+- `160-github-actions.mdc` - GitHub Actions (alternative to Azure DevOps)
 - `310-security.mdc` - Security best practices
-- `260-kubernetes.mdc` - AKS (Azure Kubernetes Service) patterns
+- `450-kubernetes.mdc` - AKS (Azure Kubernetes Service) patterns
 
 ---
 

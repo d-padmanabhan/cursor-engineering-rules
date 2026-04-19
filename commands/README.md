@@ -77,11 +77,11 @@ The AI will enter that phase and follow the corresponding workflow guidelines.
 
 Performs a full code review comparing your branch to `main`:
 
-- **6-phase structured review** following `100-core.mdc` and `050-workflow.mdc`
+- **6-phase structured review** following `100-core.mdc` and `010-workflow.mdc`
 - **Priority framework:** Critical → Recommended → Optional issues
 - **Language-specific tooling:** Runs appropriate linters (ruff, pylint, shellcheck, etc.)
 - **Security focus:** OWASP Top 10 checks, secrets scanning, dependency audits
-- **Audit integration:** Creates checkpoints and audit reports per `060-agent-audit.mdc`
+- **Audit integration:** Creates checkpoints and audit reports per `020-agent-audit.mdc`
 - **Automated fixes:** Applies formatters and re-stages files
 - **PR-ready output:** Structured report suitable for PR comments
 

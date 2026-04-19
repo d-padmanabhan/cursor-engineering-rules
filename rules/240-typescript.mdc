@@ -1382,9 +1382,9 @@ app.listen(3000, () => {
 
 ## Related Files
 
-- `170-javascript.mdc` - JavaScript patterns (many apply to TypeScript)
-- `160-python.mdc` - Type hints in Python (similar philosophy)
-- `180-go.mdc` - Strong typing in Go
+- `230-javascript.mdc` - JavaScript patterns (many apply to TypeScript)
+- `200-python.mdc` - Type hints in Python (similar philosophy)
+- `210-go.mdc` - Strong typing in Go
 
 ---
 

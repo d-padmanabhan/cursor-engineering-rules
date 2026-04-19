@@ -1792,10 +1792,10 @@ app.listen(3000, () => {
 ## Related Files
 
 - `310-security.mdc` - Security best practices
-- `160-python.mdc` - Python API patterns
-- `170-javascript.mdc` - JavaScript API patterns
-- `180-go.mdc` - Go API patterns
-- `185-rust.mdc` - Rust API patterns
+- `200-python.mdc` - Python API patterns
+- `230-javascript.mdc` - JavaScript API patterns
+- `210-go.mdc` - Go API patterns
+- `220-rust.mdc` - Rust API patterns
 - `290-testing.mdc` - API testing strategies
 
 ---

@@ -48,6 +48,7 @@ Quick lookup table for all Cursor rules files in `rules/`.
 | [300-testing.mdc](300-testing.mdc) | Comprehensive testing guide covering unit, integration, E2E, test frameworks, patterns, and CI/CD integration | 300 | No |
 | [310-security.mdc](310-security.mdc) | Comprehensive security guide covering OWASP Top 10, secret management, vulnerability scanning, and secure coding practices | 310 | Yes |
 | [315-iam.mdc](315-iam.mdc) | Practical security guidance for IAM design and identity protocols (OIDC/OAuth2/PKCE, SAML/ADFS) plus PKI and PAM operational patterns. | 315 | No |
+| [316-zero-trust.mdc](316-zero-trust.mdc) | Distinguished-engineer Zero Trust: principles-first security across identity, network, data, workload, and AI/agent systems. | 316 | Yes |
 | [320-api-design.mdc](320-api-design.mdc) | REST API design patterns, GraphQL, gRPC, versioning, authentication, and API documentation standards | 320 | No |
 | [330-observability.mdc](330-observability.mdc) | Logging, metrics, tracing, alerting, and observability patterns for production systems | 330 | No |
 
@@ -84,6 +85,7 @@ Quick lookup table for all Cursor rules files in `rules/`.
 |------|-------------|----------|--------------|
 | [800-markdown.mdc](800-markdown.mdc) | Markdown/MDX style: GitHub alerts, **clickable Markdown links** (no backticks on navigational URLs), and Mermaid diagrams. | 800 | Yes |
 | [810-documentation.mdc](810-documentation.mdc) | Patterns for creating effective documentation including documentation websites and markdown best practices. | 810 | No |
+| [815-reactflow-diagrams.mdc](815-reactflow-diagrams.mdc) | Interactive architecture canvases with @xyflow/react: nodes, edges, Cloudflare shell grouping, readability, verification. | 815 | No |
 | [820-open-source.mdc](820-open-source.mdc) | Best practices for open source projects including contribution guidelines, documentation, and community management. | 820 | No |
 
 ## Local Overrides (900-999)
@@ -98,9 +100,9 @@ Quick lookup table for all Cursor rules files in `rules/`.
 
 - **Workflow**: [010-workflow.mdc](010-workflow.mdc), [015-context-engineering.mdc](015-context-engineering.mdc), [020-agent-audit.mdc](020-agent-audit.mdc)
 - **Core engineering**: [100-core.mdc](100-core.mdc), [130-git.mdc](130-git.mdc), [110-configuration.mdc](110-configuration.mdc)
-- **Utilities + docs**: [120-utilities.mdc](120-utilities.mdc), [800-markdown.mdc](800-markdown.mdc), [810-documentation.mdc](810-documentation.mdc)
+- **Utilities + docs**: [120-utilities.mdc](120-utilities.mdc), [800-markdown.mdc](800-markdown.mdc), [810-documentation.mdc](810-documentation.mdc), [815-reactflow-diagrams.mdc](815-reactflow-diagrams.mdc)
 - **Languages**: [140-bash.mdc](140-bash.mdc), [200-python.mdc](200-python.mdc), [210-go.mdc](210-go.mdc), [220-rust.mdc](220-rust.mdc), [230-javascript.mdc](230-javascript.mdc), [240-typescript.mdc](240-typescript.mdc)
-- **Security**: [310-security.mdc](310-security.mdc), [315-iam.mdc](315-iam.mdc), [412-aws-iam.mdc](412-aws-iam.mdc)
+- **Security**: [310-security.mdc](310-security.mdc), [315-iam.mdc](315-iam.mdc), [316-zero-trust.mdc](316-zero-trust.mdc), [412-aws-iam.mdc](412-aws-iam.mdc)
 - **Cloud + IaC**: [170-cloudformation.mdc](170-cloudformation.mdc), [180-terraform.mdc](180-terraform.mdc), [400-cloudflare.mdc](400-cloudflare.mdc), [410-aws.mdc](410-aws.mdc), [420-gcp.mdc](420-gcp.mdc), [430-azure.mdc](430-azure.mdc)
 - **Containers**: [440-docker.mdc](440-docker.mdc), [450-kubernetes.mdc](450-kubernetes.mdc), [460-helm.mdc](460-helm.mdc)
 - **Databases**: [470-postgresql.mdc](470-postgresql.mdc), [475-sql.mdc](475-sql.mdc)
@@ -116,4 +118,5 @@ Quick lookup table for all Cursor rules files in `rules/`.
 - [120-utilities.mdc](120-utilities.mdc)
 - [130-git.mdc](130-git.mdc)
 - [310-security.mdc](310-security.mdc)
+- [316-zero-trust.mdc](316-zero-trust.mdc)
 - [800-markdown.mdc](800-markdown.mdc)

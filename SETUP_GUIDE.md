@@ -55,4 +55,4 @@ Workspace context files should live at:
 - `tmp/progress.md`
 - `tmp/project-brief.md`
 
-See `rules/050-workflow.mdc` for the workflow and file meanings.
+See `rules/010-workflow.mdc` for the workflow and file meanings.

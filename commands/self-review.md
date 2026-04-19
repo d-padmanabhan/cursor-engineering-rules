@@ -237,4 +237,4 @@ If CodeRabbit is available and configured for the repository:
 - `010-workflow.mdc` Review Phase
 - `100-core.mdc` Code Review Mode standards
 - `020-agent-audit.mdc` Audit requirements
-- `110-git.mdc` Commit standards
+- `130-git.mdc` Commit standards

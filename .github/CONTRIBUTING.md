@@ -153,7 +153,7 @@ refactor(go): reorganize concurrency section
 ```
 cursor-engineering-rules/
  rules/              # All .mdc rule files
-    050-workflow.mdc
+    010-workflow.mdc
     100-core.mdc
     ...
     INDEX.md       # Rule catalog

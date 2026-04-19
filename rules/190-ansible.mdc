@@ -824,9 +824,9 @@ molecule destroy   # Destroy test instance
 
 ## Related Files
 
-- `140-terraform.mdc` - Infrastructure as Code with Terraform
-- `130-bash.mdc` - Shell scripting patterns
-- `260-kubernetes.mdc` - Container orchestration
+- `180-terraform.mdc` - Infrastructure as Code with Terraform
+- `140-bash.mdc` - Shell scripting patterns
+- `450-kubernetes.mdc` - Container orchestration
 
 ---
 

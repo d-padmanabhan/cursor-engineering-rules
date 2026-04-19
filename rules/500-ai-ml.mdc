@@ -482,7 +482,7 @@ server.setRequestHandler('tools/list', async () => ({
 - Long-running operations (builds, deployments)
 - Discoverable tool ecosystems
 
-**See also:** `230-mcp-servers.mdc` for MCP server patterns, OAuth, and security
+**See also:** `510-mcp-servers.mdc` for MCP server patterns, OAuth, and security
 
 ### Simple Agent Pattern (Without MCP)
 ```typescript
@@ -1509,13 +1509,13 @@ if __name__ == "__main__":
 
 ## Related Files
 
-- `230-mcp-servers.mdc` - **MCP server patterns** (vendor-neutral AI agent standard)
+- `510-mcp-servers.mdc` - **MCP server patterns** (vendor-neutral AI agent standard)
 - `310-security.mdc` - Security best practices
 - `320-api-design.mdc` - API patterns
 - `330-observability.mdc` - Logging and monitoring
-- `285-azure.mdc` - Azure OpenAI integration
-- `290-gcp.mdc` - Vertex AI integration
-- `280-aws.mdc` - AWS Bedrock integration
+- `430-azure.mdc` - Azure OpenAI integration
+- `420-gcp.mdc` - Vertex AI integration
+- `410-aws.mdc` - AWS Bedrock integration
 
 ---
 
