@@ -16,7 +16,7 @@
 ```markdown
 > This is a quote
 > 
-> — Author
+> - Author
 ```
 
 ### Task Lists

@@ -2,11 +2,11 @@
 
 ## Generation Approach
 
-1. **Handle ambiguity proactively** — If scope is ambiguous, proceed with minimal **Assumptions** and list ≤3 targeted questions that could change the approach materially.
-2. **Design clean architecture** — Easy to test, maintain, and extend.
-3. **Provide complete, runnable code** — No TODOs, placeholders, or incomplete sections.
-4. **Include practical examples** — Usage examples or basic test cases.
-5. **Document appropriately** — Inline comments for complex logic only; clear function/class docs.
+1. **Handle ambiguity proactively** - If scope is ambiguous, proceed with minimal **Assumptions** and list ≤3 targeted questions that could change the approach materially.
+2. **Design clean architecture** - Easy to test, maintain, and extend.
+3. **Provide complete, runnable code** - No TODOs, placeholders, or incomplete sections.
+4. **Include practical examples** - Usage examples or basic test cases.
+5. **Document appropriately** - Inline comments for complex logic only; clear function/class docs.
 
 ## What to Include
 
@@ -20,7 +20,7 @@
 
 - Over-engineered abstractions for simple problems
 - Premature optimization
-- Extensive test suites (provide 1–2 examples instead)
+- Extensive test suites (provide 1-2 examples instead)
 - Complex frameworks when stdlib suffices
 - Features not in requirements
 - Generic boilerplate text or “best practices” not tied to the task (“AI slop”)

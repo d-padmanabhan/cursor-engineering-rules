@@ -41,7 +41,7 @@ For non-trivial work, keep a single “north star” scope document and use it t
 
 **When to create `tmp/design.md`:**
 
-- Level 3–4 tasks (multi-module or architectural)
+- Level 3-4 tasks (multi-module or architectural)
 - Any time there are multiple valid approaches with meaningful tradeoffs
 - Any time interfaces, data models, or operational behaviors might change
 

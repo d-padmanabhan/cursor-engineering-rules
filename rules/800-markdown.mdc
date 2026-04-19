@@ -486,11 +486,11 @@ Use standard Markdown links so URLs render as clickable in GitHub, IDEs, and com
 
 - **Preferred**: `[AWS Lambda documentation](https://docs.aws.amazon.com/lambda/)`
 - **Avoid for navigation**: bare URLs in running text when a short label reads better (still use `https://...` in link target)
-- **Do not** wrap URLs that readers should **click** in backticks: `` `https://docs.aws.amazon.com/lambda/` `` — inline code styling often prevents click-through and copies poorly.
+- **Do not** wrap URLs that readers should **click** in backticks: `` `https://docs.aws.amazon.com/lambda/` `` - inline code styling often prevents click-through and copies poorly.
 
 ### When backticks around a URL are correct
 
-Wrap a URL in backticks only when it is a **literal value**, not a navigation affordance—for example: configuration samples, CLI transcripts, log lines, schema defaults, or strings inside code-oriented examples.
+Wrap a URL in backticks only when it is a **literal value**, not a navigation affordance-for example: configuration samples, CLI transcripts, log lines, schema defaults, or strings inside code-oriented examples.
 
 ### Paths and anchors
 

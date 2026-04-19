@@ -93,7 +93,7 @@ For non-trivial work, keep a single “north star” scope document and use it t
 - **Rule**: Break work into features small enough for the agent to execute reliably (one feature per cycle)
 
 **When to create `tmp/design.md`:**
-- Level 3–4 tasks (multi-module or architectural)
+- Level 3-4 tasks (multi-module or architectural)
 - Any time there are multiple valid approaches with meaningful tradeoffs
 - Any time interfaces, data models, or operational behaviors might change
 

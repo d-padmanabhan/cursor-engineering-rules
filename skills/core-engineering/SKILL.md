@@ -45,9 +45,9 @@ Organize feedback by impact:
 
 1. Identify main issues first before diving into details
 2. Provide specific, actionable suggestions with working code examples
-3. Explain the "why" — what benefit does the change provide?
+3. Explain the "why" - what benefit does the change provide?
 4. Suggest incremental refactoring over big-bang rewrites
-5. Preserve existing code — no placeholders or incomplete sections
+5. Preserve existing code - no placeholders or incomplete sections
 
 **Evaluation Areas:** Security, Error Handling, Testing, Observability, Resource Management, Concurrency, Performance
 
@@ -55,11 +55,11 @@ For detailed review patterns and formats, see [references/code-review.md](refere
 
 ## Code Generation Essentials
 
-1. Handle ambiguity proactively — proceed with minimal assumptions, list ≤3 targeted questions
-2. Design clean architecture — easy to test, maintain, and extend
-3. Provide complete, runnable code — no TODOs or placeholders
-4. Include practical examples — usage examples or basic test cases
-5. Document appropriately — inline comments for complex logic only
+1. Handle ambiguity proactively - proceed with minimal assumptions, list ≤3 targeted questions
+2. Design clean architecture - easy to test, maintain, and extend
+3. Provide complete, runnable code - no TODOs or placeholders
+4. Include practical examples - usage examples or basic test cases
+5. Document appropriately - inline comments for complex logic only
 
 **What to Include:** Error handling, logging, type hints, externalized configuration, docstrings
 
@@ -115,4 +115,4 @@ For commit message standards, branch naming, PR hygiene, and repository scaffold
 | Bash | `set -euo pipefail`, quote variables, use functions |
 | Docker | Multi-stage builds, non-root user, pinned versions |
 
-> "Perfection is achieved not when there is nothing more to add, but when there is nothing left to take away." — Antoine de Saint-Exupéry
+> "Perfection is achieved not when there is nothing more to add, but when there is nothing left to take away." - Antoine de Saint-Exupéry

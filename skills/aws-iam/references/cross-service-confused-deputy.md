@@ -2,7 +2,7 @@
 
 When a **resource-based policy** grants access to an **AWS service principal** (for example,
 `cloudtrail.amazonaws.com`, `events.amazonaws.com`, `sns.amazonaws.com`), the policy authorizes the
-service principal — not the actor that configured the calling service.
+service principal - not the actor that configured the calling service.
 
 If the policy is missing constraints, an unauthorized actor can sometimes abuse that trust relationship
 (the **confused deputy** problem).

@@ -486,7 +486,7 @@ def process_order(order_id: int) -> Order:
 
   * Over-engineered abstractions for simple problems.
   * Premature optimization.
-  * Extensive test suites (provide 1–2 examples instead).
+  * Extensive test suites (provide 1-2 examples instead).
   * Complex frameworks when stdlib suffices.
   * Features not in requirements.
   * Generic boilerplate text or “best practices” not tied to the task (“AI slop”).

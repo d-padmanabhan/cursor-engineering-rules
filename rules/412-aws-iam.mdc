@@ -194,7 +194,7 @@ If a vendor assumes a role in your account, require an `ExternalId` and lock to 
 
 When a **resource-based policy** grants access to an **AWS service principal** (for example,
 `cloudtrail.amazonaws.com`, `events.amazonaws.com`, `sns.amazonaws.com`), the policy is trusting the
-service principal — not the human/role that configured the calling service.
+service principal - not the human/role that configured the calling service.
 
 To reduce confused-deputy risk, restrict the service principal with global condition keys:
 

@@ -6,7 +6,7 @@
 
 ## What is the Reflog?
 
-The **reflog** (reference log) is Git's time machine. While `git log` shows only commits reachable from branches/tags, the reflog records **every movement of HEAD** — every checkout, reset, commit, rebase, branch switch, and even "lost" commits.
+The **reflog** (reference log) is Git's time machine. While `git log` shows only commits reachable from branches/tags, the reflog records **every movement of HEAD** - every checkout, reset, commit, rebase, branch switch, and even "lost" commits.
 
 **Key insight:** The reflog remembers everything, even commits that appear "lost" from your branch history. This makes Git operations reversible and gives you confidence to experiment.
 
@@ -19,7 +19,7 @@ The **reflog** (reference log) is Git's time machine. While `git log` shows only
 - **Debugging** - Track "what commit was I on 20 minutes ago?"
 - **Learning** - Understand Git internals by watching HEAD movements
 
-**Reflog is your safety net** — it makes "dangerous" operations safe because you can always undo them.
+**Reflog is your safety net** - it makes "dangerous" operations safe because you can always undo them.
 
 ## Basic Reflog Usage
 

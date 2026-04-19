@@ -250,9 +250,9 @@ Prefer **neutral** or **imperative** phrasing over second-person voice.
 
 ### Punctuation
 
-**Never use em dashes (—) or en dashes (–). Use hyphens (-) instead.**
+**Never use em dashes (-) or en dashes (-). Use hyphens (-) instead.**
 
-- **Bad:** `Astral's type checker—10x faster than mypy—is now available.`
+- **Bad:** `Astral's type checker-10x faster than mypy-is now available.`
 - **Good:** `Astral's type checker - 10x faster than mypy - is now available.`
 
 **Rationale:**

@@ -2971,7 +2971,7 @@ def function_name(param: str) -> int:
 ## 17) Scaling Guidelines
 
 - **Small Scripts (<50 lines):** Stick to basics - skip advanced features unless critical.
-- **Medium Scripts (50–200 lines):** Add type hints, logging, small functions. Consider `argparse` or `Pydantic`.
+- **Medium Scripts (50-200 lines):** Add type hints, logging, small functions. Consider `argparse` or `Pydantic`.
 - **Large Projects (>200 lines):** Use OOP, SOLID principles, plugins, deployment tools. Optimize with profiling/concurrency.
 
 ## 18) Example Script

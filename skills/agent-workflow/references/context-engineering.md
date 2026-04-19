@@ -33,9 +33,9 @@ It complements:
 ### Always carry
 
 - **Goal**: one sentence
-- **Non-goals**: 1–3 bullets
+- **Non-goals**: 1-3 bullets
 - **Constraints**: security, tooling, “don’t refactor”, etc.
-- **Current plan**: 3–7 steps max
+- **Current plan**: 3-7 steps max
 - **Current state**: what’s done / what’s blocked
 - **Critical artifacts**: exact file paths, key identifiers, and error messages (verbatim)
 

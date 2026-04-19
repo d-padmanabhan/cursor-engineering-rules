@@ -102,7 +102,7 @@ docs/upgrade-guide-3-8
 
 - Prefer **repo-local** `git config` for `commit.gpgsign`, signing key, and `tag.gpgsign` for releases
 - Verify with `git log -1 --show-signature`; enable **Require signed commits** on protected branches when policy allows
-- **Agents:** never use `--no-gpg-sign` unless the user explicitly requests it and the reason is recorded; if signing fails, stop and fix config—do not silently create unsigned commits
+- **Agents:** never use `--no-gpg-sign` unless the user explicitly requests it and the reason is recorded; if signing fails, stop and fix config-do not silently create unsigned commits
 
 Full detail: workspace rule `130-git.mdc` (section **Commit signing**).
 

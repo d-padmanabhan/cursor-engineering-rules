@@ -181,7 +181,7 @@ func FindItem(items []Item, predicate func(Item) bool) *Item {
 - `switch {` with `case cond:` is idiomatic when it reads cleaner than `else if`; choose clarity.
 - Prefer methods on interfaces or a small handler map when that scales better than a growing `switch`.
 
-See [Effective Go — Switch](https://go.dev/doc/effective_go#switch) and `rules/210-go.mdc` (Simplicity & Idiomatic Go).
+See [Effective Go - Switch](https://go.dev/doc/effective_go#switch) and `rules/210-go.mdc` (Simplicity & Idiomatic Go).
 
 ## Avoid interface{} When Possible
 
