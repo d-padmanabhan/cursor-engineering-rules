@@ -95,6 +95,7 @@ export class ApiClient {
         security: '310-security.mdc',
         iam: '315-iam.mdc',
         'zero-trust': '316-zero-trust.mdc',
+        okta: '317-okta.mdc',
         'api-design': '320-api-design.mdc',
         observability: '330-observability.mdc',
       },
@@ -202,6 +203,7 @@ export class ApiClient {
       { category: 'patterns', topic: 'security', title: 'Security', description: 'OWASP Top 10, secrets, vulnerability scanning', priority: 310, content: '' },
       { category: 'patterns', topic: 'iam', title: 'IAM & Identity', description: 'OIDC/OAuth2/PKCE, SAML, PKI, PAM patterns', priority: 315, content: '' },
       { category: 'patterns', topic: 'zero-trust', title: 'Distinguished Engineer - Zero Trust', description: 'Principles-first Zero Trust across identity, network, data, workload, and AI/agent systems', priority: 316, content: '' },
+      { category: 'patterns', topic: 'okta', title: 'Okta Workforce Identity', description: 'Orgs, apps, users/groups, policies, SCIM, Workflows, ASA, Admin API, terraform-provider-okta', priority: 317, content: '' },
       { category: 'patterns', topic: 'api-design', title: 'API Design', description: 'REST, GraphQL, gRPC patterns', priority: 320, content: '' },
       { category: 'patterns', topic: 'observability', title: 'Observability', description: 'Logging, metrics, tracing', priority: 330, content: '' },
 

@@ -1,10 +1,10 @@
 # Cursor Engineering Rules
 
-> **Production-grade Cursor rules for 15+ languages and cloud platforms**
+> **Production-grade Cursor rules, skills, commands, and MCP server for 15+ languages and cloud platforms**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Comprehensive, battle-tested Cursor IDE rules for professional software engineering. Curated `.mdc` files covering languages, cloud platforms, DevOps tools, and engineering patterns.
+Comprehensive, battle-tested Cursor IDE configuration for professional software engineering. Curated rules (`.mdc`), Agent Skills, slash commands, and an MCP server covering languages, cloud platforms, DevOps tools, data platforms, identity systems, and engineering patterns.
 
 > [!NOTE]
 > As of early February 2026, this repo is maintained to work with both **Cursor** and **Claude Code** conventions (rules, commands, and Agent Skills directory layouts).
@@ -57,6 +57,7 @@ Comprehensive, battle-tested Cursor IDE rules for professional software engineer
 
 - **[310-security.mdc](rules/310-security.mdc)** - OWASP Top 10, secret management
 - **[316-zero-trust.mdc](rules/316-zero-trust.mdc)** - Distinguished Engineer - Zero Trust (identity, network, data, workload, AI/agents)
+- **[317-okta.mdc](rules/317-okta.mdc)** - Okta Workforce Identity (SSO, MFA, SCIM, policies, Workflows, ASA, terraform-provider-okta)
 - **[300-testing.mdc](rules/300-testing.mdc)** - Unit/Integration/E2E testing strategies
 
 ### Patterns & Best Practices

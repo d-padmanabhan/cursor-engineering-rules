@@ -1,0 +1,375 @@
+---
+title: Okta Workforce Identity
+description: Production patterns for Okta Workforce Identity - orgs, apps, users/groups, policies, lifecycle (SCIM), Workflows, Advanced Server Access, Admin API, and terraform-provider-okta.
+priority: 317
+alwaysApply: false
+files:
+  include:
+    - "**/*okta*.*"
+    - "**/terraform-provider-okta/**"
+    - "**/*.tf"
+    - "**/*.tfvars"
+    - "**/.github/workflows/*.yaml"
+    - "**/.github/workflows/*.yml"
+    - "**/*sso*.*"
+    - "**/*saml*.*"
+    - "**/*scim*.*"
+---
+
+# Okta Workforce Identity
+
+**Audience:** engineers designing, operating, or auditing Okta Workforce Identity (SSO, MFA, lifecycle, Workflows, Advanced Server Access).
+
+**Scope:** Okta Workforce Identity Cloud (WIC). For Customer Identity Cloud (formerly Auth0), see Auth0 documentation - patterns overlap but are not identical.
+
+> [!IMPORTANT]
+> This rule complements:
+>
+> - `315-iam.mdc` - protocol reference (OIDC/SAML/PKCE/PKI)
+> - `316-zero-trust.mdc` - Zero Trust principles (always-on)
+> - `180-terraform.mdc` - Terraform patterns (for `terraform-provider-okta`)
+>
+> Use this rule for Okta-specific decisions: app config, policies, SCIM, Workflows, API usage, and Terraform modelling.
+
+---
+
+## Non-negotiables
+
+- **MFA required for all users** (WebAuthn / FIDO2 preferred; TOTP acceptable; SMS is legacy)
+- **Phishing-resistant MFA for privileged roles** (Super Admin, Org Admin, App Admin on sensitive apps)
+- **No long-lived API tokens in code or config** - use OAuth 2.0 for Okta or scoped, rotated SSWS tokens in a vault
+- **All apps use OIDC or SAML with signed responses**, audience and issuer validation, and short assertion lifetimes
+- **Source of truth for identities is the HRIS** (Workday, BambooHR, etc.) or IdP-to-IdP federation, not manual Okta user creation
+- **Audit log exported to SIEM** (System Log API or Event Hooks), retention aligned with policy
+- **Terraform-managed org** (`terraform-provider-okta`) for any non-trivial config; no click-ops drift
+
+---
+
+## Org and Environment Model
+
+### Orgs (tenants)
+
+- **Production org** - real users, real apps
+- **Preview/sandbox org** - test config changes, Workflows, API automations
+- **Optional per-env orgs** for isolation of dev/stage/prod app configurations
+
+### Realms (if using Identity Engine Realms)
+
+- Use realms to segment user populations (employees, contractors, partners) with distinct policies
+- Do not use realms as a substitute for separate orgs when compliance requires full isolation
+
+### Admin access
+
+- **No standing Super Admin** access for humans - use just-in-time elevation with approval
+- **Scoped admin roles** (Group Admin, App Admin for specific apps) preferred over broad roles
+- **Service principals for automation** use scoped admin roles, not Super Admin
+
+---
+
+## Apps
+
+### OIDC vs SAML
+
+- **Prefer OIDC** for modern web apps, SPAs, mobile, and API-consumers. Simpler, JSON-based, modern crypto.
+- **SAML** only when the app requires it. Still common for legacy enterprise apps.
+- **Neither** when the app supports SCIM + JWT / client-credentials directly from your own IdP.
+
+### OIDC specifics
+
+- **PKCE required** for public clients (SPA, mobile). See `315-iam.mdc` for the protocol detail.
+- **No implicit flow** - deprecated. Use authorization code + PKCE.
+- **Short-lived access tokens** (15-60 min); refresh tokens rotated on use.
+- **Proper `aud`, `iss`, `sub`, `exp` validation** at every resource server.
+- **JWKS-based signature validation** with rotation support.
+- **Trusted origins** configured per app - only the origins that should redirect back.
+
+### SAML specifics
+
+- **SHA-256 signatures** (not SHA-1).
+- **Signed and encrypted assertions** for sensitive apps.
+- **Audience restriction** set to the exact SP.
+- **NotBefore / NotOnOrAfter** tight (a few minutes).
+- **NameID format** explicit (`emailAddress` or `persistent`, not `unspecified`).
+- **Attribute statements** mapped from IdP profile, not Okta profile when IdP is source of truth.
+
+### Per-app sign-on policies
+
+Every app has its own Sign-On Policy. Not "default for all apps".
+
+- **Default deny** - explicit allow rules per app
+- **Context-aware rules** (network zone, device state, user risk)
+- **Step-up auth** for high-risk apps
+- **Session lifetime** appropriate for the app (shorter for admin consoles, longer for productivity apps)
+
+---
+
+## Users and Groups
+
+### Source of truth
+
+- **HRIS -> Okta** via SCIM or a connector (Workday, Workday Adaptive, BambooHR, UKG, etc.). HRIS creates/updates/deactivates.
+- **Okta -> downstream apps** via SCIM (when the app supports it) or per-app provisioning connectors.
+- **Never** manually create users in Okta for employees.
+- **Contractors / partners** go through the same HRIS when possible; otherwise a documented exception with lifecycle automation.
+
+### Group strategy
+
+- **Group rules** (dynamic groups) driven by profile attributes - `department`, `cost_center`, `title`, `employee_type`.
+- **Static groups** only for exceptions and admin-managed access bundles.
+- **No "all users" as an access grant** for anything sensitive. Always narrow by group.
+- **Naming convention**: `app-<app>-<role>` (e.g., `app-snowflake-analyst`, `app-aws-admin-prod`).
+
+### Profile mapping
+
+- **IdP profile is the master** for fields sourced from HRIS
+- **Okta profile** adds Okta-specific fields (never override HRIS fields)
+- **App profile** mapped from Okta profile with explicit transforms (not "pass-through everything")
+
+---
+
+## Authenticator and MFA Policies
+
+### Authenticator policy
+
+- **FIDO2 / WebAuthn** for all privileged users (Admins, sensitive app users)
+- **Okta Verify** (push or OTP) as baseline
+- **TOTP** acceptable as backup
+- **SMS** deprecated - allow only as last-resort recovery, not primary factor
+- **Email** not used as a factor (recovery only)
+
+### Enrollment policy
+
+- **Mandatory enrollment** at first sign-in
+- **Multi-factor enrollment** required (at least two factors registered)
+- **Self-service factor reset** only via phishing-resistant channels; otherwise helpdesk with identity-verification process
+
+### Sign-on policy
+
+- **MFA every sign-on** for sensitive apps
+- **Device assurance** (managed device, biometric, screen lock) for high-sensitivity access
+- **Risk-based prompting** using Okta ThreatInsight / Risk Scoring
+
+---
+
+## Lifecycle (JML)
+
+### Joiner
+
+- HRIS creates user with start date; SCIM pushes to Okta on or before start date
+- Okta auto-assigns apps via group rules based on department/role/location
+- First sign-in triggers MFA enrollment and password set
+
+### Mover
+
+- HRIS attribute change (department, manager, title) propagates via SCIM
+- Group rules recompute; app access changes automatically
+- Manual app assignments are audited and time-boxed
+
+### Leaver
+
+- HRIS termination triggers SCIM "delete" or "deactivate" to Okta
+- Okta deactivation revokes all app access, terminates sessions, invalidates refresh tokens
+- **Emergency off-boarding**: admin can deactivate immediately via Admin API or UI; still logged
+- No user lingers in "suspended" state without a documented reason
+
+---
+
+## Okta Workflows vs Custom Code
+
+### Use Workflows for
+
+- Cross-app orchestration (e.g., "when a user joins group X, create mailbox in Y, ticket in Z")
+- Notifications and approvals (Slack, email, ServiceNow)
+- Light data transformations and attribute enrichment
+- Scheduled jobs (nightly hygiene, stale account reports)
+
+### Use custom code (your own services calling Okta API) for
+
+- High-throughput automation (SCIM endpoint implementations, bulk provisioning)
+- Integrations with systems Workflows doesn't support natively
+- Anything that needs complex state, retry, or transactional semantics
+- Anything that needs to live in your existing CI/CD and audit chain
+
+### Either way
+
+- Workflows and custom code both count as production - version-controlled exports, change review, environment separation (sandbox first).
+
+---
+
+## Admin API
+
+### Auth
+
+- **OAuth 2.0 for Okta** (client-credentials with scoped access) is preferred over SSWS tokens
+- **SSWS tokens**, if used, are service-principal-owned, stored in a vault, rotated quarterly (or shorter), and scoped to minimum admin role
+- **Never** commit SSWS tokens to source; never put them in env vars without vault brokering
+
+### Rate limits
+
+- **Honor `X-Rate-Limit-*` headers** on every response
+- **Exponential backoff with jitter** on 429
+- **Per-minute and per-org limits** - design for them (batch, pagination, parallelism caps)
+- **Separate token per integration** so one misbehaving integration doesn't starve others
+
+### Pagination
+
+- **Always paginate** (`?limit=200` and follow `Link: <...>; rel="next"`)
+- Do not assume a single page contains all results
+
+### Idempotency
+
+- Most Okta write operations are not idempotent. Build your own idempotency layer (e.g., check-then-act with `If-Match`, or a client-side ledger keyed by a stable external ID).
+
+---
+
+## Advanced Server Access (ASA)
+
+For SSH / RDP access instead of static keys and shared accounts.
+
+- **Per-user ephemeral certificates** minted on access (minutes, not months)
+- **Group-based project access** mapped to Okta groups; aligned with least privilege
+- **Session recording** on sensitive tiers
+- **MFA on elevation** (sudo / admin commands)
+- **No shared bastion credentials**; no `~/.ssh/authorized_keys` drift
+
+---
+
+## Terraform (`terraform-provider-okta`)
+
+### Structure
+
+- One module per concern (orgs, apps, groups, policies, authenticators)
+- Environment workspaces (prod / preview) per org
+- Sensitive values (SCIM secrets, SAML signing certs) from vault, not in state files
+
+### State
+
+- Remote state with encryption and access control (same as other infra)
+- **Drift detection** scheduled: `terraform plan` nightly in CI, alert on drift
+- Imports for pre-existing objects; do not clone-and-diverge
+
+### Common resources
+
+- `okta_app_oauth` / `okta_app_saml` - application definitions
+- `okta_group` / `okta_group_rule` - groups and dynamic group rules
+- `okta_policy_*` - authenticator, sign-on, password, MFA enrollment policies
+- `okta_authenticator` - configure authenticators
+- `okta_user_schema_property` - profile attributes
+
+### Drift causes (plan for these)
+
+- Click-ops in the UI (disable or limit admin UI where possible)
+- Group rule evaluation (some state rebuilt server-side)
+- App config changed by support / vendor sync
+
+---
+
+## Audit and System Log
+
+- **Stream System Log to SIEM** via:
+  - Polling with pagination (simple but slow)
+  - Event Hooks (push-based; requires an HTTPS endpoint)
+  - Log Streaming (native to AWS EventBridge, Splunk, etc.)
+- **Retention** per legal/regulatory requirements (typically 1-7 years for identity events)
+- **Alerts** on:
+  - Admin role grants
+  - MFA factor removal / replacement
+  - Policy changes (especially authenticator and sign-on policies)
+  - User factor resets via support channel
+  - API token creation / rotation
+  - Anomalous sign-in patterns (ThreatInsight integration)
+  - Failed-then-succeeded auth bursts
+  - Off-network admin activity
+
+---
+
+## Do / Don't
+
+| Area | Do | Don't |
+|---|---|---|
+| Admin | Just-in-time Super Admin; scoped roles default | Standing Super Admin for humans |
+| API | OAuth 2.0 for Okta; scoped SSWS rotated | Long-lived SSWS in config; Super-Admin-scoped tokens |
+| Apps | OIDC + PKCE; signed SAML | Implicit flow; SHA-1 SAML |
+| MFA | WebAuthn for privileged; Okta Verify baseline | SMS as primary factor |
+| Groups | Rule-driven from HRIS attrs | "All users" grants; manual membership sprawl |
+| Lifecycle | HRIS as source; SCIM both directions | Manual Okta user creation for employees |
+| Policy | Per-app sign-on policy, default deny | One "default" policy for everything |
+| Terraform | Modularized, drift-detected | Mixed UI + Terraform edits |
+| Audit | System Log to SIEM, alerting | System Log only in Okta UI |
+| Automation | Workflows for orchestration; code for throughput | Workflows for critical-path bulk ops |
+
+---
+
+## Reviewer Checklist
+
+Apps:
+
+- [ ] OIDC uses authorization code + PKCE; no implicit
+- [ ] SAML uses SHA-256; assertions signed; audience restriction set
+- [ ] Per-app sign-on policy configured with default deny
+- [ ] Trusted origins limited to known hosts
+
+Users and groups:
+
+- [ ] HRIS (or federated IdP) is source of truth
+- [ ] SCIM configured inbound from HRIS and outbound to downstream apps that support it
+- [ ] Group rules drive access; no "all users" grants
+- [ ] Profile attribute mappings explicit, not pass-through
+
+Policies:
+
+- [ ] MFA required for all users
+- [ ] Phishing-resistant MFA required for admins and sensitive apps
+- [ ] Session lifetimes tuned per app sensitivity
+- [ ] Device assurance enforced where warranted
+
+Admin and API:
+
+- [ ] No standing Super Admin on humans
+- [ ] Scoped admin roles for service principals
+- [ ] OAuth 2.0 for Okta used where supported; SSWS tokens scoped and in vault
+- [ ] Rate-limit handling implemented (backoff, per-integration tokens)
+
+Lifecycle:
+
+- [ ] JML events flow HRIS -> Okta -> apps automatically
+- [ ] Off-boarding revokes sessions and refresh tokens immediately
+- [ ] No lingering suspended accounts without documented reason
+
+Terraform:
+
+- [ ] Non-trivial config managed by `terraform-provider-okta`
+- [ ] State in remote backend, encrypted, access-controlled
+- [ ] Drift detection scheduled
+
+Audit:
+
+- [ ] System Log streamed to SIEM
+- [ ] Alerts on sensitive actions configured
+- [ ] Retention meets legal requirements
+
+---
+
+## Common Anti-patterns
+
+1. **Super Admin as "service account".** Use scoped roles; OAuth 2.0 for Okta.
+2. **One Sign-On Policy for all apps.** Different apps have different risk profiles. Per-app.
+3. **Manual user creation.** HRIS is source. Manual creation breaks lifecycle.
+4. **SMS as primary MFA.** Phishing-resistant for admins; Okta Verify / WebAuthn baseline for the rest.
+5. **Group Rules disabled for "performance".** If the rule is too expensive, the attributes or the rule is wrong. Fix the rule.
+6. **SCIM disabled because "it's complex".** SCIM is the cheapest part of lifecycle. Enable it.
+7. **`*.tf` files for everything in one module.** Modularize by concern; separate state files.
+8. **Workflows running critical-path bulk operations.** Use code with proper observability and retry.
+9. **System Log visited only by humans.** Stream to SIEM and alert; don't expect anyone to read it.
+10. **"We'll tighten policies later."** "Later" never comes. Tighten at the start; loosen with an exception process.
+
+---
+
+## See also
+
+- `315-iam.mdc` - IAM/OIDC/SAML/PKCE protocol reference
+- `316-zero-trust.mdc` - Zero Trust principles and AI-agent Zero Trust
+- `412-aws-iam.mdc` - AWS IAM (for AWS-Okta SSO integration)
+- `180-terraform.mdc` - Terraform patterns
+- `330-observability.mdc` - SIEM integration and audit logging
+- `310-security.mdc` - OWASP (for app-side auth bugs)

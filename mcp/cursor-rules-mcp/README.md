@@ -117,7 +117,7 @@ fetch_rule({
 - `infrastructure`: justfile, cloudformation, terraform, ansible, docker, kubernetes, helm
 - `cloud`: cloudflare, aws, aws-iam, gcp, azure
 - `devops`: github-actions, cli
-- `patterns`: testing, security, iam, zero-trust, api-design, observability
+- `patterns`: testing, security, iam, zero-trust, okta, api-design, observability
 - `data`: postgresql, sql, data-engineering, databricks, snowflake, kafka, teradata
 - `ai`: ai-ml, mcp-servers
 - `docs`: markdown, documentation, reactflow, open-source
@@ -208,6 +208,7 @@ list_available_rules()
 - **Security** (310): OWASP, secrets, vulnerability scanning
 - **IAM & Identity** (315): OIDC/OAuth2/PKCE, SAML, PKI, PAM
 - **Zero Trust** (316): Distinguished-engineer Zero Trust for identity, network, data, workload, AI/agents
+- **Okta** (317): Okta Workforce Identity (SSO, MFA, SCIM, policies, Workflows, ASA, terraform-provider-okta)
 - **API Design** (320): REST, GraphQL, gRPC patterns
 - **Observability** (330): Logging, metrics, tracing
 
