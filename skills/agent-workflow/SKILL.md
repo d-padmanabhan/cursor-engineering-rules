@@ -1,6 +1,6 @@
 ---
 name: agent-workflow
-description: Structured development workflow with Plan/Implement/Review phases, QA validation, context management, and audit requirements. Enforces no remote writes, mandatory checkpoints, and verifiable audit reports. Use when working on complex tasks, multi-file changes, or when the user mentions planning, workflow, implementing features, or needs structured development guidance.
+description: Structured development workflow with Plan/Implement/Review phases, QA validation, context management, and audit requirements. Enforces explicit authorization for remote mutations, risk-based checkpoints, and proportional audit reports. Use when working on complex tasks, multi-file changes, or when the user mentions planning, workflow, implementing features, or needs structured development guidance.
 ---
 
 # Agent Workflow
@@ -102,6 +102,6 @@ AI: "Let me design a solution first. Key decisions needed:
 
 ## Audit Requirements
 
-For audit requirements including no remote writes, checkpoint management, and audit reports, see [references/audit-requirements.md](references/audit-requirements.md).
+For audit requirements covering remote-mutation authorization, risk-based checkpoints, and proportional reports, see [references/audit-requirements.md](references/audit-requirements.md).
 
 For detailed context management and QA validation, see [references/context-management.md](references/context-management.md).

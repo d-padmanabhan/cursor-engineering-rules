@@ -622,39 +622,40 @@ git pull origin main && git checkout -b feat/your-feature
 - No `--ff-only` protection (could create merge commit)
 - Uses `checkout` (works on older Git but less clear than `switch`)
 
-## Sync with remote, then push (REQUIRED before every push)
+## Inspect remote state, then push
 
 > [!IMPORTANT]
-> **Always sync the current branch with its remote immediately before pushing to an existing remote branch.** Pushing stale history causes non-fast-forward rejections and tempts a `--force` that can clobber teammates' commits. Syncing first keeps the push clean and history linear. (This does not authorize the push itself - for agents, remote writes remain default-deny per `020-agent-audit.mdc` and require explicit user approval.)
+> Fetch and inspect the current branch immediately before pushing to an existing remote branch. Do not blindly run `git pull --rebase`: it modifies local history and can be unsafe with a dirty working tree, shared commits, or a repository that prefers merges. This inspection does not authorize the push itself; agents still need authorization under [020-agent-audit.mdc](020-agent-audit.mdc).
 
-Sync the **current branch** with its remote using **pull with rebase** (replays your local commits on top of the remote, no merge commit), then push. Using the current branch explicitly means the same commands work on `main` or any feature branch.
-
-**Two-step (recommended for clarity):**
+Start with a read-only refresh and inspect divergence:
 
 ```bash
-git pull origin $(git branch --show-current) --rebase
-git push origin $(git branch --show-current)
+git fetch origin --prune
+git status --short --branch
+git log --oneline --left-right --boundary HEAD...@{upstream}
 ```
 
-**One-liner (e.g. in scripts or agent workflows):**
+Then choose based on the evidence:
+
+- **Ahead only:** push the current branch after authorization.
+- **Behind only:** fast-forward when repository policy permits.
+- **Diverged:** stop and choose rebase or merge according to repository policy and whether the commits are shared. Do not force-push as an automatic recovery.
+- **Dirty working tree:** do not rebase or merge until the unrelated work is understood and preserved.
+
+For an existing branch with an upstream:
 
 ```bash
-git pull origin $(git branch --show-current) --rebase; git push origin $(git branch --show-current)
+git push
 ```
 
-| Element | Purpose |
-| --- | --- |
-| `$(git branch --show-current)` | Current branch name (e.g. `main`, `feat/foo`); avoids hardcoding. |
-| `--rebase` | Replay your local commits on top of remote; avoids merge commits and keeps history linear. |
-
-**Only exception - a brand-new branch with no upstream yet:** there is nothing to pull, so publish it directly and set the upstream in one step:
+For a brand-new branch with no upstream, publish it and set the upstream:
 
 ```bash
 git push -u origin HEAD
 ```
 
 > [!NOTE]
-> In PowerShell, `$(git branch --show-current)` works. In POSIX shells, backticks `` `git branch --show-current` `` are equivalent. Agents and scripts that run "sync then push" after an approved commit MUST use this pattern (or the new-branch exception above) so it works on any branch.
+> If `@{upstream}` is not configured, inspect the intended remote branch explicitly (for example, `origin/<branch>`) before setting the upstream. Use `git pull --rebase` only when the worktree is clean, the branch policy calls for rebasing, and rewriting the local commits is safe.
 
 ---
 

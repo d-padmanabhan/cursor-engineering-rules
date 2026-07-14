@@ -109,15 +109,16 @@ git fetch origin --prune && git switch -c feat/your-feature origin/main
 
 **Use when:** Creating throwaway branches or when local `main` is messy.
 
-## Sync with remote, then push (REQUIRED before every push)
+## Inspect remote state, then push
 
-**Always sync the current branch with its remote immediately before pushing to an existing remote branch** - pushing stale history triggers non-fast-forward rejections and tempts a history-clobbering `--force`. Use **pull with rebase** on the **current branch** so the same command works on `main` or any feature branch. See **130-git.mdc** (Sync with remote, then push) for full detail.
+Fetch and inspect the current branch before pushing to an existing remote branch. Do not blindly run `git pull --rebase`; it modifies local history and may be unsafe with a dirty tree, shared commits, or merge-based repository policy. See [130-git.mdc](../../../rules/130-git.mdc), "Inspect remote state, then push," for full detail.
 
 ```bash
-git pull origin $(git branch --show-current) --rebase
-git push origin $(git branch --show-current)
+git fetch origin --prune
+git status --short --branch
+git log --oneline --left-right --boundary HEAD...@{upstream}
 ```
 
-One-liner: `git pull origin $(git branch --show-current) --rebase; git push origin $(git branch --show-current)`
+Push when the branch is ahead only. If it is behind or diverged, integrate according to repository policy; rebase only when the worktree is clean and rewriting local commits is safe. Never force-push merely to bypass divergence.
 
-Only exception - a brand-new branch with no upstream yet (nothing to pull): `git push -u origin HEAD`.
+For a brand-new branch with no upstream, use `git push -u origin HEAD`.

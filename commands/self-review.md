@@ -134,10 +134,9 @@ Generate a structured review report:
 ## Phase 5: Automated Fixes (Optional)
 
 > [!IMPORTANT]
-> **Before applying fixes:** Create checkpoints per `020-agent-audit.mdc`:
+> **Before applying fixes:** Inspect the working-tree baseline and choose safeguards according to [020-agent-audit.mdc](../rules/020-agent-audit.mdc).
 >
-> - `git stash push -u -m "checkpoint/<YYYYMMDD_HHMMSS>"`
-> - `git branch "checkpoint/<YYYYMMDD_HHMMSS>" <baseline-sha>`
+> Targeted, reversible fixes do not require a stash or backup branch. Create an explicit checkpoint for repository-wide formatting, mass rewrites/deletes, history changes, or operations that put unrelated user work at risk.
 
 **Only proceed if user explicitly requests fixes or if Critical issues require formatting.**
 
@@ -162,7 +161,7 @@ Generate a structured review report:
 3. **Diff summary:** Show final `git diff main...HEAD --stat`
 4. **Ready for PR:** Confirm all Critical issues resolved
 
-**Generate Audit Report (per `020-agent-audit.mdc`):**
+**Generate an audit report when required by [020-agent-audit.mdc](../rules/020-agent-audit.mdc):**
 
 - Ensure `GIT_REPO_ROOT` is set, then write/append the report to `<GIT_REPO_ROOT>/tmp/agent_reports/$(date +%F)-agent-report-<repo>-<branch>.md` (if `<GIT_REPO_ROOT>/tmp/` exists and is gitignored) or `/tmp/$(date +%F)-agent-report-<repo>-<branch>.md`
 - Include:
@@ -171,7 +170,7 @@ Generate a structured review report:
   - All commands executed with exit codes
   - `git status` and `git diff --stat` output
   - Verification outputs (linter/test results)
-  - Checkpoint identifiers (if Phase 5 fixes were applied)
+  - Checkpoint decision and identifiers, if any
   - Summary of findings
 
 ## Constraints
@@ -183,7 +182,7 @@ Generate a structured review report:
 - Refactor code not part of current changes
 - Add features not in the current scope
 - Change APIs or break existing functionality
-- **Commit or push** without explicit user authorization (see `020-agent-audit.mdc`)
+- **Commit or push** without explicit user authorization (see [020-agent-audit.mdc](../rules/020-agent-audit.mdc))
 - Perform any remote writes (git push, PR creation, etc.)
 
 ✅ **DO:**
@@ -193,8 +192,8 @@ Generate a structured review report:
 - Apply fixes incrementally
 - Explain the "why" behind each suggestion
 - Provide actionable, specific feedback
-- Create checkpoints before applying automated fixes (Phase 5)
-- Document all operations in audit report
+- Create checkpoints before high-risk automated fixes (Phase 5)
+- Document operations in an audit report when the task's reporting tier requires one
 
 ## Output Format
 

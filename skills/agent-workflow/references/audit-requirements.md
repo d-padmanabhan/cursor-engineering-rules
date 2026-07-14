@@ -2,17 +2,15 @@
 
 These rules apply to AI agents operating in workspaces. They are designed to make work **reversible**, **verifiable**, and **auditable**.
 
-## 1. Remote Writes: Default Deny
+## 1. Remote Mutations: Explicit Authorization
 
-By default, AI agents MUST NOT modify any remote state.
+Read-only operations need no checkpoint or extra approval. This includes file inspection, API `GET` requests, status/list/describe commands, plans/diffs, and read-only tool calls.
 
-If (and only if) the user explicitly authorizes a specific remote write, the agent may execute only the authorized command(s) and MUST record:
+Remote mutations require user authorization. A direct request for a specific mutation counts as authorization. Ask again only when an operation is destructive, irreversible, security-sensitive, or materially broader than the request.
 
-- The exact authorization (who/when/what)
-- The exact commands executed
-- The results and exit codes
+For high-risk mutations, record the authorization, commands, results, and exit codes.
 
-**Disallowed operations include:**
+Mutations include:
 
 - `git push`, forced updates, tag pushes
 - Creating/merging PRs, pushing branches
@@ -22,32 +20,37 @@ If (and only if) the user explicitly authorizes a specific remote write, the age
 
 **Commits are local-only** and allowed only after explicit user authorization.
 
-## 2. Local Branch Discipline
+## 2. Local Git Repository Discipline
 
-All work MUST be performed on the **current branch**.
+These requirements apply when modifying files in a Git repository:
 
-Requirements:
+- Inspect `git status --short`, the current branch, and `HEAD` before routine edits.
+- Preserve unrelated user changes and do not assume a clean working tree.
+- Record the baseline only when the reporting tier requires an audit report.
+- Create a backup branch only for history rewrites or changes with difficult rollback.
+- Do not rebase or otherwise rewrite shared history unless explicitly authorized.
 
-- Record the baseline branch name and `HEAD` SHA in the audit report
-- Create a local backup branch before making changes:
-  - `DTTM="$(date +%Y%m%d_%H%M%S)"`
-  - `git branch "checkout-point/${DTTM}" HEAD`
-- Do not fast-forward, rebase, or otherwise rewrite shared history unless explicitly authorized
+## 3. Risk-Based Backups and Checkpoints
 
-## 3. Backups & Checkpoints (Mandatory)
+Use the least disruptive safeguard proportional to risk.
 
-Before making changes, create **identifiable, reversible checkpoints**:
+No checkpoint is needed for read-only work, trivial local-only actions, or small reversible edits whose current diff is understood.
 
-**Minimum checkpoints:**
+For routine edits, inspect a lightweight baseline:
 
-- **Baseline identifier:** Record `HEAD` SHA and current branch name
-- **Working tree backup:** Create stash with untracked files: `git stash push -u -m "checkpoint/<id>"`
-- **Rollback anchor:** Create local checkpoint: `git branch "checkout-point/<id>" <baseline-sha>`
+```bash
+git status --short
+git branch --show-current
+git rev-parse HEAD
+```
 
-**Checkpoint rules:**
+Create an explicit checkpoint for history rewrites, repository-wide mechanical changes, mass deletes/renames, broad multi-repository changes, or operations that require a clean tree while unrelated work exists.
 
-- Each checkpoint MUST have a unique `<id>` (recommend `YYYYMMDD_HHMMSS`)
-- Every checkpoint MUST be recorded with timestamp in the audit report
+- Use a backup branch before an authorized history rewrite.
+- Use a patch or targeted file copy when only selected uncommitted work is at risk.
+- Use `git stash` only when a clean tree is genuinely required; explain and promptly restore it.
+
+For external mutations, use system-specific safeguards: dry run/plan, current-state capture, narrow scope, idempotency, concurrency/version checks, and a tested rollback path. A Git branch or stash does not protect remote infrastructure, data, or API state.
 
 ## 4. Local Verification Gate (Mandatory)
 
@@ -74,9 +77,13 @@ If verification cannot run, state:
 - **Shell:** `shellcheck *.sh`, `shfmt -d .`
 - **General:** `pre-commit run --all-files` (if configured)
 
-## 5. Verifiable Audit Report (Mandatory)
+## 5. Proportional Audit Reporting
 
-For every non-trivial task, write one report file:
+Use a full report for critical tasks: history rewrites, force updates, destructive operations, remote infrastructure/data changes, security or identity changes, broad multi-repository work, or changes with a substantial blast radius.
+
+For routine tasks, a lightweight entry is optional. No report is needed for read-only or trivial local-only work.
+
+When a full report is required:
 
 **Repo root (required):**
 
@@ -97,8 +104,8 @@ For every non-trivial task, write one report file:
 - Every command executed (copy-pasteable) with exit codes
 - Summary of changes: `git status`, `git diff --stat`, changed files
 - Verification outputs
-- Proposed commit messages
-- Checkpoints/backups section with timestamps
+- Proposed commit messages, if applicable
+- Checkpoint decision and any checkpoint identifiers
 - Any authorized remote-write operations
 
 ### Optional: Terminal Recordings (asciinema)
@@ -137,33 +144,36 @@ asciinema rec -q "<GIT_REPO_ROOT>/tmp/agent_reports/recordings/session.cast"
 
 Only after the user explicitly authorizes commits:
 
-1. **Commit locally** with the agreed messages (respect **commit signing**: do not bypass signing unless the user explicitly requested an unsigned commit and the reason is recorded; see rule `130-git.mdc`, **Commit signing**)
-2. **Append to the audit report:**
+1. **Commit locally** with the agreed messages (respect **commit signing**: do not bypass signing unless the user explicitly requested an unsigned commit and the reason is recorded; see [130-git.mdc](../../../rules/130-git.mdc), **Commit signing**)
+2. **If an audit report is required or already exists, append:**
    - Commit SHAs and commit messages
    - Output from: `git log --date=iso-strict -n <N>` (where `<N>` covers the new commits)
    - Signature status: e.g. `git log -n <N> --show-signature` (or note explicitly if commits are unsigned and why)
    - Confirmation that commits match the proposed plan
 3. **Do NOT push** to remote unless explicitly authorized separately
-4. **Record the authorization** in the audit report with timestamp
+4. **Record the authorization** in the audit report when one is required or already exists
 
-## 7. GitHub CLI Read-Only Mode
+## 7. GitHub CLI Mutation Policy
 
-**Allowed:**
+**Allowed without mutation authorization:**
 
 - `gh repo view`
 - `gh issue list` / `gh issue view`
 - `gh pr list` / `gh pr view`
 - `gh api` GET requests only
 
-**Disallowed:**
+**Allowed only when explicitly authorized by the user's request:**
 
 - `gh pr create`, `gh pr merge`
 - `gh repo fork`
 - Any `gh api` mutation (POST/PATCH/PUT/DELETE)
 
+Preview the affected repository, branch, request body, or resource first. Seek separate confirmation for destructive, irreversible, privileged, or materially broader actions.
+
 ## 8. Required Sequence
 
 ```
-Understand task → propose plan → create minimal change set → take checkpoints →
-run verification → produce audit report → propose commit(s) → wait for approval
+Understand task → classify risk and mutation type → inspect baseline when editing →
+take a checkpoint only if warranted → make the minimal change → verify proportionally →
+report according to tier → obtain authorization for commits or remote mutations
 ```

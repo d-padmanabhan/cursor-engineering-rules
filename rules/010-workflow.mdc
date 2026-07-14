@@ -17,7 +17,7 @@ priority: 10
 3. **REVIEW** -> Verify results -> Suggest improvements -> Return to PLAN phase
 
 **AGENT AUDIT REQUIREMENTS (ADDITIONAL):**
-- Follow `020-agent-audit.mdc` for **no remote writes**, **local branch discipline**, **mandatory checkpoints**, **local verification**, and a **verifiable audit report**.
+- Follow [020-agent-audit.mdc](020-agent-audit.mdc) for **explicit authorization of remote mutations**, **risk-based checkpoints**, **local verification**, and **proportional audit reporting**.
 
 ** CRITICAL VIOLATIONS TO AVOID:**
 
