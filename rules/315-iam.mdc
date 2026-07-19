@@ -43,6 +43,21 @@ files:
 
 ---
 
+## Security research and citation discipline
+
+- Prefer current primary sources: standards bodies, protocol specifications, and official vendor documentation.
+- Cite a standard by name. Include an RFC, NIST publication, or CVE identifier only after verifying it.
+- Never invent a plausible-looking specification, control, CVE, feature, or version number.
+- State uncertainty plainly and identify what must be verified before implementation.
+- Recheck current vendor documentation when behavior depends on defaults, supported flows, versions, or
+  recently disclosed vulnerabilities.
+
+For OAuth deployments, use the current
+[Best Current Practice for OAuth 2.0 Security (RFC 9700 / BCP 240)](https://www.rfc-editor.org/rfc/rfc9700.html)
+alongside the applicable base and extension specifications.
+
+---
+
 ## IAM (cloud access control)
 
 ### Policy design principles
@@ -78,6 +93,58 @@ files:
 - Long session durations by default
 - Attaching `*` permissions “temporarily” and forgetting to remove them
 - Storing cloud access keys in repos, CI logs, or shell history
+
+---
+
+## Identity Governance and Administration (IGA)
+
+Authentication and authorization controls decay without lifecycle governance. Human and non-human identities
+must have an accountable owner, approved purpose, bounded entitlements, and a reliable end-of-life path.
+
+### Lifecycle requirements
+
+- Automate **joiner, mover, and leaver** events from an authoritative source.
+- Remove or recalculate access when employment, team, workload, environment, or business purpose changes.
+- Define maximum deprovisioning times by risk; privileged and production access should be revoked immediately.
+- Disable first, investigate dependencies, then delete after the documented recovery and retention period.
+- Treat dormant, orphaned, shared, and ownerless identities as findings, not inventory noise.
+
+### Entitlement governance
+
+- Maintain an entitlement catalog with business meaning, technical scope, risk, owner, and approval path.
+- Separate birthright access from requestable, privileged, emergency, and machine access.
+- Enforce separation-of-duties constraints before granting access, not only during retrospective audits.
+- Run risk-based access certifications; privileged, production, and sensitive-data access requires more frequent
+  review than low-risk access.
+- Review effective access, including nested groups, inherited roles, resource policies, and temporary grants.
+- Expire unused and time-bound grants automatically; do not rely on ticket closure as proof of revocation.
+
+### NHI governance
+
+- Inventory service accounts, IAM roles, OAuth clients, API keys, certificates, CI identities, and agents.
+- Assign every NHI an owner, workload, environment, purpose, credential type, and expected last-used pattern.
+- Couple NHI provisioning and deprovisioning to the workload lifecycle.
+- Alert on unexpected use, stale credentials, missing owners, privilege growth, and use after retirement.
+- Preserve review decisions and revocation evidence in an auditable system of record.
+
+These controls align with account-management and access-review concepts in
+[NIST SP 800-53 Rev. 5](https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final), including AC-2.
+
+---
+
+## Protocol analysis contract
+
+When designing or reviewing OAuth, OIDC, SAML, SCIM, mTLS, federation, token exchange, or delegated access:
+
+1. Identify every actor, trust boundary, authorization server, resource server, and policy enforcement point.
+2. Trace the actual messages and credential exchanges in order; use a Mermaid sequence diagram when the flow is
+   not obvious.
+3. For each token, assertion, or certificate, state the issuer, subject, actor/delegator, audience, scope,
+   lifetime, proof-of-possession model, storage location, and revocation mechanism.
+4. Separate authentication, token issuance, delegation, authorization, and policy enforcement. Do not collapse
+   them into a generic "auth" step.
+5. Describe replay, substitution, confused-deputy, token-theft, downgrade, and stale-access failure modes.
+6. Identify the audit event and correlation identifier emitted at each trust decision.
 
 ---
 
@@ -183,16 +250,24 @@ sequenceDiagram
 
 ## PKI (certificates, keys, and mTLS)
 
-### Key management basics
+### CA hierarchy and key custody
 
-- Private keys are **secrets** - store in secret managers/HSM where appropriate
-- Prefer modern algorithms and key sizes (org policy governs exact choices)
-- Rotate:
-  - certs on schedule
-  - keys when compromised or per policy
-- Separate CAs:
-  - root CA offline where possible
-  - intermediate CAs for issuing
+- Keep production root CA keys offline or in appropriately controlled HSMs.
+- Use purpose- and environment-specific intermediate or issuing CAs to constrain blast radius.
+- Separate CA administration, certificate approval, issuance, and key-recovery duties.
+- Document ceremonies for root creation, intermediate signing, rotation, compromise, and disaster recovery.
+- Do not export private keys unless the use case explicitly requires it and custody controls are documented.
+
+### Certificate profiles
+
+Define and enforce profiles rather than accepting arbitrary certificate requests:
+
+- identity in SAN (`URI`, `DNS`, or other approved SAN type), not the legacy common name
+- allowed key algorithms, parameters, signature algorithms, and validity periods
+- `KeyUsage` and `ExtendedKeyUsage` constrained to the intended purpose
+- name constraints and path-length constraints where applicable
+- issuance policy, approver, renewal window, and revocation behavior
+- environment and workload boundaries that prevent certificate reuse
 
 ### mTLS guidance
 
@@ -201,13 +276,59 @@ sequenceDiagram
   - chain to trusted CA
   - SAN (service identity)
   - EKU constraints
-  - revocation strategy (OCSP/CRL) per environment needs
+  - revocation strategy per environment needs
+- Authentication is not authorization: map the verified certificate identity to an explicit policy decision.
+
+### Revocation design
+
+- Choose CRL, OCSP, OCSP stapling, short-lived certificates, or a combination based on availability and freshness
+  requirements.
+- Document fail-open versus fail-closed behavior for unavailable or stale revocation data.
+- Test revoked, expired, not-yet-valid, unknown-issuer, wrong-SAN, and wrong-EKU cases.
+- Short certificate lifetimes reduce exposure but do not replace an emergency kill path where rapid revocation is
+  required.
 
 ### Certificate lifecycle
 
-- Automate issuance/renewal where possible (ACME or internal issuance workflows)
-- Track inventory: what cert is used where, expiry dates, owners
-- Monitor and alert well before expiry
+- Automate enrollment, issuance, renewal, deployment, and replacement using ACME or an approved internal workflow.
+- Track identity, serial number, profile, issuer, location, owner, expiry, key custody, and dependent services.
+- Monitor renewal failures and alert early enough to remediate without emergency manual issuance.
+- Verify that replacement certificates are in use before revoking or removing their predecessors.
+
+### Crypto-agility and post-quantum readiness
+
+- Maintain a cryptographic inventory covering protocols, libraries, certificates, keys, algorithms, hardware,
+  firmware, data-retention periods, and external dependencies.
+- Keep algorithms and key parameters policy-driven and replaceable; do not hardcode them throughout applications.
+- Design protocol negotiation to prevent downgrade and make cryptographic transitions observable.
+- Prioritize systems with long-lived confidentiality requirements and broad, long-lived trust infrastructure.
+- Test classical, hybrid, and post-quantum migration paths in controlled environments before production rollout.
+- Follow current standards-body and vendor interoperability guidance; do not deploy experimental cryptography as
+  a production default.
+
+See NIST's
+[Post-Quantum Cryptography project](https://csrc.nist.gov/Projects/Post-Quantum-Cryptography) and
+[Considerations for Achieving Crypto Agility](https://nvlpubs.nist.gov/nistpubs/CSWP/NIST.CSWP.39.pdf).
+
+---
+
+## Secret delivery to workloads
+
+First ask whether workload identity can eliminate the secret. If a secret remains necessary, compare delivery
+mechanisms across:
+
+- workload identity and attestation source
+- initial retrieval, renewal, and rotation behavior
+- startup failure versus runtime degradation
+- sidecar, node-plugin, control-plane, and application critical-path coupling
+- exposure through environment variables, files, tmpfs, process memory, logs, and crash dumps
+- file ownership, permissions, readers, and backup behavior
+- audit granularity, revocation latency, and stale-secret detection
+- platform dependencies and operational burden
+
+Prefer workload-bound retrieval and file or memory delivery over environment variables. Do not prescribe Vault
+Agent Injector, Secrets Store CSI Driver, or another mechanism without verifying the current provider-specific
+rotation semantics and failure modes.
 
 ---
 
@@ -244,5 +365,9 @@ PAM is about controlling and auditing privileged actions.
 - [ ] Replay protection (auth codes, SAML assertions) implemented
 - [ ] Secrets (tokens/keys/assertions) never logged
 - [ ] Rotation and revocation paths exist and are tested
+- [ ] Joiner/mover/leaver and NHI lifecycle controls exist
+- [ ] Entitlements have owners, expiry, and risk-based access reviews
+- [ ] Protocol flows identify actors, token properties, and trust decisions
+- [ ] PKI profiles, key custody, revocation behavior, and crypto-agility are documented
+- [ ] Workload identity was considered before introducing a delivered secret
 - [ ] PAM controls exist for privileged actions (JIT, MFA, auditability)
-

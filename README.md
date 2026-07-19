@@ -510,6 +510,7 @@ Skills under `skills/` cover repeatable end-to-end workflows that pair with the 
 - **[skills/security-testing](skills/security-testing/)** - OWASP Top 10 + testing strategies (overview)
 - **[skills/codebase-security-audit](skills/codebase-security-audit/)** - 8-layer audit (secrets / SAST / SCA / taint / CPG / IaC / custom / DAST) + reference CI workflow
 - **[skills/zero-trust](skills/zero-trust/)** - Distinguished-engineer Zero Trust playbook
+- **[skills/iam-security-advisor](skills/iam-security-advisor/)** - principal-level IAM, IGA, PKI, protocol, and security architecture decisions
 - **[skills/aws-iam](skills/aws-iam/)** - AWS IAM operational patterns
 - **[skills/okta](skills/okta/)** - Okta Workforce Identity playbook
 - **[skills/workload-identity](skills/workload-identity/)** - SPIFFE/SPIRE/cloud IAM/OIDC federation
