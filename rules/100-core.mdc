@@ -1,6 +1,6 @@
 ---
 title: Coding Ruleset
-description: Repo-wide engineering guardrails for review & generation.
+description: Repo-wide engineering guardrails for simple, maintainable code review and generation.
 alwaysApply: true
 priority: 100
 files:
@@ -89,6 +89,22 @@ def process_user_data(user_id: int, data: dict[str, Any]) -> dict[str, Any]:
   * **Production-Ready:** Include error handling, meaningful names, a security-first approach, and appropriate documentation.
   * **Constructive Collaboration:** Frame all feedback respectfully and focus on the code, not the author. Assume good intent and aim to teach and learn.
   * **Non-Goals:** Do not refactor unrelated modules, change APIs, or add new dependencies unless required to fix a  Critical issue or explicitly requested.
+
+## Non-negotiable: KISS and clean-code outcomes
+
+Apply **KISS (Keep It Simple)** to every design, implementation, and review. Choose the simplest correct solution that satisfies the current requirements and operational constraints. Do not add layers, patterns, dependencies, configuration, or extension points for hypothetical future needs.
+
+"Clean code" is required as a set of observable outcomes, not as an appeal to a particular book, author, or methodology. Generated or modified code MUST:
+
+- use precise, domain-meaningful names and consistent conventions;
+- keep functions, methods, classes, and modules cohesive and focused;
+- keep control flow understandable and make errors, side effects, ownership, and resource lifecycles explicit;
+- reduce meaningful duplication without forcing premature or misleading abstractions;
+- separate concerns where doing so improves comprehension, testing, or change safety;
+- avoid dead code, speculative generalization, clever shortcuts, hidden coupling, and comments that merely restate the code;
+- preserve correctness, security, accessibility, performance, compatibility, and observability instead of sacrificing them for cosmetic simplicity.
+
+Small code is not automatically simple code. Inherently complex domains may require complex implementations; isolate that complexity, document the reason, test the behavior, and avoid spreading it across unrelated components.
 
 **Naming Conventions:**
 

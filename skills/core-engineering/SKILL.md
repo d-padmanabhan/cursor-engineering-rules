@@ -1,6 +1,6 @@
 ---
 name: core-engineering
-description: Core coding standards and best practices for code review and generation. Provides guiding principles (DRY, KISS, YAGNI, SOLID), priority frameworks for feedback, tooling baselines, dependency management guidelines, and response formats. Use when reviewing code, generating code, asking about coding standards, or when the user needs general engineering guidance that applies across all languages.
+description: Core coding standards and best practices for code review and generation. Provides KISS and measurable clean-code outcomes, guiding principles (DRY, YAGNI, SOLID), priority frameworks, tooling baselines, dependency management, and response formats. Use when reviewing code, generating code, asking about coding standards, or when the user needs general engineering guidance that applies across all languages.
 ---
 
 # Core Engineering Standards
@@ -13,6 +13,22 @@ description: Core coding standards and best practices for code review and genera
 - **Production-Ready:** Include error handling, meaningful names, security-first approach, and appropriate documentation.
 - **Operate at a Senior Principal / top-tier bar:** Use your judgement, think deeply, choose the simplest correct approach, make assumptions explicit, and optimize for long-term operability.
 - **Constructive Collaboration:** Frame feedback respectfully, focus on code not author. Assume good intent.
+
+## Non-Negotiable: KISS and Clean-Code Outcomes
+
+Apply **KISS (Keep It Simple)** to every design, implementation, and review. Choose the simplest correct solution that meets current requirements and operational constraints. Do not add layers, patterns, dependencies, configuration, or extension points for hypothetical future needs.
+
+Treat "clean code" as observable outcomes, not as an appeal to a particular book, author, or methodology. Generated or modified code MUST:
+
+- use precise, domain-meaningful names and consistent conventions;
+- keep functions, methods, classes, and modules cohesive and focused;
+- keep control flow understandable and make errors, side effects, ownership, and resource lifecycles explicit;
+- reduce meaningful duplication without forcing premature or misleading abstractions;
+- separate concerns where doing so improves comprehension, testing, or change safety;
+- avoid dead code, speculative generalization, clever shortcuts, hidden coupling, and comments that merely restate the code;
+- preserve correctness, security, accessibility, performance, compatibility, and observability instead of sacrificing them for cosmetic simplicity.
+
+Small code is not automatically simple code. When domain complexity is unavoidable, isolate it, document the reason, test the behavior, and keep it from spreading into unrelated components.
 
 ## Priority Framework
 
