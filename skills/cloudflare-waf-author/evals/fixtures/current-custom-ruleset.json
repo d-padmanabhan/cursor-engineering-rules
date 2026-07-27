@@ -1,0 +1,17 @@
+{
+  "id": "synthetic-custom-ruleset",
+  "name": "Custom WAF rules",
+  "kind": "zone",
+  "phase": "http_request_firewall_custom",
+  "version": "12",
+  "etag": "\"synthetic-etag-v12\"",
+  "rules": [
+    {
+      "id": "existing-admin-log-rule",
+      "action": "log",
+      "description": "Observe admin traffic outside trusted egress",
+      "expression": "(http.host eq \"admin.acme.com\" and starts_with(http.request.uri.path, \"/admin/\") and not ip.src in $trusted_egress_ips)",
+      "enabled": true
+    }
+  ]
+}

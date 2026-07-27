@@ -1,0 +1,128 @@
+{
+  "skill_name": "core-engineering",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Review the attached Python function. Prioritize findings by impact, explain the attack path, and propose the smallest safe correction. Do not redesign unrelated code.",
+      "expected_output": "Identify SQL injection as the critical issue, replace string interpolation with a parameterized query, mention input/trust-boundary handling, and avoid an unrelated rewrite.",
+      "files": [
+        "evals/fixtures/vulnerable_user_lookup.py"
+      ],
+      "checks": [
+        {
+          "id": "names-injection",
+          "type": "contains_any",
+          "values": [
+            "SQL injection",
+            "injection vulnerability"
+          ]
+        },
+        {
+          "id": "prioritizes-severity",
+          "type": "contains_any",
+          "values": [
+            "critical",
+            "blocker",
+            "highest severity"
+          ]
+        },
+        {
+          "id": "uses-parameters",
+          "type": "contains_any",
+          "values": [
+            "parameterized",
+            "query parameters",
+            "placeholder"
+          ]
+        },
+        {
+          "id": "avoids-broad-rewrite",
+          "type": "not_contains",
+          "value": "rewrite the entire"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Write a complete Python 3.14 command-line program that reads a local JSON array of objects and prints a count by the string field `status`. Use the standard library, validate the top-level shape, report useful errors to stderr, and include the entry point. Keep the solution proportionate.",
+      "expected_output": "A runnable, typed Python program using argparse, json, validation, explicit error handling, and an if __name__ == \"__main__\" entry point without third-party dependencies.",
+      "files": [],
+      "checks": [
+        {
+          "id": "stdlib-shape",
+          "type": "contains_all",
+          "values": [
+            "argparse",
+            "json",
+            "stderr",
+            "__main__"
+          ]
+        },
+        {
+          "id": "validates-array",
+          "type": "contains_any",
+          "values": [
+            "isinstance",
+            "must be a list",
+            "JSON array"
+          ]
+        },
+        {
+          "id": "no-pandas",
+          "type": "not_regex",
+          "pattern": "(?:^|\\n)\\s*(?:from|import)\\s+pandas\\b"
+        },
+        {
+          "id": "no-cli-framework",
+          "type": "not_regex",
+          "pattern": "(?:^|\\n)\\s*(?:from|import)\\s+(?:click|typer)\\b"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "A repository still uses actions/checkout@v4 and actions/setup-python@v5. Using the attached official-release metadata, tell me the versions to use and provide the workflow snippet. Treat model memory as potentially stale, cite both sources, and state when the metadata was retrieved.",
+      "expected_output": "Use actions/checkout@v7 and actions/setup-python@v7, identify releases v7.0.1 and v7.0.0 from the supplied official repository release pages, cite both links, and state the retrieval date.",
+      "files": [
+        "evals/fixtures/current-action-releases.json"
+      ],
+      "checks": [
+        {
+          "id": "requires-verification",
+          "type": "contains_any",
+          "values": [
+            "verify",
+            "verified",
+            "current release"
+          ]
+        },
+        {
+          "id": "uses-official-source",
+          "type": "contains",
+          "value": "github.com/actions/checkout"
+        },
+        {
+          "id": "uses-both-official-sources",
+          "type": "contains",
+          "value": "github.com/actions/setup-python"
+        },
+        {
+          "id": "uses-current-action-majors",
+          "type": "contains_all",
+          "values": [
+            "actions/checkout@v7",
+            "actions/setup-python@v7"
+          ]
+        },
+        {
+          "id": "names-current-releases",
+          "type": "contains_all",
+          "values": [
+            "v7.0.1",
+            "v7.0.0"
+          ]
+        }
+      ]
+    }
+  ]
+}

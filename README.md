@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Comprehensive, battle-tested configuration for AI coding agents. Curated **rules** (`.mdc`), **Agent Skills**, **slash commands**, an **MCP server**, and **lifecycle hooks** covering languages, cloud platforms, DevOps tools, data platforms, identity systems, AI/ML, Zero Trust, and engineering patterns.
+Comprehensive, battle-tested configuration for AI coding agents. Curated **rules** (`.mdc`), **Agent Skills**, a **skill evaluation harness**, **slash commands**, an **MCP server**, and **lifecycle hooks** covering languages, cloud platforms, DevOps tools, data platforms, identity systems, AI/ML, Zero Trust, and engineering patterns.
 
 > [!NOTE]
 > **Agent-neutral.** Originally built for Cursor; today the content ships in formats compatible with **Cursor**, **Claude Code**, and **Codex** - rules (`.cursor/rules/`, `AGENTS.md`), Agent Skills (`.cursor/skills/`, `.claude/skills/`, `.codex/skills/`), and slash commands. The MCP server works with any MCP-compatible client.
@@ -547,3 +547,20 @@ Skills under `skills/` cover repeatable end-to-end workflows that pair with the 
 
 - **[skills/skills-composition](skills/skills-composition/)** - patterns for chaining skills, scope resolution, graceful degradation
 - **[skills/skills-continuous-improvement](skills/skills-continuous-improvement/)** - biweekly maintenance workflow for rule/skill drift, stale examples, unsafe snippets, and missing non-negotiables
+
+## Evaluating Skills
+
+The dependency-free [Agent Skills eval harness](evals/) validates every skill and supports with-skill versus baseline comparisons through a vendor-neutral command adapter. Pull-request CI runs deterministic schema and unit checks without model credentials or paid calls.
+
+The initial suites cover:
+
+- [Core engineering evals](skills/core-engineering/evals/evals.json)
+- [Cloudflare WAF author evals](skills/cloudflare-waf-author/evals/evals.json)
+- [IAM security advisor evals](skills/iam-security-advisor/evals/evals.json)
+
+```bash
+uv run python -m evals.skill_eval validate
+uv run python -m unittest discover -s evals/tests -v
+```
+
+See the [eval documentation](evals/README.md) for the adapter protocol, deterministic checks, model-backed runs, artifacts, safety limits, and expansion criteria.

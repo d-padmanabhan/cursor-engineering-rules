@@ -1,6 +1,6 @@
 ---
 name: skills-continuous-improvement
-description: Biweekly maintenance workflow for improving Agent Skills and matching rules in this handbook. Use when the user asks to review, refresh, audit, improve, harden, or update skills/rules, or when doing a scheduled every-2-weeks quality pass over skills. Finds drift between rules and skills, stale examples, unsafe snippets, broken/clickability issues, duplicated guidance, and missing non-negotiables; applies high-confidence fixes and reports larger follow-ups.
+description: Biweekly maintenance workflow for improving Agent Skills, eval suites, and matching rules in this handbook. Use when the user asks to review, refresh, audit, improve, harden, evaluate, or update skills/rules, or when doing a scheduled every-2-weeks quality pass over skills. Finds rule/skill/eval drift, stale examples, unsafe snippets, broken navigation, duplicated guidance, and missing non-negotiables; applies high-confidence fixes and reports larger follow-ups.
 ---
 
 # Skills Continuous Improvement
@@ -15,6 +15,7 @@ Run every two weeks, or sooner when:
 
 - A rule changes and its companion skill may now be stale.
 - A new skill is added.
+- A skill with an eval suite changes its instructions, description, fixtures, or expected behavior.
 - A user reports that agents still generate weak code despite existing guidance.
 - A vendor/runtime changes defaults, versions, APIs, or best practices.
 - Pre-commit, lint, or security checks reveal repeated issues.
@@ -25,6 +26,7 @@ Review both layers:
 
 - **Rules** (`rules/*.mdc`) - concise non-negotiables and file-scoped policy.
 - **Skills** (`skills/*/SKILL.md` plus one-level `references/*.md`) - workflow and examples.
+- **Skill evals** (`skills/*/evals/evals.json` and synthetic fixtures) - measurable behavior and regression coverage.
 
 Prioritize skills with paired rules first:
 
@@ -114,6 +116,15 @@ git diff --check
 pre-commit run --files <changed-files>
 ```
 
+For any skill with an `evals/evals.json`, also run:
+
+```bash
+uv run python -m evals.skill_eval validate
+uv run python -m unittest discover -s evals/tests -v
+```
+
+Run a model-backed with-skill versus baseline comparison when a change affects triggering, workflow order, required outputs, safety gates, or other behavior covered by the suite. Follow the [eval harness documentation](../../evals/README.md); do not put model credentials or paid runs in pull-request CI.
+
 If broad pre-commit is too large or noisy, run targeted hooks and clearly report any skipped checks.
 
 ## Output Report
@@ -148,3 +159,4 @@ End every pass with a short report:
 - Preserve intentional BAD/GOOD examples; make the label clear instead of deleting the BAD example.
 - Do not change unrelated user edits in a dirty tree.
 - Do not add always-on behavior to skills. If guidance must always load, put the principle in a rule and keep the workflow in a skill.
+- Keep eval fixtures synthetic and public-safe. Never use production credentials, customer data, private incidents, or live external mutations.

@@ -1,0 +1,13 @@
+{
+  "retrieved_at": "2026-07-22T00:00:00Z",
+  "sources": {
+    "actions/checkout": {
+      "latest_release": "v7.0.1",
+      "url": "https://github.com/actions/checkout/releases/tag/v7.0.1"
+    },
+    "actions/setup-python": {
+      "latest_release": "v7.0.0",
+      "url": "https://github.com/actions/setup-python/releases/tag/v7.0.0"
+    }
+  }
+}

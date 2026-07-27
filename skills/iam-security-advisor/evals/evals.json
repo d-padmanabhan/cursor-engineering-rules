@@ -1,0 +1,136 @@
+{
+  "skill_name": "iam-security-advisor",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Choose between a long-lived cloud access key stored in GitHub Actions secrets and OIDC workload federation for production deployments. Recommend one architecture, identify the trust conditions, explain failure and revocation behavior, and state what facts would reverse the decision.",
+      "expected_output": "Recommend short-lived OIDC workload federation, constrain issuer/audience/subject and authorization, cover token replay, revocation and audit, and provide explicit reversal conditions.",
+      "files": [],
+      "checks": [
+        {
+          "id": "recommends-federation",
+          "type": "contains_all",
+          "values": [
+            "OIDC",
+            "short-lived"
+          ]
+        },
+        {
+          "id": "trust-conditions",
+          "type": "contains_all",
+          "values": [
+            "issuer",
+            "audience",
+            "subject"
+          ]
+        },
+        {
+          "id": "lifecycle-and-evidence",
+          "type": "contains_all",
+          "values": [
+            "revocation",
+            "audit"
+          ]
+        },
+        {
+          "id": "reversal-conditions",
+          "type": "contains_any",
+          "values": [
+            "reversal conditions",
+            "would change the recommendation",
+            "reverse this decision"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Give a security architecture deep dive for an AI agent using OAuth delegation to call a customer records API on behalf of a user. Trace the actors and trust boundaries, separate authentication from authorization, and analyze token misuse and recovery.",
+      "expected_output": "Enumerate the user, agent/client, authorization server, resource server, and policy enforcement point; trace issuance and delegation; cover audience, scope, lifetime, replay, confused deputy, revocation, and audit correlation.",
+      "files": [],
+      "checks": [
+        {
+          "id": "actors",
+          "type": "contains_all",
+          "values": [
+            "authorization server",
+            "resource server",
+            "user",
+            "agent"
+          ]
+        },
+        {
+          "id": "token-contract",
+          "type": "contains_all",
+          "values": [
+            "audience",
+            "scope",
+            "lifetime"
+          ]
+        },
+        {
+          "id": "attack-paths",
+          "type": "contains_all",
+          "values": [
+            "replay",
+            "confused deputy",
+            "token theft"
+          ]
+        },
+        {
+          "id": "recovery",
+          "type": "contains_all",
+          "values": [
+            "revocation",
+            "audit"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "A Kubernetes workload needs a database credential. Compare environment-variable injection, a mounted secret, and workload-identity-based retrieval. Start by deciding whether the static secret can be removed. Recommend one approach and include outage behavior, rotation, exposure, recovery, and reversal conditions.",
+      "expected_output": "First consider eliminating the secret with workload identity. If a secret remains, compare delivery mechanisms across freshness, exposure, audit, outage coupling, revocation, and recovery, then recommend one with reversal conditions.",
+      "files": [],
+      "checks": [
+        {
+          "id": "eliminate-secret-first",
+          "type": "contains_any",
+          "values": [
+            "eliminate the secret",
+            "remove the static secret",
+            "workload identity"
+          ]
+        },
+        {
+          "id": "rejects-env-default",
+          "type": "contains_any",
+          "values": [
+            "avoid environment variables",
+            "not recommend environment",
+            "environment variables expose"
+          ]
+        },
+        {
+          "id": "lifecycle",
+          "type": "contains_all",
+          "values": [
+            "rotation",
+            "revocation",
+            "outage",
+            "recovery"
+          ]
+        },
+        {
+          "id": "decisive",
+          "type": "contains_any",
+          "values": [
+            "recommend",
+            "preferred approach",
+            "choose"
+          ]
+        }
+      ]
+    }
+  ]
+}

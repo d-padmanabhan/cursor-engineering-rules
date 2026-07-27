@@ -1,0 +1,164 @@
+{
+  "skill_name": "cloudflare-waf-author",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Our upload endpoint is being blocked by Cloudflare WAF. Add an allow rule so uploads work again.",
+      "expected_output": "Stop before drafting. Ask which authoring interface is authoritative, classify custom rule versus managed-rule exception, and request the ticket, owner, exact traffic shape, observed child-rule IDs, peer rule, and soak plan.",
+      "files": [],
+      "checks": [
+        {
+          "id": "asks-interface",
+          "type": "contains_all",
+          "values": [
+            "Terraform",
+            "Dashboard",
+            "API"
+          ]
+        },
+        {
+          "id": "asks-rule-type",
+          "type": "contains_any",
+          "values": [
+            "managed-rule exception",
+            "custom rule",
+            "rule type"
+          ]
+        },
+        {
+          "id": "asks-provenance",
+          "type": "contains_all",
+          "values": [
+            "ticket",
+            "host",
+            "path",
+            "method"
+          ]
+        },
+        {
+          "id": "does-not-draft-rule",
+          "type": "not_regex",
+          "pattern": "(?:\"action\"\\s*:|action\\s*=|\"expression\"\\s*:|expression\\s*=|\\(http\\.host\\b|(?:^|\\n)\\s*http\\.host\\s+eq)"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Using the attached Terraform peer rules, draft a managed-rule exception for ticket CHG-2048. The legitimate browser upload is POST https://uploads.acme.com/api/v1/documents/ and Security Events show only child rules 6179ae15870a4bb7b2d480d4843b323c and 5de7edfa648c4d6891dc3e7f84534ffa. Scope it to multipart uploads with a filename marker and preserve the execute rule.",
+      "expected_output": "Draft a narrow http_request_firewall_managed skip rule before the execute rule, skip only the two observed child IDs, guard exact host/path/method/content type/body marker, and include provenance plus validation and soak guidance.",
+      "files": [
+        "evals/fixtures/current-managed-rules.tf"
+      ],
+      "checks": [
+        {
+          "id": "managed-phase",
+          "type": "contains",
+          "value": "http_request_firewall_managed"
+        },
+        {
+          "id": "child-rules-only",
+          "type": "contains_all",
+          "values": [
+            "6179ae15870a4bb7b2d480d4843b323c",
+            "5de7edfa648c4d6891dc3e7f84534ffa"
+          ]
+        },
+        {
+          "id": "narrow-traffic-shape",
+          "type": "contains_all",
+          "values": [
+            "uploads.acme.com",
+            "/api/v1/documents/",
+            "POST",
+            "multipart/form-data",
+            "filename="
+          ]
+        },
+        {
+          "id": "uses-multivalue-header",
+          "type": "contains",
+          "value": "any("
+        },
+        {
+          "id": "states-child-only-scope",
+          "type": "contains_any",
+          "values": [
+            "only these two",
+            "only the two",
+            "only these child rules",
+            "skip only"
+          ]
+        },
+        {
+          "id": "does-not-skip-whole-ruleset",
+          "type": "not_regex",
+          "pattern": "(?:\"ruleset\"\\s*:\\s*\"current\"|ruleset\\s*=\\s*\"current\"|\"rulesets\"\\s*:|rulesets\\s*=)"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "We maintain WAF rules through the Rulesets API. Update the attached current-state payload with a narrow custom managed_challenge rule for GET /admin/ on admin.acme.com from outside the named trusted IP list. Explain the safe mutation sequence and rollback evidence; do not perform the API call.",
+      "expected_output": "Capture current state and ETag, validate the expression, use If-Match and explicit position semantics, preserve a rollback artifact, and scope the expression to host, path, method, and named trusted list.",
+      "files": [
+        "evals/fixtures/current-custom-ruleset.json"
+      ],
+      "checks": [
+        {
+          "id": "optimistic-concurrency",
+          "type": "contains_all",
+          "values": [
+            "GET",
+            "ETag",
+            "If-Match"
+          ]
+        },
+        {
+          "id": "rollback",
+          "type": "contains",
+          "value": "rollback"
+        },
+        {
+          "id": "expression-validation",
+          "type": "contains_any",
+          "values": [
+            "expression test",
+            "validate the expression",
+            "expression validation"
+          ]
+        },
+        {
+          "id": "position-semantics",
+          "type": "contains_any",
+          "values": [
+            "position.before",
+            "position.after",
+            "\"position\""
+          ]
+        },
+        {
+          "id": "custom-phase-and-action",
+          "type": "contains_all",
+          "values": [
+            "http_request_firewall_custom",
+            "managed_challenge"
+          ]
+        },
+        {
+          "id": "named-list-scope",
+          "type": "contains_all",
+          "values": [
+            "admin.acme.com",
+            "/admin/",
+            "$trusted_egress_ips"
+          ]
+        },
+        {
+          "id": "negates-trusted-list",
+          "type": "regex",
+          "pattern": "(?:not\\s+ip\\.src\\s+in\\s+\\$trusted_egress_ips|ip\\.src\\s+not\\s+in\\s+\\$trusted_egress_ips)"
+        }
+      ]
+    }
+  ]
+}
