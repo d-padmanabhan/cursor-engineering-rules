@@ -1,0 +1,68 @@
+---
+name: Python Tooling and Skill Eval Checks
+
+# yamllint disable-line rule:truthy
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/ci-skill-evals.yaml"
+      - "evals/**"
+      - "hooks/cursor/**"
+      - "pyproject.toml"
+      - "skills/**"
+      - "uv.lock"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/ci-skill-evals.yaml"
+      - "evals/**"
+      - "hooks/cursor/**"
+      - "pyproject.toml"
+      - "skills/**"
+      - "uv.lock"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: skill-evals-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deterministic:
+    name: Validate Python tools and skill evals
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v9
+
+      - name: Install locked development tools
+        run: uv sync --frozen --dev
+
+      - name: Lint and format-check Python
+        run: |
+          uv run ruff check evals hooks/cursor
+          uv run ruff check hooks/cursor/*.py --select D --config "lint.pydocstyle.convention='google'"
+          uv run ruff format --check evals hooks/cursor
+          uv run pylint hooks/cursor/*.py
+
+      - name: Validate skills and eval definitions
+        run: uv run python -m evals.skill_eval validate
+
+      - name: Run Python unit tests
+        run: |
+          uv run python -m unittest discover -s evals/tests -v
+          uv run python -m unittest discover -s hooks/cursor/tests -v
