@@ -30,6 +30,8 @@ Treat "clean code" as observable outcomes, not as an appeal to a particular book
 
 Small code is not automatically simple code. When domain complexity is unavoidable, isolate it, document the reason, test the behavior, and keep it from spreading into unrelated components.
 
+Clean, cohesive, predictable code is also cheaper and safer for AI agents to read and modify: it reduces the context that must be loaded, lowers navigation and inference cost, and makes targeted changes less likely to affect unrelated behavior. Optimize for clarity, locality, explicit interfaces, and discoverable structure - not token count alone. Compressed code, excessive indirection, fragmented abstractions, and redundant documentation can increase agent cost even when individual files are short.
+
 ## Priority Framework
 
 Organize feedback by impact:

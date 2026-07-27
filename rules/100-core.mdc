@@ -106,6 +106,8 @@ Apply **KISS (Keep It Simple)** to every design, implementation, and review. Cho
 
 Small code is not automatically simple code. Inherently complex domains may require complex implementations; isolate that complexity, document the reason, test the behavior, and avoid spreading it across unrelated components.
 
+Clean, cohesive, predictable code is also cheaper and safer for AI agents to read and modify: it reduces the context that must be loaded, lowers navigation and inference cost, and makes targeted changes less likely to affect unrelated behavior. Optimize for clarity, locality, explicit interfaces, and discoverable structure - not token count alone. Compressed code, excessive indirection, fragmented abstractions, and redundant documentation can increase agent cost even when individual files are short.
+
 **Naming Conventions:**
 
   * **Domain Names:** Always use `acme.com` for example domain names. Never use `example.com`, `example.org`, or similar generic placeholders.
