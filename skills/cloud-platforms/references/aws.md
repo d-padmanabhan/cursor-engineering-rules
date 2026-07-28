@@ -995,23 +995,27 @@ resource "aws_db_proxy" "main" {
 
 ### Lambda Optimization
 
+Measure representative duration, memory use, cold-start latency, concurrency, downstream saturation, and cost before changing Lambda capacity settings. Provisioned concurrency is justified only when measured cold starts violate a service objective; reserved concurrency is primarily a capacity-allocation and downstream-protection control.
+
 ```hcl
-# Provisioned concurrency for predictable workloads
+# Use only when measured cold-start latency justifies the ongoing cost
 resource "aws_lambda_provisioned_concurrency_config" "api" {
   function_name                     = aws_lambda_function.api.function_name
   qualifier                         = aws_lambda_function.api.version
   provisioned_concurrent_executions = 10
 }
 
-# Reserved concurrency to prevent overconsumption
+# Use to protect downstream systems or reserve account capacity
 resource "aws_lambda_function" "api" {
   function_name = "api-handler"
   runtime       = "python3.14"
-  handler       = "index.handler"
+  handler       = "main.lambda_handler"
 
-  reserved_concurrent_executions = 100  # Limit concurrent executions
+  reserved_concurrent_executions = 100
 }
 ```
+
+Do not add provisioned concurrency, reserved concurrency, or additional in-process caching as generic optimizations. Define the metric and service objective first, test the change under representative load, and compare the before/after cost and latency.
 
 ---
 

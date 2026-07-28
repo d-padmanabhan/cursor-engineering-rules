@@ -386,5 +386,5 @@ class User(BaseModel):
 - **Modern Python Features**: See [references/modern-python.md](references/modern-python.md) for match-case, walrus operator, dataclasses, functional patterns
 - **Async & Concurrency**: See [references/async-concurrency.md](references/async-concurrency.md) for asyncio, threading, multiprocessing
 - **Testing Patterns**: See [references/testing-patterns.md](references/testing-patterns.md) for pytest, mocking, fixtures
-- **AWS Lambda**: See [references/aws-lambda.md](references/aws-lambda.md) for boto3 patterns, Lambda best practices
-- **AWS & Boto3**: See [references/aws-boto3.md](references/aws-boto3.md) for client configuration, error handling, pagination, Lambda patterns
+- **AWS Lambda**: See [references/aws-lambda.md](references/aws-lambda.md) for handlers, dry-run safety, observability, tracing, and measured performance tuning
+- **AWS & Boto3**: See [references/aws-boto3.md](references/aws-boto3.md) for canonical client lifecycle, retry, region, error, pagination, and waiter guidance

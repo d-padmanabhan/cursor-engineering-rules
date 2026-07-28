@@ -1,184 +1,156 @@
-# AWS & Boto3 Best Practices
+# AWS and Boto3 Best Practices
 
-## Client Configuration
+This is the canonical SDK reference for Python code that calls AWS services. Lambda-specific lifecycle and observability guidance lives in [AWS Lambda](aws-lambda.md).
 
-**Global Initialization:** In Lambda, create `boto3` clients globally (outside handler) to reuse across invocations:
+## Client Lifecycle
+
+Reuse clients when calls share the same service, region, credentials, and configuration. In Lambda, create frequently used clients at module scope so warm invocations reuse their connection pools. Create a client per request only when its configuration must vary per request.
 
 ```python
 import boto3
+from botocore.client import BaseClient
 from botocore.config import Config
 
-boto_config = Config(
-    retries={"max_attempts": 5, "mode": "standard"},
-    connect_timeout=5,
-    read_timeout=30
+_BOTO_CONFIG = Config(
+    retries={
+        "mode": "standard",
+        "total_max_attempts": 5,
+    },
+    connect_timeout=3,
+    read_timeout=10,
 )
 
-s3_client = boto3.client("s3", config=boto_config, region_name="us-east-1")
+s3_client: BaseClient = boto3.client("s3", config=_BOTO_CONFIG)
 ```
 
-**Region Handling:** Retrieve from `AWS_REGION` env var, default to `us-east-1`, allow override via parameter.
+Pass clients into business functions when doing so makes dependencies and tests clearer. A client owned by a class is also valid when the class instance is reused for the intended lifetime.
 
-**Client Factory:** Create reusable factory function:
+Use `functools.cache` or a bounded cache only when clients genuinely vary by stable configuration such as region. Do not add singleton managers or unbounded dictionaries for one fixed client.
 
 ```python
-def create_boto3_client(service_name: str, region_name: str, **kwargs) -> boto3.client:
-    try:
-        config = Config(retries={"max_attempts": 5, "mode": "standard"})
-        client = boto3.client(service_name, region_name=region_name, config=config, **kwargs)
-        logger.info(f"Created boto3 client for {service_name} in {region_name}")
-        return client
-    except (BotoCoreError, ClientError) as e:
-        logger.error(f"Failed to create boto3 client: {e}")
-        raise
+from functools import cache
+
+
+@cache
+def get_ec2_client(region_name: str) -> BaseClient:
+    """Return a reusable EC2 client for a validated region."""
+    return boto3.client(
+        "ec2",
+        region_name=region_name,
+        config=_BOTO_CONFIG,
+    )
 ```
+
+## Retries and Timeouts
+
+- Prefer Botocore's `standard` retry mode for transient AWS failures.
+- Use `total_max_attempts` when configuring a `Config` object. It includes the initial request; `max_attempts` in `Config` counts only retries.
+- Size retry attempts, connection timeout, and read timeout to fit inside the caller's end-to-end deadline.
+- Do not wrap an SDK call in another retry loop unless the higher-level operation is idempotent and needs recovery beyond Botocore's request retries.
+- Treat `adaptive` mode as an intentional, tested choice. Boto3 currently documents it as experimental.
+
+See the official [Botocore Config reference](https://botocore.amazonaws.com/v1/documentation/api/latest/reference/config.html) and [Boto3 retry guide](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/retries.html).
+
+## Region Configuration
+
+Use the SDK's default region resolution when the client should operate in the workload's execution region. Lambda supplies `AWS_REGION`, and the default credential/configuration chain already uses it.
+
+Require and validate explicit configuration when a client must target a different or authoritative region. Do not silently default to `us-east-1`; a fallback can send data or mutations to the wrong region.
+
+```python
+import os
+
+
+def require_region(variable_name: str) -> str:
+    """Return a required region setting."""
+    region = os.getenv(variable_name)
+    if not region:
+        raise ValueError(f"{variable_name} environment variable is required")
+    return region
+```
+
+Use an allowlist only when the application has an actual regional policy. Keep the allowlist in configuration rather than embedding a generic list in shared helpers.
 
 ## Error Handling
 
-**Specific Exceptions:** Catch `botocore.exceptions.ClientError`, `ResourceNotFoundError`, etc.
-
-**Error Codes:** Check `e.response['Error']['Code']` for specific AWS errors.
+Catch `botocore.exceptions.ClientError` only when the caller can recover, translate the failure, or change behavior based on the AWS service error code. There is no general `botocore.exceptions.ResourceNotFoundError`; inspect `exc.response["Error"]["Code"]` or use a service-specific exception exposed through `client.exceptions`.
 
 ```python
 from botocore.exceptions import ClientError
 
-try:
-    response = s3_client.get_object(Bucket="my-bucket", Key="my-key")
-except ClientError as e:
-    error_code = e.response['Error']['Code']
-    if error_code == 'NoSuchKey':
-        logger.warning("Object not found")
-    elif error_code == 'AccessDenied':
-        logger.error("Access denied")
-    else:
+
+def describe_instance(ec2_client: BaseClient, instance_id: str) -> dict[str, object]:
+    """Return an EC2 instance description."""
+    try:
+        return ec2_client.describe_instances(InstanceIds=[instance_id])
+    except ClientError as exc:
+        error_code = exc.response.get("Error", {}).get("Code")
+        if error_code == "InvalidInstanceID.NotFound":
+            raise ValueError(f"EC2 instance {instance_id} was not found") from exc
         raise
 ```
 
-## Pagination & Waiters
+Do not catch, log, and re-raise every SDK exception; that creates duplicate logs without adding recovery. At an operational boundary, log safe identifiers and the error code, not credentials, authorization headers, secret values, request bodies, or sensitive service responses.
 
-**Paginators:** Use for large result sets:
+## Pagination
+
+Use a paginator when the operation supports one, and stream items page by page unless the complete result set is genuinely required in memory.
 
 ```python
-paginator = s3_client.get_paginator("list_objects_v2")
-for page in paginator.paginate(Bucket="my-bucket"):
-    for obj in page.get("Contents", []):
-        process(obj)
+from collections.abc import Iterator
+
+
+def iter_s3_objects(s3_client: BaseClient, bucket_name: str) -> Iterator[dict[str, object]]:
+    """Yield S3 objects without accumulating every page."""
+    paginator = s3_client.get_paginator("list_objects_v2")
+    for page in paginator.paginate(Bucket=bucket_name):
+        yield from page.get("Contents", [])
 ```
 
-**NextToken:** Handle manually if paginator unavailable.
+If no paginator exists, loop on the continuation field returned by that operation. Continuation fields are service-specific, including `NextToken`, `Marker`, `ContinuationToken`, and DynamoDB's `LastEvaluatedKey`.
 
-**Waiters:** Pause until resource is ready:
+```python
+def iter_table_items(dynamodb_client: BaseClient, table_name: str) -> Iterator[dict[str, object]]:
+    """Yield DynamoDB items using the service continuation key."""
+    exclusive_start_key: dict[str, object] | None = None
+
+    while True:
+        request: dict[str, object] = {"TableName": table_name}
+        if exclusive_start_key:
+            request["ExclusiveStartKey"] = exclusive_start_key
+
+        response = dynamodb_client.scan(**request)
+        yield from response.get("Items", [])
+
+        exclusive_start_key = response.get("LastEvaluatedKey")
+        if not exclusive_start_key:
+            return
+```
+
+## Waiters
+
+Use a waiter only when a subsequent operation requires a resource to reach a particular state. Always bound its delay and attempts to the caller's deadline.
 
 ```python
 waiter = ec2_client.get_waiter("instance_running")
-waiter.wait(InstanceIds=["i-123456"])
-```
-
-## Lambda Patterns
-
-**Global Scope Pattern (Recommended):**
-
-```python
-import boto3
-import os
-from botocore.config import Config
-
-#  CORRECT: Create clients in global scope (outside handler)
-boto_config = Config(
-    retries={"max_attempts": 10, "mode": "adaptive"},
-    connect_timeout=5,
-    read_timeout=30,
+waiter.wait(
+    InstanceIds=[instance_id],
+    WaiterConfig={
+        "Delay": 5,
+        "MaxAttempts": 12,
+    },
 )
-
-region = os.environ["AWS_REGION"]
-s3_client = boto3.client("s3", config=boto_config, region_name=region)
-dynamodb_client = boto3.client("dynamodb", config=boto_config, region_name=region)
-
-def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
-    """Lambda handler reuses clients from global scope."""
-    response = s3_client.list_buckets()
-    return {"statusCode": 200, "body": "Success"}
 ```
 
-**Anti-Patterns:**
+Do not hold a Lambda invocation open for long-running provisioning. Prefer event-driven completion, Step Functions, or another durable orchestration mechanism.
 
-```python
-#  WRONG: Creates new client on every invocation (cold start penalty)
-def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
-    s3_client = boto3.client("s3")  # Bad: Recreated every time
-    return {"statusCode": 200}
+## Review Checklist
 
-#  WRONG: Ties client lifecycle to class instance
-class S3Manager:
-    def __init__(self):
-        self.s3_client = boto3.client("s3")  # Bad
-```
-
-**Cold Start Optimization:**
-
-```python
-#  Lazy initialization for rarely-used clients
-_sns_client: Any = None
-
-def get_sns_client() -> Any:
-    """Lazy-load SNS client only when needed."""
-    global _sns_client
-    if _sns_client is None:
-        _sns_client = boto3.client("sns")
-    return _sns_client
-
-#  Always-needed clients in global scope
-s3_client = boto3.client("s3")  # Frequently used
-
-def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
-    s3_client.list_buckets()  # Always available
-
-    if event.get("notify"):
-        sns = get_sns_client()  # Loaded only if needed
-        sns.publish(TopicArn="...", Message="...")
-
-    return {"statusCode": 200}
-```
-
-**AWS Lambda Powertools (Observability):**
-
-```python
-from aws_lambda_powertools import Logger, Tracer, Metrics
-from aws_lambda_powertools.metrics import MetricUnit
-from typing import Any
-
-logger = Logger()
-tracer = Tracer()
-metrics = Metrics()
-
-@tracer.capture_lambda_handler
-@logger.inject_lambda_context(log_event=True)
-@metrics.log_metrics(capture_cold_start_metric=True)
-def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
-    """Lambda handler with full observability."""
-    logger.info("Processing request", extra={"request_id": event.get("requestId")})
-    metrics.add_metric(name="ItemsProcessed", unit=MetricUnit.Count, value=10)
-    result = process_items(event["items"])
-    return {"statusCode": 200, "body": result}
-
-@tracer.capture_method
-def process_items(items: list[str]) -> str:
-    """Process items with automatic tracing."""
-    logger.info(f"Processing {len(items)} items")
-    return "success"
-```
-
-## Region Validation
-
-```python
-ALLOWED_REGIONS = {"us-east-1", "us-west-2", "eu-west-1"}
-
-def get_aws_region() -> str:
-    """Get AWS region from environment or default."""
-    region = os.getenv("AWS_REGION", "us-east-1")
-    
-    if region not in ALLOWED_REGIONS:
-        raise ValueError(f"Region {region} not in allowed list: {ALLOWED_REGIONS}")
-    
-    return region
-```
+- [ ] Frequently used clients are reused at the appropriate lifetime
+- [ ] Client caches are necessary, keyed by bounded validated values, and not speculative
+- [ ] `standard` retries and `total_max_attempts` fit the caller's deadline
+- [ ] Cross-region clients require explicit validated configuration
+- [ ] `ClientError` handling checks service error codes and preserves exception chains
+- [ ] Logs exclude credentials, secrets, authorization data, and sensitive responses
+- [ ] Paginated results stream unless full accumulation is required
+- [ ] Waiters have bounded `Delay` and `MaxAttempts`

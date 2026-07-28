@@ -1,190 +1,162 @@
-# AWS Lambda & Boto3 Patterns
+# AWS Lambda Best Practices
 
-## Global Scope Pattern (Required)
+Apply these practices when they improve correctness, performance, security, or operability. Avoid adding abstractions that a small function does not need. SDK configuration, retries, errors, pagination, and waiters are defined in the canonical [AWS and Boto3 reference](aws-boto3.md).
 
-Create boto3 clients in global scope to reuse across invocations:
+## Structure and Handler
+
+For handbook projects, use `main.py` as the Lambda entry module and configure the handler as `main.lambda_handler`. This is a repository convention, not an AWS platform requirement.
+
+Place supporting functions before `lambda_handler` so the handler reads as the orchestration entry point. Use a descriptive context parameter when needed and prefix it when intentionally unused.
 
 ```python
-import boto3
+def process_event(event: dict[str, object]) -> dict[str, object]:
+    """Process a validated Lambda event."""
+    return {"processed": True}
+
+
+def lambda_handler(
+    event: dict[str, object],
+    context: object,
+) -> dict[str, object]:
+    """Handle a Lambda invocation."""
+    return process_event(event)
+```
+
+```python
+def lambda_handler(
+    event: dict[str, object],
+    _context: object,
+) -> dict[str, object]:
+    """Handle an invocation that does not use Lambda context."""
+    return process_event(event)
+```
+
+Use event-source-specific types or validation models when the payload contract is known. A generic `dict[str, object]` is only a baseline.
+
+## Client Initialization
+
+Reuse frequently used AWS SDK clients across warm invocations by creating them at module scope. Lazy initialization is appropriate for clients needed only on uncommon paths when eager initialization would add unnecessary cold-start work.
+
+Do not create a client on every invocation unless its configuration must vary per request. Passing clients into business functions improves testability. A client created inside a class is valid when the class instance itself is reused.
+
+Use a cached factory only when clients vary by bounded, validated configuration. Do not introduce a singleton manager for one fixed client. See [AWS and Boto3](aws-boto3.md) for the canonical client configuration.
+
+## Dry-Run Behavior
+
+Add dry-run behavior only when every side effect can be completely and reliably suppressed.
+
+- Prefer deployment configuration or a validated environment variable over an untrusted event field.
+- If an event flag is necessary, accept it only from a trusted event source and validate that it is a boolean.
+- Suppress every write, delete, notification, queue publish, and external mutation, not just the primary action.
+- Do not log complete payloads, secrets, or sensitive values while previewing actions.
+
+```python
 import os
-from botocore.config import Config
-from typing import Any
 
-# CORRECT: Create clients in global scope
-boto_config = Config(
-    retries={"max_attempts": 10, "mode": "adaptive"},
-    connect_timeout=5,
-    read_timeout=30,
-)
 
-region = os.environ.get("AWS_REGION", "us-east-1")
-s3_client = boto3.client("s3", config=boto_config, region_name=region)
-dynamodb_client = boto3.client("dynamodb", config=boto_config, region_name=region)
-
-def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
-    """Lambda handler reuses clients from global scope."""
-    response = s3_client.list_buckets()
-    return {"statusCode": 200, "body": "Success"}
+def dry_run_enabled() -> bool:
+    """Return whether deployment-configured dry-run mode is enabled."""
+    return os.getenv("DRY_RUN") == "1"
 ```
 
-## Anti-Patterns to Avoid
+## Logging and Correlation
+
+Use structured JSON logs suitable for CloudWatch Logs Insights. Configure Lambda's advanced logging controls through infrastructure as code, or use a structured logger when it provides required capabilities.
+
+Include `context.aws_request_id` and a stable upstream identifier when available. Propagate an existing correlation ID across service boundaries rather than replacing it at every hop.
 
 ```python
-# WRONG: Creates new client on every invocation
-def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
-    s3_client = boto3.client("s3")  # Bad: Cold start penalty
-    return {"statusCode": 200}
+import logging
 
-# WRONG: Client in class instance
-class S3Manager:
-    def __init__(self):
-        self.s3_client = boto3.client("s3")  # Bad: Tied to instance
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+
+def lambda_handler(
+    event: dict[str, object],
+    context: object,
+) -> dict[str, object]:
+    """Handle an EventBridge event with correlation fields."""
+    request_id = getattr(context, "aws_request_id", None)
+    event_id = event.get("id")
+    logger.info(
+        "Processing event",
+        extra={
+            "aws_request_id": request_id,
+            "event_id": event_id,
+        },
+    )
+    return process_event(event)
 ```
 
-## Lazy Initialization for Rarely-Used Clients
+Do not log complete events by default. Events can contain credentials, authorization headers, personal data, secrets, or large payloads. Redact sensitive fields and log only the identifiers needed to operate the function.
+
+AWS Lambda supports native JSON formatting for Python standard-library logs. See [Using structured JSON logs with Lambda Python](https://docs.aws.amazon.com/lambda/latest/dg/python-logging.html).
+
+## Powertools for AWS Lambda
+
+Use Powertools when it replaces meaningful custom code or provides required capabilities such as:
+
+- Structured logging and correlation
+- Event parsing and validation
+- Custom metrics
+- Idempotency
+- Batch processing or parameter retrieval
+
+Do not add Powertools solely because code runs in Lambda. If native structured logging and existing utilities already meet the requirements, another dependency may not add value.
+
+When using the Logger utility, event logging remains opt-in. Do not enable full-event logging without a reviewed data-classification and redaction decision.
 
 ```python
-_sns_client: Any = None
-
-def get_sns_client() -> Any:
-    """Lazy-load SNS client only when needed."""
-    global _sns_client
-    if _sns_client is None:
-        _sns_client = boto3.client("sns")
-    return _sns_client
-
-# Always-needed clients in global scope
-s3_client = boto3.client("s3")  # Frequently used
-
-def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
-    s3_client.list_buckets()  # Always available
-
-    if event.get("notify"):
-        sns = get_sns_client()  # Loaded only if needed
-        sns.publish(TopicArn="...", Message="...")
-
-    return {"statusCode": 200}
-```
-
-## AWS Lambda Powertools
-
-```python
-from aws_lambda_powertools import Logger, Tracer, Metrics
-from aws_lambda_powertools.metrics import MetricUnit
-from typing import Any
+from aws_lambda_powertools import Logger
 
 logger = Logger()
-tracer = Tracer()
-metrics = Metrics()
 
-@tracer.capture_lambda_handler
-@logger.inject_lambda_context(log_event=True)
-@metrics.log_metrics(capture_cold_start_metric=True)
-def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
-    """Lambda handler with full observability."""
-    logger.info("Processing request", extra={"request_id": event.get("requestId")})
-    metrics.add_metric(name="ItemsProcessed", unit=MetricUnit.Count, value=10)
-    return {"statusCode": 200, "body": "Success"}
+
+@logger.inject_lambda_context
+def lambda_handler(
+    event: dict[str, object],
+    context: object,
+) -> dict[str, object]:
+    """Handle an invocation with Lambda context fields."""
+    logger.info("Processing invocation")
+    return process_event(event)
 ```
 
-## Error Handling
+See the official [Powertools for AWS Lambda overview](https://docs.aws.amazon.com/lambda/latest/dg/powertools-for-lambda.html).
 
-```python
-from botocore.exceptions import ClientError, BotoCoreError
+## Tracing
 
-def get_object_safe(bucket: str, key: str) -> bytes | None:
-    try:
-        response = s3_client.get_object(Bucket=bucket, Key=key)
-        return response["Body"].read()
-    except ClientError as e:
-        error_code = e.response["Error"]["Code"]
-        if error_code == "NoSuchKey":
-            logger.warning(f"Key not found: {key}")
-            return None
-        elif error_code == "AccessDenied":
-            logger.error(f"Access denied to {bucket}/{key}")
-            raise
-        else:
-            raise
-```
+Treat tracing as a separate observability change with its own testing and operational review.
 
-## Pagination
+- Enable Lambda Active Tracing and configure sampling and IAM through infrastructure as code.
+- Prefer the AWS-managed OpenTelemetry Lambda layer or another reviewed OpenTelemetry setup for new application instrumentation.
+- Instrument relevant AWS SDK and outbound HTTP calls.
+- Evaluate cold-start latency, package size, telemetry cost, sampling behavior, and sensitive-data exposure.
+- Do not add new instrumentation based on the AWS X-Ray SDK. AWS placed the X-Ray SDKs and daemon into maintenance mode on February 25, 2026 and recommends migration to OpenTelemetry.
+- Keep logs, metrics, and traces complementary; none replaces the others.
 
-```python
-def list_all_objects(bucket: str) -> list[dict]:
-    """Use paginator for large result sets."""
-    paginator = s3_client.get_paginator("list_objects_v2")
-    objects = []
-    
-    for page in paginator.paginate(Bucket=bucket):
-        for obj in page.get("Contents", []):
-            objects.append(obj)
-    
-    return objects
-```
+See AWS guidance for [migrating X-Ray instrumentation to OpenTelemetry](https://docs.aws.amazon.com/xray/latest/devguide/xray-sdk-migration.html) and the [X-Ray SDK support timeline](https://docs.aws.amazon.com/xray/latest/devguide/xray-sdk-daemon-timeline.html).
 
-## Waiters
+## Performance and Memory
 
-```python
-def wait_for_instance(instance_id: str) -> None:
-    """Wait until instance is running."""
-    waiter = ec2_client.get_waiter("instance_running")
-    waiter.wait(InstanceIds=[instance_id])
-    logger.info(f"Instance {instance_id} is now running")
-```
+Measure before optimizing. Compare duration, billed duration, memory use, CPU availability, network throughput, error rate, cold-start latency, concurrency, and cost.
 
-## Region Validation
+- Reused SDK clients generally have negligible memory cost compared with application and dependency initialization.
+- Right-size memory with representative load tests or production metrics.
+- Add provisioned concurrency only when measured cold-start latency materially violates the service objective and the cost is justified.
+- Add reserved concurrency to protect downstream systems or allocate account capacity, not as a generic performance toggle.
+- Add caches or in-process concurrency only after identifying a bottleneck and defining lifecycle, correctness, and failure behavior.
+- Move long-running waits and orchestration to Step Functions or event-driven workflows.
 
-```python
-ALLOWED_REGIONS = [
-    "us-east-1", "us-west-2", "us-east-2", "ca-central-1",
-    "eu-west-1", "eu-west-2", "eu-central-1", "eu-north-1",
-    "ap-southeast-1", "ap-southeast-2"
-]
+## Review Checklist
 
-def validate_region(region: str) -> str:
-    if region not in ALLOWED_REGIONS:
-        raise ValueError(f"Invalid region: {region}. Allowed: {ALLOWED_REGIONS}")
-    return region
-```
-
-## Client Factory
-
-```python
-def create_boto3_client(
-    service_name: str,
-    region_name: str = "us-east-1",
-    **kwargs
-) -> Any:
-    """Create boto3 client with standard configuration."""
-    try:
-        config = Config(
-            retries={"max_attempts": 5, "mode": "standard"},
-            connect_timeout=5,
-            read_timeout=30
-        )
-        client = boto3.client(
-            service_name,
-            region_name=validate_region(region_name),
-            config=config,
-            **kwargs
-        )
-        logger.info(f"Created boto3 client for {service_name} in {region_name}")
-        return client
-    except (BotoCoreError, ClientError) as e:
-        logger.error(f"Failed to create boto3 client: {e}")
-        raise
-```
-
-## Lambda Best Practices Checklist
-
-- [ ] Clients in global scope (not in handler)
-- [ ] AWS Lambda Powertools for observability
-- [ ] Specific exception handling (`ClientError` codes)
-- [ ] Paginators for large result sets
-- [ ] Lazy initialization for rarely-used clients
-- [ ] Handler at end of file
-- [ ] Use `context.aws_request_id` for correlation
-- [ ] Never log credentials or session tokens
-- [ ] Dry-run mode for testing
-- [ ] Pass clients to functions as parameters
+- [ ] Handler module and configured handler path agree
+- [ ] Handler follows supporting functions and has an intentional context parameter
+- [ ] Frequently used clients are reused; rare clients are lazy only when beneficial
+- [ ] Business functions can receive clients for testing where useful
+- [ ] Dry-run mode is trusted, validated, and suppresses every side effect
+- [ ] Logs are structured, correlated, and free of complete sensitive events
+- [ ] Powertools replaces meaningful code or supplies a required capability
+- [ ] New tracing uses reviewed OpenTelemetry instrumentation
+- [ ] Memory, concurrency, and cold-start changes are supported by measurements
