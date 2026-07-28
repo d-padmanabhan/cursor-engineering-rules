@@ -49,16 +49,13 @@ jobs:
 ## Secrets Best Practices
 
 ```yaml
-# Don't echo secrets
-- run: |
-    echo "::add-mask::${{ secrets.API_KEY }}"
-    # Use without logging
-    export API_KEY="${{ secrets.API_KEY }}"
+# Pass a secret through the step environment, not script interpolation
+- name: Deploy
+  env:
+    API_KEY: ${{ secrets.API_KEY }}
+  run: |
+    set -euo pipefail
     ./deploy.sh
-
-# Use environment files
-- run: |
-    echo "API_KEY=${{ secrets.API_KEY }}" >> $GITHUB_ENV
 
 # Never in artifact
 - uses: actions/upload-artifact@v4
@@ -68,6 +65,25 @@ jobs:
       dist/
       !dist/**/*.env  # Exclude env files
 ```
+
+Prefer step-level secret scope. Do not persist secrets through `GITHUB_ENV` unless later steps genuinely need them, and never print a secret merely to mask it.
+
+## Untrusted Contexts and Inputs
+
+GitHub expressions are expanded before the shell parses a `run:` script. Shell quoting around `${{ ... }}` does not prevent command injection.
+
+```yaml
+# Unsafe: pull request titles can contain shell syntax
+- run: echo "${{ github.event.pull_request.title }}"
+
+# Safe: keep untrusted data out of the generated script
+- name: Print pull request title
+  env:
+    PR_TITLE: ${{ github.event.pull_request.title }}
+  run: printf '%s\n' "$PR_TITLE"
+```
+
+Apply the same pattern to issue bodies, commit messages, branch names, dispatch inputs, matrix values, and third-party action outputs. For constrained inputs such as environments or versions, validate against an allowlist or strict format before using them in paths, commands, or deployment decisions.
 
 ## Third-Party Actions
 
@@ -95,6 +111,35 @@ on:
 # Use pull_request not pull_request_target for PRs
 # pull_request_target has write access - dangerous for forks
 ```
+
+## Protected Deployment Environments
+
+Use a GitHub Environment for each deployment boundary, especially production. Configure required reviewers and deployment-branch restrictions in repository settings, and keep production credentials environment-scoped.
+
+```yaml
+jobs:
+  deploy:
+    environment:
+      name: production
+      url: https://app.acme.com
+    permissions:
+      contents: read
+      id-token: write
+```
+
+Environment approval is the authorization gate. Do not implement production authorization by comparing `github.actor` to a username in workflow code.
+
+## Self-Hosted Runner Trust Boundary
+
+Treat a self-hosted runner as privileged infrastructure:
+
+- Do not run untrusted fork or pull-request code on runners with internal network or credential access
+- Prefer ephemeral, single-job runners with clean state
+- Isolate runner groups by environment and restrict which workflows may target them
+- Allowlist required egress and avoid exposing broad internal networks
+- Keep the runner, base image, and preinstalled tools patched and monitored
+
+Use GitHub-hosted runners by default when the workload does not require private networking, specialized hardware, or a controlled execution environment.
 
 ## Dependency Review
 

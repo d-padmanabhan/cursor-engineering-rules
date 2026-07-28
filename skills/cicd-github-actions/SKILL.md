@@ -20,6 +20,27 @@ description: GitHub Actions best practices for CI/CD workflows. Covers security 
 - [ ] Timeout values set on all jobs
 - [ ] Caching implemented for dependencies
 - [ ] PR workflows use `pull_request`, not `pull_request_target`
+- [ ] A concise purpose comment follows the workflow `name:`
+- [ ] Untrusted contexts and inputs reach shell commands through step-level `env`
+- [ ] Production deploys use protected GitHub Environments
+- [ ] Changed workflows pass `actionlint`
+
+## Workflow Authoring Contract
+
+Put a short operational description immediately after the workflow name. Document only what an operator or reviewer needs: purpose, triggers, required credentials, external dependencies, and approval gates.
+
+```yaml
+name: Deploy Application
+
+# Deploys a tested release to the selected GitHub Environment.
+# Triggers: manual dispatch.
+# Authentication: cloud OIDC; no static cloud credentials.
+# Approval: the production environment requires reviewers.
+```
+
+Treat `${{ github.event.* }}`, `${{ inputs.* }}`, issue text, branch names, and action outputs as untrusted data. Do not interpolate them directly into a `run:` script. Assign them to step-level `env`, quote the shell variable, and validate constrained values before use. See [Security](references/security.md).
+
+For a complete starting point and local validation commands, use the [minimum viable workflow](references/minimum-viable-workflow.md).
 
 ## Minimal Permissions
 
@@ -97,17 +118,15 @@ concurrency:
 ## Secrets Handling
 
 ```yaml
-env:
-  # Reference secrets in env
-  API_KEY: ${{ secrets.API_KEY }}
-
 steps:
   - name: Use secret safely
+    env:
+      API_KEY: ${{ secrets.API_KEY }}
     run: |
-      # Mask in logs
-      echo "::add-mask::${{ secrets.API_KEY }}"
-      # Use in command
-      curl -H "Authorization: Bearer $API_KEY" https://api.acme.com
+      set -euo pipefail
+      curl --fail --silent --show-error \
+        -H "Authorization: Bearer ${API_KEY}" \
+        https://api.acme.com
 ```
 
 ## Reusable Workflows
@@ -166,7 +185,10 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Deploying ${{ needs.build.outputs.version }}"
+      - name: Report version
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: printf 'Deploying %s\n' "$VERSION"
 ```
 
 ## Action-version audit (when editing or reviewing an existing workflow)
@@ -208,6 +230,7 @@ For the rationale, the breaking-change protocol, and reasoning about supply-chai
 
 ## Detailed References
 
+- **Minimum Viable Workflow**: See [references/minimum-viable-workflow.md](references/minimum-viable-workflow.md)
 - **Workflow Patterns**: See [references/workflow-patterns.md](references/workflow-patterns.md)
 - **Security**: See [references/security.md](references/security.md)
 - **Troubleshooting**: See [references/troubleshooting.md](references/troubleshooting.md)

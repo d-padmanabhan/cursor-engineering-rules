@@ -277,8 +277,42 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy
+        env:
+          TARGET_ENVIRONMENT: ${{ inputs.environment }}
+          LOG_LEVEL: ${{ inputs.log-level }}
+          DRY_RUN: ${{ inputs.dry-run }}
         run: |
-          echo "Deploying to ${{ inputs.environment }}"
-          echo "Log level: ${{ inputs.log-level }}"
-          echo "Dry run: ${{ inputs.dry-run }}"
+          printf 'Deploying to %s\n' "$TARGET_ENVIRONMENT"
+          printf 'Log level: %s\n' "$LOG_LEVEL"
+          printf 'Dry run: %s\n' "$DRY_RUN"
 ```
+
+## Choose the Smallest Reuse Boundary
+
+- Use a **composite action** for a repeated sequence of steps that runs inside one job and does not need its own runner, permissions, or approval boundary.
+- Use a **reusable workflow** for one or more complete jobs that need explicit inputs, secrets, outputs, permissions, runners, or environments.
+- Keep logic local until it is repeated and stable. Premature shared abstractions make workflow behavior harder to inspect and change.
+
+Define inputs and secrets explicitly. Avoid `secrets: inherit` across broad trust boundaries because it obscures which credentials the called workflow receives.
+
+## Actionable Workflow Summary
+
+Add a concise summary when the run produces information a reviewer or operator needs. Prefer the built-in summary file over a PR comment unless the result must remain attached to the pull request.
+
+```yaml
+- name: Write workflow summary
+  if: always()
+  env:
+    EVENT_NAME: ${{ github.event_name }}
+    REF_NAME: ${{ github.ref_name }}
+    JOB_STATUS: ${{ job.status }}
+  run: |
+    {
+      printf '## CI result\n\n'
+      printf -- '- Event: `%s`\n' "$EVENT_NAME"
+      printf -- '- Ref: `%s`\n' "$REF_NAME"
+      printf -- '- Status: `%s`\n' "$JOB_STATUS"
+    } >> "$GITHUB_STEP_SUMMARY"
+```
+
+Keep summaries free of secrets and sensitive raw logs. Link to retained artifacts for detailed output.

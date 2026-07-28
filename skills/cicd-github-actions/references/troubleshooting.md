@@ -31,15 +31,29 @@ permissions:
 # Secrets not available in:
 # - fork PRs (security)
 # - workflow_dispatch from forks
-# - scheduled runs without proper context
 
-# Solution: Use environment secrets
+# Use environment-scoped secrets for deployments
 jobs:
   deploy:
     environment: production
     steps:
-      - run: echo ${{ secrets.PROD_KEY }}
+      - name: Deploy
+        env:
+          PROD_KEY: ${{ secrets.PROD_KEY }}
+        run: ./deploy.sh
 ```
+
+### Workflow Does Not Trigger
+
+Check these in order:
+
+1. The workflow file exists on the default branch for `workflow_dispatch` and scheduled events.
+2. The event, branch, tag, and path filters all match. `paths` and `paths-ignore` cannot be used together for the same event.
+3. The changed files are not excluded by the workflow's path filters.
+4. The repository or organization has not disabled Actions or restricted the referenced actions.
+5. A previous run was not skipped by commit-message filtering or cancelled by concurrency.
+
+Use the Actions UI or `gh workflow view <workflow> --yaml` to inspect the workflow GitHub is actually evaluating.
 
 ## Debugging
 
@@ -58,26 +72,23 @@ ACTIONS_RUNNER_DEBUG: true
 
 ### Print Context
 
+Print only the fields needed for diagnosis. Do not dump the complete `github` context because it includes sensitive values such as `github.token`.
+
 ```yaml
-- name: Dump context
+- name: Print diagnostic context
+  env:
+    EVENT_NAME: ${{ github.event_name }}
+    REF_NAME: ${{ github.ref_name }}
+    COMMIT_SHA: ${{ github.sha }}
+    ACTOR: ${{ github.actor }}
   run: |
-    echo "Event: ${{ github.event_name }}"
-    echo "Ref: ${{ github.ref }}"
-    echo "SHA: ${{ github.sha }}"
-    echo "Actor: ${{ github.actor }}"
-    echo "::group::GitHub Context"
-    echo '${{ toJSON(github) }}'
-    echo "::endgroup::"
+    printf 'Event: %s\n' "$EVENT_NAME"
+    printf 'Ref: %s\n' "$REF_NAME"
+    printf 'SHA: %s\n' "$COMMIT_SHA"
+    printf 'Actor: %s\n' "$ACTOR"
 ```
 
-### SSH Debug Session
-
-```yaml
-- name: Setup tmate session
-  if: failure()
-  uses: mxschmitt/action-tmate@v3
-  timeout-minutes: 15
-```
+Interactive debug shells expand the runner's exposure and may reveal credentials or private network access. Use them only through an explicitly approved, time-bounded workflow on trusted branches and never for untrusted pull requests.
 
 ## Performance
 
