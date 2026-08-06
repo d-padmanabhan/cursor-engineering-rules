@@ -45,7 +45,7 @@
     {
       "id": 2,
       "prompt": "Using the attached Terraform peer rules, draft a managed-rule exception for ticket CHG-2048. The legitimate browser upload is POST https://uploads.acme.com/api/v1/documents/ and Security Events show only child rules 6179ae15870a4bb7b2d480d4843b323c and 5de7edfa648c4d6891dc3e7f84534ffa. Scope it to multipart uploads with a filename marker and preserve the execute rule.",
-      "expected_output": "Draft a narrow http_request_firewall_managed skip rule before the execute rule, skip only the two observed child IDs, guard exact host/path/method/content type/body marker, and include provenance plus validation and soak guidance.",
+      "expected_output": "Draft a narrow http_request_firewall_managed skip rule before the execute rule, skip only the two observed child IDs, guard exact host/path/method/content type/body marker, and use concise direct CHG-2048 provenance without guard-by-guard, approval-rollup, or peer-shape boilerplate.",
       "files": [
         "evals/fixtures/current-managed-rules.tf"
       ],
@@ -93,6 +93,16 @@
           "id": "does-not-skip-whole-ruleset",
           "type": "not_regex",
           "pattern": "(?:\"ruleset\"\\s*:\\s*\"current\"|ruleset\\s*=\\s*\"current\"|\"rulesets\"\\s*:|rulesets\\s*=)"
+        },
+        {
+          "id": "keeps-direct-ticket-provenance",
+          "type": "contains",
+          "value": "CHG-2048"
+        },
+        {
+          "id": "rejects-comment-slop",
+          "type": "not_regex",
+          "pattern": "(?i)(why each guard|approval:|same shape as|peer rule:)"
         }
       ]
     },

@@ -1,13 +1,14 @@
 # Templates: Terraform (`cloudflare_ruleset`)
 
-Drop-in HCL templates for both rule types. Pair with `405-cloudflare-waf-rules.mdc` § "Provenance + rationale (mandatory)" and the cumulative anti-patterns list.
+Drop-in HCL templates for both rule types. Pair with `405-cloudflare-waf-rules.mdc` § "Provenance without comment slop" and the cumulative anti-patterns list.
 
 **Conventions:**
 
 - `$trusted_egress_ips` is a placeholder for your zone's named [IP List](https://developers.cloudflare.com/waf/tools/lists/). Replace with the actual list name configured in your account.
-- `<your-app>`, `<host>`, `<endpoint>`, `<ticket-id>`, `<peer-rule-name>` are placeholders - replace before applying.
+- `<your-app>`, `<host>`, `<endpoint>`, and `<ticket-id>` are placeholders - replace before applying.
 - All multi-value headers use the `any(... [*] ...)` form. Bare `eq` against a header is wrong.
 - Country codes pasted from the [Cloudflare country code reference](https://developers.cloudflare.com/network/country-codes/), never typed.
+- Remove all template-only comments after filling the rule.
 
 ---
 
@@ -16,30 +17,23 @@ Drop-in HCL templates for both rule types. Pair with `405-cloudflare-waf-rules.m
 The most common case is an allow + block pair. Draft both rules and confirm the **allow is positioned ABOVE the block** in the file (Cloudflare evaluates top-down; first match wins).
 
 ```hcl
-// <ticket-id> - <Short purpose statement>. <Peer-rule cross-reference: e.g., "Same shape as <peer-rule-name>">.
-//
-// Why each guard:
-//   - <country / geo predicate>: <one-sentence justification>
-//   - <trusted-IPs escape hatch>: required so internal users (including travelers) are not blocked
-//   - <path scope>: <eq vs starts_with-with-slash vs alternation>
-//
-// Soak plan: log mode for <N hours>, validated via Security Events filter (action=block, host=<host>), then promoted.
-// Approval: <requester>, <YYYY-MM-DD>. Review by: <YYYY-MM-DD or "permanent + justification">.
+# <YYYY-MM-DD> / <ticket-id> - <host or rule purpose> added to <allowed or blocked scope>.
+# <Optional: unusual source scope, accepted risk, known gap, or expiry.>
 
 # Allow trusted IPs + sanctioned regions (skip-as-allow). Positioned ABOVE the block rule.
 {
-  action      = "skip"   # skip-as-allow: bypasses the downstream block rule
-  description = "<your-app>-allow-<region-or-purpose>"   # purpose-based; ticket lives in the // comment, not here
+  action      = "skip"
+  description = "<your-app>-allow-<region-or-purpose>"
   enabled     = true
   expression  = <<-EOT
     http.host eq "<host>"
     and (ip.geoip.country in {"US" "CA" "GB"} or ip.src in $trusted_egress_ips)
   EOT
   logging = {
-    enabled = true   # log every match - cheap, helps with debugging allow-rule scope
+    enabled = true
   }
   action_parameters = {
-    ruleset = "current"   # skip the rest of THIS ruleset for matched traffic
+    ruleset = "current"
   }
 },
 
@@ -52,7 +46,7 @@ The most common case is an allow + block pair. Draft both rules and confirm the 
     http.host eq "<host>"
   EOT
   logging = {
-    enabled = true   # required for block-class rules so blocked traffic is visible in Security Events
+    enabled = true
   }
 },
 ```
@@ -65,17 +59,11 @@ The most common case is an allow + block pair. Draft both rules and confirm the 
 ## Managed-Rule Exception (phase `http_request_firewall_managed`, action `skip`)
 
 ```hcl
-// <ticket-id> - <Short purpose statement>. Same shape as <peer-rule-name>.
-//
-// Why each guard:
-//   - <origin / trusted-IPs / etc>: <one-sentence justification>
-//   - <path predicate choice>: <eq vs starts_with-with-slash vs alternation, with reason>
-//   - <OWASP child-rule list lineage>: e.g., "shared baseline from <peer-rule-name>; added <id> for this incident because <reason>"
-//
-// Approval: <requester>, <YYYY-MM-DD>. Review by: <YYYY-MM-DD>.
+# <YYYY-MM-DD> / <ticket-id> - <host and endpoint> added to the managed-rule exception.
+# <Optional: Ray ID, child-rule lineage/addition, unusual source scope, known gap, or expiry.>
 {
   action      = "skip"
-  description = "<your-app>-<endpoint>-skip"   # purpose-based; do NOT prefix with the ticket
+  description = "<your-app>-<endpoint>-skip"
   enabled     = true
   expression  = <<-EOT
     <host predicate>             # http.host eq "..." | http.host in {"..." "..."}
@@ -86,16 +74,11 @@ The most common case is an allow + block pair. Draft both rules and confirm the 
     and <origin guard>            # any(http.request.headers["origin"][*] eq "https://<browser-host>")  (browser flow only)
     and <source guard>            # ip.src in $trusted_egress_ips  (and/or ip.geoip.continent in {...})
   EOT
-  # No logging block needed: skip rules are recorded automatically in WAF events when they fire.
   action_parameters = {
     rules = {
       (local.waf_ruleset_ids.cloudflare_owasp_core_ruleset_id) = [
-        # Source the rule IDs from Security Events on YOUR zone, not from training data.
-        # Filter: action=block, host=<host>, path=<path>, last 7 days. Note the rule IDs that fired.
-        # Skip ONLY those IDs. Skipping the whole ruleset bypasses everything else too.
         "<owasp-rule-id-1>",
         "<owasp-rule-id-2>",
-        # ... add only the IDs you confirmed are firing on legitimate traffic
       ]
     }
   }

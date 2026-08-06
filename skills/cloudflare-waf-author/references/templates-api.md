@@ -178,26 +178,21 @@ rules/
 └── <your-app>-<endpoint>-skip.md      # the provenance
 ```
 
-The `.md` shape (mirrors the Terraform `//` comment block):
+Keep the sibling record concise:
 
 ```markdown
 # <your-app>-<endpoint>-skip
 
 - **Ticket:** <ticket-id>
-- **Zone:** <zone-name> (<zone-id>)
-- **Ruleset:** <ruleset-name> (<ruleset-id>)
-- **Phase:** http_request_firewall_managed
-- **Peer rule:** <peer-rule-name-or-id>
-- **Host / path / method:** <host> / <path> / POST
-- **Action:** skip
-- **OWASP child-rule IDs skipped:** <id-1>, <id-2>  (sourced from Security Events on <YYYY-MM-DD>)
-- **Why each guard:**
-  - `<guard>`: <one-sentence justification>
+- **Rule:** <zone-name> (<zone-id>) / <phase> / <ruleset-id>
+- **Scope:** <host> / <path> / <method> / <source>
+- **Action:** skip <id-1>, <id-2>
+- **Evidence:** <Security Events date/filter and Ray ID when available>
+- **Non-obvious decision:** <only when a risk, exception, or unusual scope needs explanation>
 - **Soak plan:** Log mode for <N> hours via a parallel `action: "log"` rule with the same expression; promoted to `skip` after validation.
-- **Approval:** <requester>, <YYYY-MM-DD>
-- **Review by:** <YYYY-MM-DD>
 - **API call:** `PUT /zones/<zone-id>/rulesets/<ruleset-id>` on <YYYY-MM-DDTHH:MM:SSZ>
 - **Run-log entry:** see `waf-changes.log` line <N>
+- **Expiry/review:** <temporary rules only>
 ```
 
 PR review of the JSON + `.md` together enforces the provenance discipline.

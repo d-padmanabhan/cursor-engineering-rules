@@ -99,7 +99,7 @@ Open the docs for the chosen rule type and skim before writing any expression. D
 | API | [Rulesets API reference](https://developers.cloudflare.com/api/operations/listAccountRulesets) plus the [expression test endpoint](https://developers.cloudflare.com/ruleset-engine/rulesets-api/test/). |
 
 > [!IMPORTANT]
-> Quote the relevant URL or sentence in your provenance artifact (Terraform comment, Dashboard runbook entry, or API sibling `.md`). "I read the docs" without a citation is not a citation.
+> Cite relevant documentation in the PR, change ticket, Dashboard runbook, or API sibling `.md`. Do not paste generic documentation URLs into every Terraform rule comment.
 
 ---
 
@@ -168,23 +168,23 @@ Common patterns across all six combinations (interface × rule type):
 
 ---
 
-### Step 5 - Write the provenance artifact + verify four-source consistency
+### Step 5 - Record concise provenance + verify consistency
 
-The provenance artifact is **mandatory** and its shape is interface-specific. From `405-cloudflare-waf-rules.mdc` § "Provenance + rationale (mandatory)":
+Provenance is mandatory, but it must not duplicate the rule expression or the change ticket:
 
 | Interface | Carrier |
 |---|---|
-| Terraform | Inline HCL `//` comment block immediately above the rule resource (see templates). |
+| Terraform | One direct HCL `#` line above the rule; add up to two lines only for non-obvious security or lifecycle context. Detailed evidence stays in the PR/ticket. |
 | Dashboard | (1) Rule `description` (purpose-based, optionally ticket-suffixed) **plus** (2) an out-of-band runbook entry (Confluence / ServiceNow / repo doc). Both are required - Audit Logs cover who / what / when but never *why*. |
 | API | Repo-resident sibling `.md` file alongside the JSON payload. The `description` field carries the purpose. |
 
-The artifact MUST include: ticket, host, path, method, traffic shape, peer-rule cross-reference (rule name or ID), per-guard justification, OWASP child-rule list lineage (for skip rules), approver, date, review-by date.
+For Terraform, retain date/ticket and purpose/scope. Add a Ray ID, child-rule lineage, unusual source scope, known gap, or expiry only when relevant. Never generate `Why each guard`, `Approval:`, or “same shape as” boilerplate. Dashboard/API records may be structured but should still omit fields that add no rule-specific value.
 
 Then verify all four sources of truth agree:
 
 - **Title** of the PR / change ticket / API call summary describes the predicate intent ("narrow", "broaden", "scope to trusted IPs", "block country X").
 - **Body** uses the same vocabulary.
-- **Provenance artifact** describes the actual code shape (not the intended shape).
+- **Provenance record** identifies the change and any non-obvious security decision without restating the expression.
 - **Saved rule expression** matches all three.
 
 A drift between any two of these is the most common cause of "the change shipped but did the wrong thing" incidents.
@@ -197,9 +197,9 @@ Run through the per-interface reviewer checklist from `405-cloudflare-waf-rules.
 
 ### Always (both rule types, all interfaces)
 
-- [ ] Cited at least one Cloudflare doc URL in the provenance artifact
-- [ ] Identified peer rule in the same zone (rule name or ID)
-- [ ] `description` field is purpose-based (Terraform: ticket-free, ticket lives in `//` comment; Dashboard / API: ticket-suffixed if your zone's convention is option (a) from the naming table)
+- [ ] Cited relevant Cloudflare documentation in the PR, ticket, runbook, or API sibling file
+- [ ] Checked the closest peer rule; cite it only when lineage or divergence matters
+- [ ] `description` field is purpose-based (Terraform: ticket-free, ticket lives in concise `#` provenance; Dashboard / API: ticket-suffixed if required by zone convention)
 - [ ] Path predicate matches one of the four sanctioned shapes
 - [ ] Multi-value headers use `any(... [*] ...)` form (not bare `eq`)
 - [ ] No hardcoded IPs - a named IP List is referenced
@@ -208,7 +208,7 @@ Run through the per-interface reviewer checklist from `405-cloudflare-waf-rules.
 
 ### Custom rules only
 
-- [ ] Action choice (`block` / `managed_challenge` / `log` / skip-as-allow) is documented in the provenance artifact
+- [ ] Any non-obvious action or accepted risk is documented in the appropriate change record
 - [ ] Allow-as-skip rules positioned ABOVE corresponding block rules
 - [ ] Geo blocks include trusted-IPs escape hatch (unless OFAC compliance block)
 - [ ] No `js_challenge` on `/api/*` paths

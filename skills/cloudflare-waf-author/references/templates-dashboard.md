@@ -1,6 +1,6 @@
 # Templates: Cloudflare Dashboard (UI authoring)
 
-Step-by-step UI workflow for both rule types. Pair with `405-cloudflare-waf-rules.mdc` § "Provenance + rationale (mandatory)" - the Dashboard sub-section.
+Step-by-step UI workflow for both rule types. Pair with `405-cloudflare-waf-rules.mdc` § "Provenance without comment slop" - the Dashboard sub-section.
 
 **Why Dashboard authoring needs extra care:**
 
@@ -95,18 +95,14 @@ In your team's runbook (Confluence / ServiceNow / `waf-rules-log.md` in your gov
 ## <YYYY-MM-DD> - <your-app>-<purpose>
 
 - **Ticket:** <ticket-id>
-- **Zone:** <zone-name>
-- **Phase:** http_request_firewall_custom
-- **Rule name (description in Dashboard):** <your-app>-<purpose>
-- **Peer rule:** <peer-rule-name-or-id> (the closest existing rule you mirrored)
-- **Host / path / method:** <host> / <path-pattern> / <method>
-- **Action:** <Log | Block | Skip | Managed Challenge>
-- **Why each guard:**
-  - <guard>: <one-sentence justification>
+- **Rule:** <zone> / <phase> / <rule-name>
+- **Scope:** <host> / <path-pattern> / <method> / <source>
+- **Action:** <Log | Block | Skip | Managed Challenge>; <child-rule IDs when applicable>
+- **Evidence:** <Security Events filter, Ray ID, or observed child-rule IDs>
+- **Non-obvious decision:** <only when a risk, exception, or unusual scope needs explanation>
 - **Soak plan:** Log mode for <N> hours; validated via Security Events filter (action=<original-action>, host=<host>).
-- **Approval:** <requester>, <YYYY-MM-DD>
-- **Review by:** <YYYY-MM-DD>
 - **Audit Log entry ID:** <copy from Audit Log>
+- **Expiry/review:** <temporary rules only>
 ```
 
 ---
@@ -186,7 +182,7 @@ The exception must appear BEFORE the managed-rule execution it bypasses. In the 
 
 - Save the exception.
 - Watch Security Events for 24h. Filter on the original blocked rule IDs - they should now show `action=skip` for the matching traffic and continue to show `action=block` for any other traffic (proving the exception is correctly scoped).
-- Add the runbook entry (same shape as the custom-rule example above, with the additional fields: **OWASP child-rule IDs skipped** and **Security Events evidence** linking to the filter view).
+- Add the concise runbook entry above, including skipped child-rule IDs and Security Events evidence.
 
 ---
 

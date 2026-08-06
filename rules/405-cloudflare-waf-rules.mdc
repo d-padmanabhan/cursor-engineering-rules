@@ -36,7 +36,7 @@ The rule covers both phases:
 **Why this rule exists:** A loose predicate, a missing guard, or a name that hides intent ships the same risk regardless of authoring path - blocking legitimate traffic (custom rule bug) or silently bypassing managed signatures (skip rule bug). The substance (predicates, guards, naming, anti-patterns) is interface-independent; only the *delivery mechanics* differ (HCL vs UI vs JSON) and the *change-management mechanics* differ (Git PR vs change ticket + audit log vs API call + recorded runbook entry). This rule encodes the patterns observed in past WAF PR reviews that have shipped clean, and the failure modes that have shown up repeatedly.
 
 > [!IMPORTANT]
-> The pre-edit gate, path predicate matrix, multi-value header syntax requirements, four-sources-of-truth rule, naming convention, required guards, and most anti-patterns apply **regardless of interface**. The "Provenance + rationale" and "Reviewer checklist" sections call out per-interface differences explicitly.
+> The pre-edit gate, path predicate matrix, multi-value header syntax requirements, source-of-truth rule, naming convention, required guards, and most anti-patterns apply **regardless of interface**. The provenance and reviewer sections call out per-interface differences explicitly.
 
 ## Source-of-truth discipline (NON-NEGOTIABLE)
 
@@ -67,7 +67,7 @@ Document the choice in the zone's README / runbook so the next on-call doesn't a
    - Note any change to the API or Terraform provider since the rules in this file were last touched (use the [WAF changelog](https://developers.cloudflare.com/waf/change-log/) and [Cloudflare Terraform changelog](https://github.com/cloudflare/terraform-provider-cloudflare/blob/master/CHANGELOG.md)).
    - If the workspace has the `user-cloudflare-docs` MCP server configured, prefer that for fresh fetches over training-data memory.
 
-2. **Survey the peer rules in the same zone.** The closest existing rule to your use case is your reference shape. Mirror it line-for-line; do not invent a new pattern unless the case genuinely demands it (and document why in your provenance artifact). Use the carrier appropriate to your interface: in Terraform, scan the rules in the same `.tf` file; in Dashboard, scan the rules listed for the phase + zone in the UI; in API, `GET` the current ruleset JSON and grep it.
+2. **Survey the peer rules in the same zone.** Use the closest valid rule as an implementation reference. Do not copy legacy weaknesses, and cite the peer only when list lineage or an intentional divergence would otherwise be unclear.
 
    ### Canonical shapes for managed-rule exceptions (skip rules)
 
@@ -104,7 +104,7 @@ If any of the above is missing, **stop and ask** before drafting the rule. Do no
 
 ## Path predicate decision matrix
 
-This is the most-litigated decision in WAF reviews. Use this matrix; document the choice in the inline comment.
+Use this matrix. Record the choice in the PR or ticket; add an inline comment only when the predicate is intentionally broader than it appears.
 
 | Choice | Use when | Bypass surface | Notes |
 |---|---|---|---|
@@ -171,7 +171,9 @@ Every skip rule MUST include the guards in its row, plus the standard host + met
 | **Attack-score gate (Enterprise plan)** | host + path scope + `cf.waf.score le N` (per `400-cloudflare.mdc` § "WAF Attack Score (Plan-Aware)"). Never gate globally on raw score; always combine with host / path / method. |
 | **Bot / ASN block** | `ip.geoip.asnum in {<list>}` OR `cf.client.bot` predicate. Document the ASN owner and the incident that justified the block. |
 
-### Why each guard exists (cite this in your inline comment)
+### Guard rationale reference
+
+Use this section during design and review. Do not copy these explanations into every rule comment; the expression already shows ordinary guards.
 
 - **`lower(...)` + `any(...)` content-type normalization** - request `content-type` is a multi-value header (`headers["content-type"][*]`). `any(...)[*] contains "multipart/form-data"` matches any value, lowercased, which handles `Multipart/Form-Data`, `multipart/form-data; boundary=...`, etc. This is the canonical form. Inventing a single-value `eq` check is wrong.
 - **`filename=` body marker** - narrows the skip to actual file uploads, rejects POSTs with multipart content-type but no file part. Cheap, unambiguous, defends against tooling that mis-sets content-type.
@@ -196,36 +198,27 @@ The `description` is what the rule *does*. It shows up in the Cloudflare Dashboa
 
 If the rule was raised against multiple tickets, list them in the provenance artifact for the interface you're using (Terraform comment, Dashboard runbook, or API JSON metadata), not the `description`.
 
-## Provenance + rationale (mandatory)
+## Provenance without comment slop
 
-Every WAF rule needs a durable record of *why it exists*, *who approved it*, *when to revisit*, and *which peer rule it mirrors*. The format is interface-specific because the available carriers differ.
+Every WAF rule needs durable provenance, but Terraform comments are not a second change ticket. Keep evidence in the system designed for it: PR/change ticket for Terraform, runbook for Dashboard, and sibling Markdown for API payloads.
 
 ### Terraform
 
-Inline comment block immediately above the rule resource, in HCL `#` syntax:
+Default to one direct line; use at most three when a non-obvious security decision needs to survive outside the ticket:
 
 ```hcl
-# <ticket id> - <host> `<path>` <method> <traffic shape>. <Peer-rule cross-reference: e.g. "Same shape as <peer-rule-name>">.
-#
-# Why each guard:
-#   - <origin / trusted-IPs / etc>: <one-sentence justification>
-#   - <path predicate choice>: <eq vs starts_with vs alternation, with reason>
-#   - <OWASP child-rule list lineage>: <e.g. "shared baseline from <peer-rule-name>">
-#
-# Approval: <requester / change ticket>, <date>. Review by: <YYYY-MM-DD or "permanent + justification">.
+# <YYYY-MM-DD> / <ticket> - <host or rule purpose> added to <scope or exception>.
+# <Optional: Ray ID, child-rule lineage, unusual source scope, known gap, or expiry/review trigger.>
 ```
+
+Do not add `Why each guard` blocks, `Approval:` rollups, “same shape as” narration, documentation URLs, or prose that restates the expression. Ordinary host/method/path/source guards are self-documenting. Name an approver only when the approval is not recoverable from the ticket or represents an exceptional security acceptance.
 
 ### Cloudflare Dashboard
 
-The UI has no inline-comment field, so the provenance has to live in **two** places (both required):
+The UI has no inline-comment field, so provenance lives in:
 
 1. **Rule `description`** - purpose-based name, optionally suffixed with the ticket ID per the naming-tradeoff row above.
-2. **Out-of-band runbook entry** (Confluence / ServiceNow / repo doc / a `waf-rules-log.md` in the governance repo) with the same fields as the Terraform comment block:
-   - ticket, host, path, method, traffic shape
-   - peer-rule cross-reference (rule name or ID in the same zone)
-   - per-guard justification
-   - OWASP child-rule list lineage (for skip rules)
-   - approver, date, review-by date
+2. **Out-of-band runbook entry** with ticket/date, rule name and phase, exact scope/action, Security Events evidence or child-rule IDs, any non-obvious risk acceptance, and Audit Log ID. Add owner/review date only for temporary rules.
 
 The Dashboard's **Audit Logs** capture *who changed what when*, but not *why* - the runbook fills that gap. If your team can't commit to maintaining the runbook, switch to Terraform or API authoring; this is not optional.
 
@@ -233,13 +226,13 @@ The Dashboard's **Audit Logs** capture *who changed what when*, but not *why* - 
 
 JSON payloads don't carry comments either. Two options - pick one and document it:
 
-1. **Repo-resident JSON** (recommended): commit the JSON payload to a Git repo, with a sibling `.md` file alongside each rule (e.g., `rules/<your-app>-<endpoint>-skip.json` + `rules/<your-app>-<endpoint>-skip.md`). The `.md` is the provenance block (same fields as Terraform). The PR review enforces it.
+1. **Repo-resident JSON** (recommended): commit the JSON payload with a concise sibling `.md` containing ticket/date, exact scope/action, observed child-rule IDs, non-obvious decisions, and mutation/run-log evidence.
 2. **Inline JSON metadata** (lossy): add an unofficial `_metadata` key to your local JSON before stripping it at apply-time. Cloudflare's API ignores unknown top-level fields *today*, but this is undocumented behavior - do not rely on it for production rules.
 
 Either way, the `description` field carries the purpose-based name (and optionally the ticket suffix).
 
 > [!IMPORTANT]
-> A future on-call must be able to read the provenance and answer "should this rule still exist?" without opening a ticket system, regardless of which interface authored it.
+> A future on-call must be able to identify the ticket and any non-obvious risk or lifecycle constraint without reading a wall of comments.
 
 ---
 
@@ -255,7 +248,7 @@ These have all shown up in past WAF PRs (observed in the wild). If you see one, 
 4. **Plain `http.request.headers["X"] eq "..."`** - wrong syntax for a multi-value header field. Use `any(http.request.headers["X"][*] eq "...")`.
 5. **Single-value content-type check** - `http.request.headers["content-type"] eq "multipart/form-data"` is wrong syntax and wrong semantics (header is multi-value, may include `; boundary=...`). Use `any(lower(http.request.headers["content-type"][*])[*] contains "multipart/form-data")`.
 6. **Outer parens wrapping a top-level `and` chain** - `(a and b and c)`. The parens are a no-op; remove them for readability.
-7. **Missing provenance** - every WAF rule (custom or skip) is a policy commitment. Whether the provenance carrier is an HCL `#` comment (Terraform), a runbook entry (Dashboard), or a sibling `.md` (API), the rule does not merge / save / `PUT` without it.
+7. **Missing or bloated provenance** - retain the ticket and non-obvious security context, but reject comment walls that restate predicates, explain obvious guards, repeat approvals, cite peer shape without meaningful lineage, or embed generic documentation links.
 8. **No `log`-mode soak before enforce** - new block / skip rules should be staged in `action = "log"` (or Dashboard "Log" action / API `"action": "log"`) for at least 24h to validate the predicate hits the intended traffic shape, then promoted to `block` / `skip`.
 
 ### Managed-Rule Exceptions only
@@ -276,7 +269,7 @@ These have all shown up in past WAF PRs (observed in the wild). If you see one, 
 
 ### Terraform-specific (only when authoring HCL)
 
-16. **Description prefixed with the ticket ID** - the `description` field is for what the rule *does*; put the ticket in the inline `//` comment block. (Existing rules with ticket-prefixed names should be kept as-is - the Dashboard / log history references them.)
+16. **Description prefixed with the ticket ID** - the `description` field is for what the rule *does*; put the ticket in the concise inline `#` provenance. (Existing rules with ticket-prefixed names should be kept as-is - the Dashboard / log history references them.)
 17. **Outer parens wrapping a top-level `and` chain** in HCL - already in Shared #6, but worth restating since HCL is forgiving.
 18. **Heredoc body indented inconsistently with the neighboring rule** - `<<-EOT` strips the shortest leading-whitespace prefix, so semantically a no-op, but it makes diffs noisy. Match the surrounding rule's indent.
 19. **File mode flipped to `100755`** on a `.tf` file - trips `check-executables-have-shebangs` pre-commit. Restore to `100644`.
@@ -307,15 +300,15 @@ These have all shown up in past WAF PRs (observed in the wild). If you see one, 
 
 - [ ] Cloudflare docs have been re-read for this change (WAF custom rules / WAF exceptions / ruleset-engine fields, plus OWASP CRS reference if it's a managed-rule skip)
 - [ ] `description` field is purpose-based, not ticket-prefixed (Terraform) or includes the ticket suffix per the per-zone convention (Dashboard / API)
-- [ ] Peer rule in the same zone has been identified (cross-referenced in the provenance artifact)
-- [ ] Path predicate choice (`eq` vs `starts_with` with-trailing-slash vs alternation) matches requester intent and is documented
+- [ ] Peer rule in the same zone has been checked; it is cited only when lineage or divergence matters
+- [ ] Path predicate choice (`eq` vs `starts_with` with-trailing-slash vs alternation) matches requester intent
 - [ ] All four sources of truth agree (PR / ticket title, PR / ticket body, provenance artifact, saved rule / code / JSON)
 - [ ] Multi-value headers use `any(... [*] ...)` form (not bare `eq`)
 - [ ] Content-type guard (where used) uses `any(lower(...)[*] contains ...)` form
 - [ ] No hardcoded IPs - `$trusted_egress_ips` / a named IP List referenced
 - [ ] No outer parens wrapping the top-level `and` chain
-- [ ] Action choice is documented in the provenance artifact (why `block` vs `managed_challenge` vs `skip`)
-- [ ] Provenance artifact present and complete (ticket, peer cross-reference, per-guard rationale, approval source, review-by date)
+- [ ] Non-obvious action or risk decisions are documented in the PR, ticket, or runbook
+- [ ] Provenance is present and concise: ticket/date plus only non-obvious risk, evidence, or lifecycle context
 - [ ] New block- / skip-class rules went through a `log`-mode soak (linked in PR / ticket) before being promoted
 - [ ] Source-of-truth discipline respected: change made via the zone's documented authoring path
 
@@ -335,7 +328,7 @@ These have all shown up in past WAF PRs (observed in the wild). If you see one, 
 
 ### Terraform-only (skip if not using Terraform)
 
-- [ ] Inline `//` comment block present (ticket, peer cross-reference, per-guard rationale, approval source)
+- [ ] Concise inline `#` provenance present; no guard-by-guard or approval-rollup boilerplate
 - [ ] Heredoc indentation matches neighboring rules in the same file
 - [ ] File mode is `100644` (no accidental `100755`)
 - [ ] `terraform fmt` is clean
@@ -343,7 +336,7 @@ These have all shown up in past WAF PRs (observed in the wild). If you see one, 
 
 ### Dashboard-only (skip if not authoring via UI)
 
-- [ ] Runbook entry created (or updated) with the same fields as the Terraform comment block; linked in the change ticket
+- [ ] Concise runbook entry created or updated with scope, evidence, and Audit Log ID
 - [ ] Change made by cloning the existing rule (if modifying), not editing it in place
 - [ ] Save batched as a single logical change per Audit Log entry (no bulk reorders combined with semantic edits)
 - [ ] Staging-zone dry-run completed (save in log mode in staging zone, observe 24h) before authoring in production zone
