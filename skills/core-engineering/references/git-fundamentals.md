@@ -68,6 +68,18 @@ Now every `git fetch` and `git pull` automatically removes stale remote-tracking
 
 ## Robust Feature Branch Workflow
 
+> [!IMPORTANT]
+> Before creating any feature branch, fetch the remote and prove the selected base is current. Branch creation from a stale base is blocked. If the current worktree contains user changes, do not switch branches or stash those changes; create an isolated worktree from `origin/main`.
+
+Required pre-branch proof:
+
+```bash
+git fetch origin --prune
+test "$(git rev-parse main)" = "$(git rev-parse origin/main)"
+```
+
+If the proof fails, update local `main` with the clean-worktree workflow below or branch directly from the refreshed `origin/main`.
+
 When creating a feature branch from an updated `main`, use this explicit pattern:
 
 ```bash
@@ -93,12 +105,18 @@ git switch -c feat/your-feature-name
 | `git pull --ff-only` | Prevents accidental merge bubbles |
 | `git switch -c` | Creates branch from now-updated main |
 
-## Quick Alternative (With Caveats)
+## Direct Remote-Base Alternatives
 
-Skip your local `main` entirely by branching directly from `origin/main`:
+Skip your local `main` by branching directly from the refreshed `origin/main`.
+
+### Clean Worktree
+
+Use `git switch -c` only after proving the current worktree is clean:
 
 ```bash
-git fetch origin --prune && git switch -c feat/your-feature origin/main
+git fetch origin --prune
+test -z "$(git status --porcelain)"
+git switch -c feat/your-feature origin/main
 ```
 
 **Advantages:**
@@ -107,7 +125,21 @@ git fetch origin --prune && git switch -c feat/your-feature origin/main
 - Works even if your local `main` is in a weird state
 - Guaranteed to start from remote's latest
 
-**Use when:** Creating throwaway branches or when local `main` is messy.
+**Use when:** Local `main` is stale and the current worktree is verified clean.
+
+### Dirty Worktree - Isolated Worktree Required
+
+Create a new sibling worktree so user changes remain untouched:
+
+```bash
+git fetch origin --prune
+git worktree add -b feat/your-feature "../repo-feature" origin/main
+```
+
+Choose a sibling path that does not already exist and perform all feature work there.
+
+> [!IMPORTANT]
+> `git switch -c` is prohibited for this path because Git can carry compatible uncommitted changes onto the new branch. See the canonical [Git rule](../../../rules/130-git.mdc#robust-feature-branch-workflow) for the agent gate and audit requirements.
 
 ## Inspect remote state, then push
 

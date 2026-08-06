@@ -95,8 +95,9 @@ Git worktrees allow you to work on multiple branches simultaneously in separate 
 ### Basic Worktree Usage
 
 ```bash
-# Create a worktree for a feature branch
-git worktree add ../myproject-feature-auth feature/auth
+# Create a new feature branch from the refreshed remote base
+git fetch origin --prune
+git worktree add -b feature/auth ../myproject-feature-auth origin/main
 
 # List all worktrees
 git worktree list
@@ -104,6 +105,8 @@ git worktree list
 # Remove worktree when done
 git worktree remove ../myproject-feature-auth
 ```
+
+Choose a new sibling path that does not already exist. This is the required isolation pattern when the current worktree contains user changes; do not use `git switch -c` and carry those changes onto the agent branch.
 
 ### Phantom (Recommended Tool)
 

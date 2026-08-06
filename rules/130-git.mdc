@@ -571,6 +571,18 @@ Now every `git fetch` and `git pull` automatically removes stale remote-tracking
 
 ## Robust Feature Branch Workflow
 
+> [!IMPORTANT]
+> **NON-NEGOTIABLE AGENT GATE:** Before creating any feature branch, fetch the remote and prove the selected base is current. Never create a branch from a stale local `main`. If a dirty working tree prevents safe synchronization, do not stash, switch, or rebase user changes; create an isolated worktree directly from `origin/main`. Record the fetched base SHA and new branch SHA in the audit report.
+
+Required pre-branch proof:
+
+```bash
+git fetch origin --prune
+test "$(git rev-parse main)" = "$(git rev-parse origin/main)"
+```
+
+If the proof fails, update local `main` with the explicit workflow below or branch directly from `origin/main`. Branch creation is blocked until one of those paths succeeds.
+
 When creating a feature branch from an updated `main`, use this explicit pattern:
 
 ```bash
@@ -596,20 +608,41 @@ git switch -c feat/your-feature-name
 | `git pull --ff-only` | Prevents accidental merge bubbles |
 | `git switch -c` | Creates branch from now-updated main |
 
-## Quick Alternative (With Caveats)
+## Direct Remote-Base Alternatives
 
-Skip your local `main` entirely by branching directly from `origin/main`:
+Skip your local `main` by branching directly from the refreshed `origin/main`.
+
+### Clean Worktree
+
+Use `git switch -c` only after proving the current worktree is clean:
 
 ```bash
-git fetch origin --prune && git switch -c feat/your-feature origin/main
+git fetch origin --prune
+test -z "$(git status --porcelain)"
+git switch -c feat/your-feature origin/main
 ```
 
 **Advantages:**
+
 - Faster (one fewer step)
 - Works even if your local `main` is in a weird state
 - Guaranteed to start from remote's latest
 
-**Use when:** Creating throwaway branches or when local `main` is messy.
+**Use when:** Local `main` is stale and the current worktree is verified clean.
+
+### Dirty Worktree - Isolated Worktree Required
+
+Do not switch branches, stash, or carry user changes into the agent branch. Create a sibling worktree from the refreshed remote-tracking branch instead:
+
+```bash
+git fetch origin --prune
+git worktree add -b feat/your-feature "../repo-feature" origin/main
+```
+
+Choose a new sibling path that does not already exist. Perform all feature work inside that worktree. The original dirty worktree remains on its current branch with user changes untouched.
+
+> [!IMPORTANT]
+> For agents, `git worktree add` is the required path whenever the current worktree contains user changes that must not be disturbed. `git switch -c` in a dirty worktree is prohibited because Git can carry compatible uncommitted changes onto the new branch.
 
 ## One-Liner (Legacy, Less Safe)
 
