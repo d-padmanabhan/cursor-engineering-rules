@@ -1,0 +1,137 @@
+{
+  "skill_name": "containers-orchestration",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Review this Dockerfile for build-cache behavior and provide the smallest safe rewrite:\n\nFROM node:24-alpine\nWORKDIR /app\nCOPY . .\nRUN npm ci\nRUN npm run build\nCMD [\"node\", \"dist/server.js\"]\n\nThe repository has package.json, package-lock.json, src/, tests/, node_modules/, and a .git directory. The final image does not need the compiler or development dependencies. State how to verify cache reuse.",
+      "expected_output": "Identify the broad source copy before dependency installation as the primary cache problem. Copy package manifests first, install dependencies, copy source later, add a .dockerignore, use a multi-stage build that copies only runtime artifacts, and verify a repeated BuildKit build reports dependency steps as cached.",
+      "files": [],
+      "checks": [
+        {
+          "id": "manifests-before-source",
+          "type": "contains_all",
+          "values": [
+            "package.json",
+            "package-lock.json",
+            "COPY"
+          ]
+        },
+        {
+          "id": "requires-dockerignore",
+          "type": "contains",
+          "value": ".dockerignore"
+        },
+        {
+          "id": "uses-multi-stage",
+          "type": "contains_any",
+          "values": [
+            "multi-stage",
+            "AS builder",
+            "FROM node:24-alpine AS"
+          ]
+        },
+        {
+          "id": "copies-runtime-artifacts",
+          "type": "contains_any",
+          "values": [
+            "COPY --from",
+            "runtime artifacts",
+            "final stage"
+          ]
+        },
+        {
+          "id": "verifies-cache",
+          "type": "contains_all",
+          "values": [
+            "BuildKit",
+            "CACHED",
+            "repeated"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "A reviewer says every Dockerfile should have the fewest possible layers, so all dependency installation, compilation, cleanup, and application copying should be collapsed into one giant RUN instruction. Is that the correct optimization target? Give the non-negotiable rule and a corrected approach.",
+      "expected_output": "Reject raw layer-count minimization. Explain that intentional layers are cache boundaries, keep stable dependency work before frequently changing source, combine only logically coupled package-manager operations, and preserve correctness when BuildKit caches are empty.",
+      "files": [],
+      "checks": [
+        {
+          "id": "rejects-layer-count-target",
+          "type": "contains_any",
+          "values": [
+            "not the correct",
+            "not the goal",
+            "do not optimize for",
+            "not layer count"
+          ]
+        },
+        {
+          "id": "preserves-cache-separation",
+          "type": "contains_all",
+          "values": [
+            "cache",
+            "separate"
+          ]
+        },
+        {
+          "id": "keeps-stable-work-early",
+          "type": "contains_all",
+          "values": [
+            "dependencies",
+            "source"
+          ]
+        },
+        {
+          "id": "combines-only-coupled-operations",
+          "type": "contains_all",
+          "values": [
+            "logically coupled",
+            "install",
+            "cleanup"
+          ]
+        },
+        {
+          "id": "cache-not-correctness",
+          "type": "contains_any",
+          "values": [
+            "empty cache",
+            "cache is empty",
+            "cache contents"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Review a Dockerfile's caching strategy in an environment where Docker and BuildKit are unavailable. The file copies requirements.txt before src/ and installs dependencies between those copies. Report what can and cannot be concluded.",
+      "expected_output": "Perform a static review that recognizes the cache-friendly ordering, check other contract items such as .dockerignore and coupled package operations, and explicitly state that runtime cache reuse was not verified because BuildKit was unavailable.",
+      "files": [],
+      "checks": [
+        {
+          "id": "recognizes-static-ordering",
+          "type": "contains_all",
+          "values": [
+            "requirements.txt",
+            "src",
+            "cache"
+          ]
+        },
+        {
+          "id": "reports-limitation",
+          "type": "contains_all",
+          "values": [
+            "BuildKit",
+            "unavailable",
+            "not verified"
+          ]
+        },
+        {
+          "id": "does-not-claim-runtime-proof",
+          "type": "not_regex",
+          "pattern": "(?i)(cache reuse (?:is|was) verified|verified cache reuse)"
+        }
+      ]
+    }
+  ]
+}

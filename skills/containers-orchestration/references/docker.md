@@ -131,6 +131,20 @@ ENTRYPOINT ["/main"]
 
 ## Layer Optimization
 
+### Non-Negotiable Build Cache Contract
+
+Dockerfiles must preserve intentional cache boundaries:
+
+- Copy dependency manifests and lock files before application source.
+- Install dependencies before broad source copies.
+- Use `.dockerignore` to keep volatile, generated, sensitive, and irrelevant files out of the build context.
+- Use multi-stage builds when build-only tools or artifacts are unnecessary at runtime.
+- Combine logically coupled package index, installation, and cleanup operations.
+- **Treat BuildKit cache mounts as performance-only.** Use them where supported, but require builds to succeed when the cache is empty or garbage-collected.
+- Verify repeated builds report unchanged dependency steps as cached, or explicitly report why runtime verification was unavailable.
+
+Do not optimize for the fewest possible layers. Stable dependency work and frequently changing application work should remain separate when that improves cache reuse. See Docker's current [cache optimization](https://docs.docker.com/build/cache/optimize/) and [cache invalidation](https://docs.docker.com/build/cache/invalidation/) guidance.
+
 ### Order Instructions by Change Frequency
 
 ```dockerfile
@@ -155,10 +169,10 @@ COPY . .  # Invalidates cache on every code change
 RUN pip install -r requirements.txt
 ```
 
-### Combine RUN Commands to Reduce Layers
+### Combine Logically Coupled RUN Operations
 
 ```dockerfile
-# ✅ GOOD - Single layer
+# ✅ GOOD - Package index, installation, and cleanup share one cache boundary
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
@@ -754,9 +768,10 @@ docker port <container_id>
 - [ ] Use multi-stage builds for compiled languages
 - [ ] Run as non-root user
 - [ ] Use minimal base images (alpine, slim, distroless)
-- [ ] Order instructions by change frequency
-- [ ] Combine RUN commands to reduce layers
-- [ ] Add .dockerignore file
+- [ ] Build cache gate passed with dependency inputs before application source
+- [ ] Repeated build confirms unchanged dependency steps are cached, or limitation reported
+- [ ] Combine logically coupled package-manager operations in one RUN
+- [ ] Add `.dockerignore` file
 - [ ] Include HEALTHCHECK instruction
 - [ ] Clean up package manager caches
 - [ ] Don't install unnecessary packages

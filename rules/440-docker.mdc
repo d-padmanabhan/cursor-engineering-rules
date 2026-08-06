@@ -136,6 +136,25 @@ ENTRYPOINT ["/main"]
 
 ## Layer Optimization
 
+### Build Cache Contract (NON-NEGOTIABLE)
+
+> [!IMPORTANT]
+> Optimize cache invalidation, not the raw number of layers. Intentional layers are the unit of cache reuse. Do not collapse stable and frequently changing work into one `RUN` or `COPY` merely to reduce the layer count.
+
+Every Dockerfile change must satisfy this gate:
+
+- Copy dependency manifests and lock files before application source, then install dependencies in that stable layer.
+- Do not use broad `COPY . .` before dependency installation unless the build demonstrably requires source code for dependency resolution.
+- Include a `.dockerignore` that excludes source-control metadata, local dependencies, build output, caches, temporary files, and secrets.
+- Use multi-stage builds when build tools or intermediate artifacts are not required at runtime; copy only required runtime artifacts into the final stage.
+- Combine logically coupled package-manager operations, such as `apt-get update`, installation, and cleanup, in the same `RUN`.
+- **Treat BuildKit cache mounts as performance-only.** Use them for expensive package-manager or compiler caches when supported, but require the build to succeed when the cache is empty or garbage-collected.
+- Verify reuse with BuildKit plain-progress output or equivalent CI evidence. A repeated build with unchanged dependency inputs must report the dependency copy and installation steps as cached. Do not use `--no-cache` for this check.
+
+If the image cannot be built in the current environment, report the exact blocker and review the Dockerfile statically against this gate. Do not claim cache reuse was verified.
+
+Current Docker guidance: [Optimize cache usage](https://docs.docker.com/build/cache/optimize/) and [Build cache invalidation](https://docs.docker.com/build/cache/invalidation/).
+
 ### Order Instructions by Change Frequency
 ```dockerfile
 # GOOD - Least changing first, most changing last
@@ -159,9 +178,9 @@ COPY . .  #  Invalidates cache on every code change
 RUN pip install -r requirements.txt
 ```
 
-### Combine RUN Commands to Reduce Layers
+### Combine Logically Coupled RUN Operations
 ```dockerfile
-# GOOD - Single layer
+# GOOD - Package index, installation, and cleanup share one cache boundary
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \

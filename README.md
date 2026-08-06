@@ -555,6 +555,7 @@ The dependency-free [Agent Skills eval harness](evals/) validates every skill an
 
 The initial suites cover:
 
+- [Containers and orchestration evals](skills/containers-orchestration/evals/evals.json)
 - [Core engineering evals](skills/core-engineering/evals/evals.json)
 - [Cloudflare WAF author evals](skills/cloudflare-waf-author/evals/evals.json)
 - [IAM security advisor evals](skills/iam-security-advisor/evals/evals.json)

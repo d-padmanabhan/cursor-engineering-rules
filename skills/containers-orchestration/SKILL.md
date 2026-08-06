@@ -114,6 +114,20 @@ CMD ["python", "-m", "src.main"]
 
 ## Layer Optimization
 
+### Build Cache Gate (Non-Negotiable)
+
+Optimize cache invalidation rather than minimizing the number of layers:
+
+- Copy dependency manifests and lock files before application source.
+- Install dependencies before broad source `COPY` instructions.
+- Require `.dockerignore` coverage for volatile, generated, sensitive, and irrelevant files.
+- Use multi-stage builds and copy only required runtime artifacts.
+- Combine logically coupled package index, installation, and cleanup operations in one `RUN`.
+- **Treat BuildKit cache mounts as performance-only.** Use them where supported, but require the build to succeed when the cache is empty or garbage-collected.
+- Verify a repeated BuildKit build reports unchanged dependency copy and installation steps as cached. If building is unavailable, report that limitation instead of claiming verification.
+
+Do not collapse stable dependency work and frequently changing application work merely to reduce the layer count. See the canonical [Docker rule](../../rules/440-docker.mdc#build-cache-contract-non-negotiable) and [Docker cache guidance](https://docs.docker.com/build/cache/optimize/).
+
 ### Order Instructions by Change Frequency
 
 ```dockerfile
@@ -337,9 +351,10 @@ CMD ["node", "index.js"]
 - [ ] Use multi-stage builds for compiled languages
 - [ ] Run as non-root user
 - [ ] Use minimal base images (alpine, slim, distroless)
-- [ ] Order instructions by change frequency
-- [ ] Combine RUN commands to reduce layers
-- [ ] Add .dockerignore file
+- [ ] Build cache gate passed with dependency inputs before application source
+- [ ] Repeated build confirms unchanged dependency steps are cached, or limitation reported
+- [ ] Combine logically coupled package-manager operations in one RUN
+- [ ] Add `.dockerignore` file
 - [ ] Include HEALTHCHECK instruction
 - [ ] Clean up package manager caches
 - [ ] Don't install unnecessary packages
