@@ -1,0 +1,161 @@
+{
+  "skill_name": "memory-architecture",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Design persistent memory for a support agent serving multiple customer tenants. The system ingests customer documents, extracts reusable claims, retrieves context for conversations, and must honor correction and deletion requests. Provide the architecture, minimum record contract, security controls, and measurable release criteria.",
+      "expected_output": "Separate evidence, claims, derived indexes, and request context; treat ingest as untrusted; require stable IDs and provenance; enforce tenant authorization before retrieval; propagate deletion; and define measurable retrieval, groundedness, freshness, and isolation tests.",
+      "files": [],
+      "checks": [
+        {
+          "id": "separates-memory-planes",
+          "type": "contains_all",
+          "values": [
+            "evidence",
+            "claims",
+            "index"
+          ]
+        },
+        {
+          "id": "requires-provenance",
+          "type": "contains_all",
+          "values": [
+            "stable ID",
+            "provenance",
+            "citation"
+          ]
+        },
+        {
+          "id": "filters-before-retrieval",
+          "type": "contains_all",
+          "values": [
+            "tenant",
+            "authorization",
+            "before"
+          ]
+        },
+        {
+          "id": "covers-deletion",
+          "type": "contains_all",
+          "values": [
+            "deletion",
+            "embeddings",
+            "cache"
+          ]
+        },
+        {
+          "id": "measures-quality",
+          "type": "contains_any",
+          "values": [
+            "precision",
+            "recall",
+            "groundedness"
+          ]
+        },
+        {
+          "id": "requires-zero-leakage",
+          "type": "contains_any",
+          "values": [
+            "zero unauthorized",
+            "zero cross-tenant",
+            "unauthorized retrieval rate"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Review this proposed memory design: keep all permanent team knowledge under gitignored tmp/agent/memory; call raw ingested files ground truth; rank user-confirmed notes above all source evidence; and automatically merge or mark conflicts whenever embedding similarity exceeds 0.90. Identify the important flaws and give the smallest safer correction.",
+      "expected_output": "Reject tmp as the sole durable team store, classify raw ingest as untrusted evidence, avoid a universal trust ranking, and use embedding similarity only to propose review candidates. Separate conflicts from supersession and preserve stable lineage.",
+      "files": [],
+      "checks": [
+        {
+          "id": "rejects-tmp-durability",
+          "type": "contains_all",
+          "values": [
+            "tmp",
+            "ephemeral",
+            "durable"
+          ]
+        },
+        {
+          "id": "raw-is-untrusted",
+          "type": "contains_all",
+          "values": [
+            "raw",
+            "untrusted",
+            "evidence"
+          ]
+        },
+        {
+          "id": "rejects-universal-ranking",
+          "type": "contains_any",
+          "values": [
+            "universal ranking",
+            "not automatically outrank",
+            "authority and freshness"
+          ]
+        },
+        {
+          "id": "similarity-is-candidate",
+          "type": "contains_all",
+          "values": [
+            "similarity",
+            "candidate",
+            "review"
+          ]
+        },
+        {
+          "id": "preserves-lineage",
+          "type": "contains_all",
+          "values": [
+            "conflict",
+            "supersession",
+            "lineage"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "A coding task will continue tomorrow on the same workstation. It only needs the current goal, constraints, completed work, blockers, and next three actions. Should I build a persistent vector-backed memory system? Recommend the proportionate approach and explain the boundary for upgrading later.",
+      "expected_output": "Recommend ephemeral session or handoff context in a gitignored tmp file rather than a persistent vector system. State that durable memory becomes appropriate when knowledge must survive cleanup, support multiple users or agents, require governed retrieval, or satisfy retention and recovery requirements.",
+      "files": [],
+      "checks": [
+        {
+          "id": "chooses-session-context",
+          "type": "contains_all",
+          "values": [
+            "session",
+            "handoff",
+            "tmp"
+          ]
+        },
+        {
+          "id": "avoids-vector-overbuild",
+          "type": "contains_any",
+          "values": [
+            "do not build",
+            "not need",
+            "unnecessary"
+          ]
+        },
+        {
+          "id": "states-upgrade-boundary",
+          "type": "contains_any",
+          "values": [
+            "multiple users",
+            "multiple agents",
+            "survive cleanup",
+            "retention"
+          ]
+        },
+        {
+          "id": "no-provider-prescription",
+          "type": "not_regex",
+          "pattern": "\\b(?:Pinecone|Weaviate|Milvus|Chroma)\\b"
+        }
+      ]
+    }
+  ]
+}

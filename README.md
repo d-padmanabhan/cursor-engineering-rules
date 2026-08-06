@@ -533,6 +533,7 @@ Skills under `skills/` cover repeatable end-to-end workflows that pair with the 
 ### AI, MCP & analysis
 
 - **[skills/mcp-development](skills/mcp-development/)** - building MCP servers
+- **[skills/memory-architecture](skills/memory-architecture/)** - persistent agent memory and knowledge architecture with provenance, secure retrieval, lifecycle controls, and measurable quality
 - **[skills/web-research-kb-refresh](skills/web-research-kb-refresh/)** - bounded web-research KB refresh with atomic swap (general pattern)
 - **[skills/multi-perspective-review](skills/multi-perspective-review/)** - weighted multi-advisor decision review with industry-precedent pairs
 
@@ -557,6 +558,7 @@ The initial suites cover:
 - [Core engineering evals](skills/core-engineering/evals/evals.json)
 - [Cloudflare WAF author evals](skills/cloudflare-waf-author/evals/evals.json)
 - [IAM security advisor evals](skills/iam-security-advisor/evals/evals.json)
+- [Memory architecture evals](skills/memory-architecture/evals/evals.json)
 
 ```bash
 uv run python -m evals.skill_eval validate
