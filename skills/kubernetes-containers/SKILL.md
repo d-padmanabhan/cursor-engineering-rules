@@ -1,6 +1,6 @@
 ---
 name: kubernetes-containers
-description: Kubernetes and Helm best practices for container orchestration. Covers deployments, services, RBAC, resource management, Helm charts, Podtrace runtime debugging, and production patterns. Use when working with Kubernetes manifests, Helm charts, kubectl commands, Podtrace, or when asking about container orchestration, pod configuration, or cluster management.
+description: Kubernetes, Helm, and Argo CD best practices for container orchestration. Covers deployments, services, RBAC, resource management, Helm charts, GitOps synchronization, Podtrace runtime debugging, and production patterns. Use when working with Kubernetes manifests, Helm charts, Argo CD sync policies, kubectl commands, Podtrace, or when asking about container orchestration, pod configuration, GitOps, or cluster management.
 ---
 
 # Kubernetes & Containers
@@ -234,6 +234,18 @@ containers:
 ```
 
 Exceptions are narrow: CNI / CSI components, eBPF observability, runtime security agents, node problem detectors, and short-lived break-glass diagnostics. Require an owner, reason, dedicated namespace, scoped service account/RBAC, duration, and review date before allowing an exception.
+
+## Argo CD Sync Gate (Non-Negotiable)
+
+Treat `argocd app sync`, rollback, and sync-window overrides as remote cluster mutations. Before a production sync:
+
+- verify the Application, AppProject, destination cluster/namespace, and explicit revision;
+- inspect refreshed status, diff, dry-run output, hooks, waves, shared resources, and every prune action;
+- show the target, diff, prune set, and recovery plan at the human approval gate;
+- avoid `--force`, use a bounded wait, and require both `Synced` and `Healthy`;
+- preserve operation evidence and recover through a reviewed Git revert by default.
+
+For automated sync, set `automated.enabled` explicitly and review `prune`, `selfHeal`, and `allowEmpty` as separate risk decisions. Keep `allowEmpty: false`, prefer `FailOnSharedResource=true`, and use `PruneLast=true` when pruning unless a reviewed dependency requires different ordering. Every production policy review must state the applicable sync window and confirm that hooks are idempotent and sync-wave ordering is tested. See [Argo CD synchronization](references/argocd-sync.md) for commands, policy examples, and failure handling.
 
 ## Helm Quick Reference
 

@@ -32,6 +32,36 @@ files:
 - **"Observability built-in"** - Metrics, logs, events for debugging
 - **"No retries on conflicts"** - Conflicts indicate architectural problems
 
+## Argo CD Synchronization Contract (NON-NEGOTIABLE)
+
+> [!IMPORTANT]
+> An Argo CD sync mutates a remote cluster. Agents require explicit authorization under [020-agent-audit.mdc](020-agent-audit.mdc) before syncing. Read-only status, refresh, diff, and dry-run operations do not authorize the mutation.
+
+Before any manual production sync:
+
+1. Verify the exact Application, AppProject, destination cluster, namespace, repository, and target revision. Resolve moving revisions such as `main` to the commit SHA being reviewed.
+2. Refresh status and inspect the live-to-target diff. Treat a diff exit code as "changes found," not automatically as a command failure.
+3. Run a sync dry-run and inspect every create, update, hook, and prune action. Pruning is destructive.
+4. Review sync waves, hooks, CRDs, Namespaces, shared resources, and dependencies whose ordering or deletion can expand the blast radius.
+5. Obtain production approval showing the application, destination, revision, diff, prune set, and rollback plan.
+6. Sync the explicit revision. Do not use `--force` unless a documented break-glass plan specifically requires replacement semantics.
+7. Wait with a timeout for the operation to finish and for the Application to become both `Synced` and `Healthy`.
+8. Record the revision, operation result, health, resource failures, approver, and audit link.
+
+Automated synchronization requires an explicit policy review:
+
+- Set `spec.syncPolicy.automated.enabled` explicitly. Do not rely on `null` being treated as enabled.
+- Enable `prune` only after reviewing deletion ownership and recovery. When pruning is enabled, use `PruneLast=true` unless a documented dependency requires different ordering.
+- Keep `allowEmpty: false` unless a reviewed teardown workflow intentionally permits deleting every managed resource.
+- Enable `selfHeal` only when Git is authoritative and emergency live changes are expected to be overwritten.
+- Use `FailOnSharedResource=true` unless shared ownership is explicitly designed and reviewed.
+- Configure production sync windows and control who may override them.
+- Require hooks to be idempotent, bounded, observable, and safe to rerun. Review sync-wave ordering and hook deletion policies.
+
+Recovery defaults to reverting the bad Git commit and synchronizing the resulting reviewed revision. An emergency Argo CD history rollback must be recorded and followed by a Git change so the declared source of truth matches the cluster. Do not repair GitOps-managed resources with unrecorded `kubectl apply` changes.
+
+Current Argo CD references: [automated sync](https://argo-cd.readthedocs.io/en/release-3.4/user-guide/auto_sync/), [sync options](https://argo-cd.readthedocs.io/en/release-3.4/user-guide/sync-options/), [sync windows](https://argo-cd.readthedocs.io/en/release-3.4/user-guide/sync_windows/), and [sync phases and waves](https://argo-cd.readthedocs.io/en/release-3.4/user-guide/sync-waves/).
+
 ## Container Health Checks (Readiness and Liveness Probes)
 
 Readiness and liveness probes are health checks used by Kubernetes to manage the lifecycle and traffic flow of your containers.

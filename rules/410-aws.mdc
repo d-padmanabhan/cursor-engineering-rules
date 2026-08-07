@@ -827,7 +827,7 @@ module "eks_cluster" {
 
 ### GitOps Integration
 
-**Use ArgoCD or Flux for GitOps:**
+Use Argo CD or Flux for GitOps. Start production Applications with automated mutation disabled; enable pruning or self-healing only after satisfying the non-negotiable [Argo CD synchronization contract](450-kubernetes.mdc#argo-cd-synchronization-contract-non-negotiable).
 
 ```yaml
 # argocd-app.yaml
@@ -846,10 +846,13 @@ spec:
     namespace: production
   syncPolicy:
     automated:
-      prune: true
-      selfHeal: true
+      enabled: false
+      prune: false
+      selfHeal: false
+      allowEmpty: false
     syncOptions:
-    - CreateNamespace=true
+      - CreateNamespace=true
+      - FailOnSharedResource=true
 ```
 
 ## Security Best Practices

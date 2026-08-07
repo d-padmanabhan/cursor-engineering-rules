@@ -559,6 +559,7 @@ The initial suites cover:
 - [Core engineering evals](skills/core-engineering/evals/evals.json)
 - [Cloudflare WAF author evals](skills/cloudflare-waf-author/evals/evals.json)
 - [IAM security advisor evals](skills/iam-security-advisor/evals/evals.json)
+- [Kubernetes containers evals](skills/kubernetes-containers/evals/evals.json)
 - [Memory architecture evals](skills/memory-architecture/evals/evals.json)
 
 ```bash

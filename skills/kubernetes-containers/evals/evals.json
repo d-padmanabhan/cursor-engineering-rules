@@ -1,0 +1,197 @@
+{
+  "skill_name": "kubernetes-containers",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Write a safe command sequence for manually synchronizing the Argo CD Application payments-production to commit 0123456789abcdef0123456789abcdef01234567. This is production, pruning might be required, and the operator must confirm the result. Include the approval boundary and recovery approach.",
+      "expected_output": "Verify the Application, AppProject, cluster, namespace, repository, and exact revision; refresh status; inspect diff and a dry-run that exposes the prune set; obtain approval before mutation; sync the explicit revision without force; wait with a timeout for operation completion, Synced, and Healthy; record evidence; and prefer a reviewed Git revert for recovery.",
+      "files": [],
+      "checks": [
+        {
+          "id": "verifies-target",
+          "type": "contains_all",
+          "values": [
+            "AppProject",
+            "cluster",
+            "namespace",
+            "revision"
+          ]
+        },
+        {
+          "id": "previews-diff-and-prune",
+          "type": "contains_all",
+          "values": [
+            "argocd app diff",
+            "--dry-run",
+            "--prune"
+          ]
+        },
+        {
+          "id": "requires-production-approval",
+          "type": "contains_all",
+          "values": [
+            "approval",
+            "production",
+            "prune"
+          ]
+        },
+        {
+          "id": "pins-sync-revision",
+          "type": "contains_all",
+          "values": [
+            "argocd app sync",
+            "--revision",
+            "0123456789abcdef0123456789abcdef01234567"
+          ]
+        },
+        {
+          "id": "waits-for-complete-health",
+          "type": "contains_all",
+          "values": [
+            "argocd app wait",
+            "--operation",
+            "--sync",
+            "--health",
+            "--timeout"
+          ]
+        },
+        {
+          "id": "avoids-force",
+          "type": "contains_any",
+          "values": [
+            "Do not use `--force`",
+            "Avoid `--force`",
+            "without `--force`"
+          ]
+        },
+        {
+          "id": "uses-git-recovery",
+          "type": "contains_all",
+          "values": [
+            "Git",
+            "revert",
+            "evidence"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Review this production Argo CD policy and provide the smallest safe correction:\n\nspec:\n  syncPolicy:\n    automated:\n      prune: true\n      selfHeal: true\n      allowEmpty: true\n\nThe team says these are universal GitOps defaults. The Application includes migration hooks and ordered dependencies and shares a Namespace with another Application.",
+      "expected_output": "Reject the universal defaults. Set automated.enabled explicitly; treat prune and selfHeal as separate risk decisions; keep allowEmpty false; fail on shared resources; use prune-last ordering when pruning; and review sync windows, hooks, waves, ownership, deletion, and recovery before enabling automation.",
+      "files": [],
+      "checks": [
+        {
+          "id": "requires-explicit-enabled",
+          "type": "contains_all",
+          "values": [
+            "enabled",
+            "explicit"
+          ]
+        },
+        {
+          "id": "covers-prune-and-self-heal",
+          "type": "contains_all",
+          "values": [
+            "prune",
+            "selfHeal"
+          ]
+        },
+        {
+          "id": "keeps-allow-empty-safe",
+          "type": "contains_all",
+          "values": [
+            "allowEmpty",
+            "false"
+          ]
+        },
+        {
+          "id": "protects-shared-resources",
+          "type": "contains_all",
+          "values": [
+            "FailOnSharedResource=true",
+            "shared"
+          ]
+        },
+        {
+          "id": "orders-pruning-last",
+          "type": "contains",
+          "value": "PruneLast=true"
+        },
+        {
+          "id": "reviews-orchestration-controls",
+          "type": "contains_all",
+          "values": [
+            "sync window",
+            "hooks",
+            "waves"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "An Argo CD production sync is Degraded after a PostSync migration hook failed. Automated retries are rerunning the hook. An operator proposes `argocd app sync payments-production --force` followed by direct kubectl patches. Give the recovery workflow.",
+      "expected_output": "Reject force and hidden live patches. Preserve operation, tree, and history evidence; stop harmful retries; diagnose the hook and resource health; fix or revert through Git; preview and authorize the recovery revision; sync it and wait for operation completion, Synced, and Healthy. Treat history rollback as break-glass and reconcile Git immediately if it is used.",
+      "files": [],
+      "checks": [
+        {
+          "id": "preserves-failure-evidence",
+          "type": "contains_all",
+          "values": [
+            "--show-operation",
+            "tree=detailed",
+            "app history"
+          ]
+        },
+        {
+          "id": "stops-repeated-side-effects",
+          "type": "contains_all",
+          "values": [
+            "stop",
+            "retries",
+            "hook"
+          ]
+        },
+        {
+          "id": "rejects-force-and-live-drift",
+          "type": "contains_all",
+          "values": [
+            "Do not",
+            "--force",
+            "kubectl"
+          ]
+        },
+        {
+          "id": "recovers-through-git",
+          "type": "contains_all",
+          "values": [
+            "Git",
+            "revert",
+            "preview",
+            "approval"
+          ]
+        },
+        {
+          "id": "verifies-recovery-health",
+          "type": "contains_all",
+          "values": [
+            "--operation",
+            "--sync",
+            "--health",
+            "--timeout"
+          ]
+        },
+        {
+          "id": "bounds-history-rollback",
+          "type": "contains_all",
+          "values": [
+            "rollback",
+            "break-glass",
+            "reconcile Git"
+          ]
+        }
+      ]
+    }
+  ]
+}
