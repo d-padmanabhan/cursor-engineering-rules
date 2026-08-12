@@ -70,6 +70,225 @@
           ]
         }
       ]
+    },
+    {
+      "id": 4,
+      "prompt": "Create the header for a new executable standalone Python 3.14 script with no third-party dependencies. It must run directly with uv and use PEP 723. Explain how a project pins one exact tested patch without confusing that pin with requires-python.",
+      "expected_output": "Use `#!/usr/bin/env -S uv run --script`, PEP 723 metadata with `requires-python = \">=3.14\"` and `dependencies = []`, then a module docstring. Explain that requires-python is a compatibility range while `uv python pin 3.14.x` writes the exact tested project interpreter request.",
+      "files": [],
+      "checks": [
+        {
+          "id": "uses-correct-uv-script-header",
+          "type": "contains_all",
+          "values": [
+            "uv run --script",
+            "requires-python",
+            ">=3.14",
+            "dependencies = []"
+          ]
+        },
+        {
+          "id": "distinguishes-pin-from-floor",
+          "type": "contains_all",
+          "values": [
+            "uv python pin",
+            "exact",
+            "compatibility"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Review this library function:\n\ndef load_config(path: Path) -> Config:\n    try:\n        return parse_config(path.read_text())\n    except Exception as e:\n        raise RuntimeError(f\"failed: {e}\") from e\n\nProvide the smallest error-handling correction and explain when catching Exception is acceptable.",
+      "expected_output": "Catch expected failures such as OSError and the parser's specific validation exception, preserve context with `raise ... from error`, and avoid exposing unnecessary exception text. Catch Exception only at an intentional top-level process/request/task boundary that logs traceback context and then terminates, re-raises, or returns a safe error.",
+      "files": [],
+      "checks": [
+        {
+          "id": "requires-specific-errors",
+          "type": "contains_all",
+          "values": [
+            "OSError",
+            "specific",
+            "raise",
+            "from"
+          ]
+        },
+        {
+          "id": "bounds-catch-all",
+          "type": "contains_all",
+          "values": [
+            "boundary",
+            "log",
+            "re-raise"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "A review standard demands annotations on every local assignment and migration of every existing requirements.txt project to uv. Apply the Python handbook policy and explain what should actually be required.",
+      "expected_output": "Require precise annotations on interfaces and locals whose intended type is unclear, not redundant annotations on obvious assignments. Use pyproject.toml and uv.lock for new projects, while preserving an existing supported requirements workflow unless migration is explicitly in scope.",
+      "files": [],
+      "checks": [
+        {
+          "id": "avoids-redundant-local-types",
+          "type": "contains_all",
+          "values": [
+            "local",
+            "inferred",
+            "redundant"
+          ]
+        },
+        {
+          "id": "scopes-uv-migration",
+          "type": "contains_all",
+          "values": [
+            "pyproject.toml",
+            "uv.lock",
+            "existing",
+            "migration"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Implement a reusable iterator for an API that returns `items` and an opaque `next_cursor`. The provider has occasionally repeated a cursor during incidents. The caller may process millions of records.",
+      "expected_output": "Stream items instead of collecting all pages, treat the cursor as opaque, stop explicitly at completion, detect repeated or non-progressing cursors, enforce page/item limits, and define timeout, cancellation, retry, ordering, and partial-result semantics.",
+      "files": [],
+      "checks": [
+        {
+          "id": "streams-bounded-pagination",
+          "type": "contains_all",
+          "values": [
+            "yield",
+            "opaque",
+            "repeated",
+            "limit"
+          ]
+        },
+        {
+          "id": "defines-failure-semantics",
+          "type": "contains_any",
+          "values": [
+            "partial result",
+            "cancellation",
+            "timeout"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Review a Python client that creates `requests.Session()` inside every loop iteration, has no timeout, and retries every exception five times while creating payments with a new random request ID on each attempt.",
+      "expected_output": "Reuse and close one session, configure finite connect/read and end-to-end deadlines, bound concurrency, retry only transient failures within one retry budget, and reuse a stable provider-supported idempotency key. A payment timeout is an unknown outcome requiring reconciliation.",
+      "files": [],
+      "checks": [
+        {
+          "id": "owns-http-client-and-deadlines",
+          "type": "contains_all",
+          "values": [
+            "reuse",
+            "close",
+            "timeout",
+            "deadline"
+          ]
+        },
+        {
+          "id": "protects-payment-retries",
+          "type": "contains_all",
+          "values": [
+            "transient",
+            "idempotency",
+            "stable",
+            "reconciliation"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "A cleanup CLI has `--dry-run`, but it still sends Slack notifications, publishes an audit event, creates temporary cloud resources, and calls a database stored procedure before skipping the final delete. Review the design.",
+      "expected_output": "Dry-run must build and preview the same deterministic action plan used by execution while suppressing every external mutation, including notifications, messages, database procedures, cloud changes, and file writes. Destructive execution needs confirmation over the unchanged plan.",
+      "files": [],
+      "checks": [
+        {
+          "id": "suppresses-all-side-effects",
+          "type": "contains_all",
+          "values": [
+            "action plan",
+            "notification",
+            "database",
+            "cloud",
+            "suppress"
+          ]
+        },
+        {
+          "id": "requires-stable-confirmation",
+          "type": "contains_all",
+          "values": [
+            "confirmation",
+            "plan",
+            "change"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "Define a Pydantic v2 request model for a public money-transfer API. Unknown fields must be rejected, implicit type coercion is not allowed, source and destination accounts must differ, and validation errors must not echo secrets.",
+      "expected_output": "Use ConfigDict with extra='forbid' and strict=True, declarative Field constraints, a model_validator for the cross-field invariant, and safe ValidationError mapping that does not return unrestricted input values.",
+      "files": [],
+      "checks": [
+        {
+          "id": "uses-strict-boundary-model",
+          "type": "contains_all",
+          "values": [
+            "ConfigDict",
+            "extra",
+            "forbid",
+            "strict"
+          ]
+        },
+        {
+          "id": "enforces-safe-model-validation",
+          "type": "contains_all",
+          "values": [
+            "model_validator",
+            "ValidationError",
+            "secret"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "A Python 3.14 async worker starts 50,000 coroutines with gather, creates an aiohttp session per task, catches cancellation, and retries forever. Provide the smallest production-safe redesign.",
+      "expected_output": "Reuse one bounded-lifetime client, use TaskGroup for structured failure and cancellation, bound concurrency with a semaphore or queue, configure deadlines, let cancellation propagate, and use bounded retry only for classified transient idempotent operations.",
+      "files": [],
+      "checks": [
+        {
+          "id": "uses-structured-concurrency",
+          "type": "contains_all",
+          "values": [
+            "TaskGroup",
+            "semaphore",
+            "cancellation",
+            "client"
+          ]
+        },
+        {
+          "id": "bounds-time-and-retries",
+          "type": "contains_all",
+          "values": [
+            "deadline",
+            "bounded",
+            "transient",
+            "idempotent"
+          ]
+        }
+      ]
     }
   ]
 }

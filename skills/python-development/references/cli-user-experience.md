@@ -102,12 +102,10 @@ if not file.exists():
 
 # GOOD: Clear error message
 if not file.exists():
-    raise FileNotFoundError(
-        f"File not found: {file}\n"
-        f"Current directory: {Path.cwd()}\n"
-        f"Available files: {list(Path.cwd().glob('*.txt'))}"
-    )
+    raise FileNotFoundError(f"Input file not found: {file}")
 ```
+
+Do not enumerate directory contents or expose unrestricted environment details in user-facing errors.
 
 **Progress Indicators:**
 
@@ -128,13 +126,29 @@ with tqdm(total=100) as pbar:
 **Dry-Run Mode:**
 
 ```python
-def process_files(files: list[str], dry_run: bool = False) -> None:
-    """Process files with dry-run support."""
-    for file in files:
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class PlannedAction:
+    """Describe one externally visible action."""
+
+    action: str
+    target: str
+
+
+def build_plan(files: list[str]) -> list[PlannedAction]:
+    """Build the same deterministic plan used by preview and execution."""
+    return [PlannedAction(action="process", target=file) for file in files]
+
+
+def run_plan(actions: list[PlannedAction], *, dry_run: bool) -> None:
+    """Preview or execute a complete action plan."""
+    for action in actions:
         if dry_run:
-            print(f"[DRY RUN] Would process: {file}")
-            print(f"[DRY RUN] Would execute: process_file('{file}')")
-        else:
-            process_file(file)
-            print(f"Processed: {file}")
+            print(f"[DRY RUN] Would {action.action}: {action.target}")
+            continue
+        execute_action(action)
 ```
+
+A dry run must suppress every externally visible side effect: file/database writes, API mutations, messages, notifications, subprocess mutations, and infrastructure changes. Preview the exact normalized targets and action types without exposing secrets. For destructive execution, show the plan at the human confirmation gate and reject stale approval if the plan changes.

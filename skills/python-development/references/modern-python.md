@@ -7,8 +7,10 @@
 ```python
 name = "Alice"
 print(f"User: {name}")
-print(f"{name!r}")  # Python 3.12: debug repr
+print(f"{name=}")  # Debug expression syntax, available since Python 3.8
 ```
+
+Python 3.12 relaxed f-string expression grammar. Python 3.14 adds t-strings as a separate literal type; do not describe ordinary representation conversion such as `!r` as a new f-string safety or debugging feature.
 
 ### match-case (Python 3.10+)
 

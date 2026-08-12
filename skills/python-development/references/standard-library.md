@@ -4,17 +4,17 @@
 
 ## File & Path Operations
 
-**`pathlib` (Preferred over `os.path`):**
+**`pathlib` (preferred for new path-oriented code):**
 
 ```python
-# BAD: os.path (old-style, string-based)
+# Supported: os.path remains valid in existing string-based code
 import os
 file_path = os.path.join("data", "users", "file.txt")
 if os.path.exists(file_path):
     with open(file_path) as f:
         content = f.read()
 
-# GOOD: pathlib (object-oriented, cross-platform)
+# Preferred for new code: pathlib is object-oriented and cross-platform
 from pathlib import Path
 
 file_path = Path("data") / "users" / "file.txt"
@@ -115,11 +115,11 @@ heapq.heappush(heap, 5)
 heapq.heappush(heap, 2)
 heapq.heappop(heap)  # Returns 2 (smallest)
 
-# Max-heap (negate values)
+# Max-heap (Python 3.14+)
 max_heap = []
-heapq.heappush(max_heap, -5)
-heapq.heappush(max_heap, -2)
--largest = heapq.heappop(max_heap)  # Returns -5, so largest is 5
+heapq.heappush_max(max_heap, 5)
+heapq.heappush_max(max_heap, 2)
+largest = heapq.heappop_max(max_heap)  # Returns 5
 
 # Priority queue pattern
 import heapq
@@ -256,20 +256,20 @@ from textwrap import wrap, fill, dedent, indent, shorten
 wrapped = wrap(long_text, width=50)
 
 # Fill text (wrap and join)
-filled = textwrap.fill(text, width=50)
+filled = fill(text, width=50)
 
 # Dedent (remove leading whitespace) - great for SQL, templates
-sql = textwrap.dedent("""
+sql = dedent("""
     SELECT *
     FROM users
     WHERE active = true
 """).strip()
 
 # Indent text
-indented = textwrap.indent("Line 1\nLine 2", prefix="  ")
+indented = indent("Line 1\nLine 2", prefix="  ")
 
 # Shorten text with ellipsis
-short = textwrap.shorten("This is a very long string", width=20, placeholder="...")
+short = shorten("This is a very long string", width=20, placeholder="...")
 ```
 
 **`contextlib` (Context managers):**

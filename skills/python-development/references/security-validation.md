@@ -25,24 +25,20 @@ bandit -r . -c .bandit
 
 ## Input Validation
 
-**Input Validation:** Sanitize early with `re.match(r"^\w+$", user_input)`. For complex patterns, see [Making Regex Readable](#making-regex-readable) below.
+Validate untrusted input against the destination's domain rules: type, length, allowed values, normalization, and parser behavior. Regex is useful for bounded lexical formats, but it does not prevent SQL injection or XSS. Use parameterized SQL and context-appropriate output encoding.
 
 **SQL Injection:** Use parameterized queries: `cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))`.
 
-**Shell Sanitization:** Use `shlex.quote(user_input)` for shell commands.
+**Command execution:** Prefer an argument sequence with `shell=False`. Do not apply `shlex.quote()` to an argument sequence; that changes the literal argument. Use shell syntax only when it is unavoidable and then constrain the command separately.
 
 ```python
-import shlex
 import subprocess
 
 # BAD: Shell injection vulnerability
-subprocess.run(f"echo {user_input}", shell=True)
-
-# GOOD: Use shlex.quote
-subprocess.run(["echo", shlex.quote(user_input)])
+subprocess.run(f"echo {user_input}", shell=True, check=True)
 
 # GOOD: Use list form (no shell)
-subprocess.run(["echo", user_input])
+subprocess.run(["echo", user_input], check=True)
 ```
 
 ## Pydantic Validation

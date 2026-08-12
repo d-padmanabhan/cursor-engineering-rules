@@ -90,6 +90,9 @@ target-version = "py314"
 select = ["E", "F", "I", "N", "W", "UP"]
 ignore = []
 
+[tool.ruff.format]
+quote-style = "double"
+
 [tool.mypy]
 python_version = "3.14"
 strict = true
@@ -103,6 +106,8 @@ disable = ["C0103", "C0111"]  # Disable specific checks if needed
 [tool.pylint.format]
 max-line-length = 120
 ```
+
+Ruff's `I` rules enforce grouped, alphabetized imports. The formatter uses double quotes by default and may preserve single quotes when changing them would add escaping. Do not annotate every obvious local variable solely to increase annotation count; annotate public interfaces and locals whose intended type is not clear from inference.
 
 **pylintrc (Optional, for project-specific config):**
 

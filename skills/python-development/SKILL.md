@@ -49,6 +49,10 @@ For per-line operative readings (how to apply each in review), see the Zen secti
 - **Keep It Simple**: Prefer stdlib over complex architectures
 - **Respect Context**: Don't transform a 20-line script into a 200-line framework
 
+Do not review Python by asking whether every language feature or library could be inserted. Recommend a comprehension, generator, decorator, dataclass, protocol, cache, concurrency model, framework, or design pattern only when it removes concrete duplication, enforces a requirement, or addresses measured cost. State the problem first and prefer deletion or a direct implementation.
+
+Before adding a dependency, identify the capability missing from the standard library or existing dependencies, its operational and security cost, and the smallest alternative. Assertions are for internal invariants and may be disabled; never use them to validate untrusted input or enforce authorization.
+
 ## Non-negotiables
 
 > [!IMPORTANT]
@@ -57,6 +61,8 @@ For per-line operative readings (how to apply each in review), see the Zen secti
 ### NN-1: Python ≥ 3.14 for new applications, services, and Lambda functions
 
 Use `requires-python = ">=3.14"` in `pyproject.toml`, Python 3.14 in CI, Python 3.14 Docker images, and Python 3.14 Lambda runtimes for new code.
+
+`requires-python` declares compatibility; it does not select one exact interpreter. For deterministic project execution, commit a `.python-version` created with an exact tested patch, for example `uv python pin 3.14.7`, and update that pin deliberately. For one-off execution, request the tested patch explicitly with `uv run --python 3.14.7 script.py`. Do not encode one patch version as an evergreen handbook constant.
 
 Libraries published to PyPI or shipped to external customers MAY target a lower floor when there is a documented compatibility commitment. The acceptable lower floor is Python 3.11. The PR description must explain the audience, the 3.14 features being deferred, and the planned floor-bump date.
 
@@ -95,21 +101,24 @@ Reject in review:
 | Aspect | Standard |
 |--------|----------|
 | **Python Version** | ≥ 3.14 |
-| **Shebang** | `#!/usr/bin/env -S uv run` |
+| **Executable PEP 723 script shebang** | `#!/usr/bin/env -S uv run --script` |
 | **Formatting** | 4-space indents, 120 char line length |
-| **Linting** | `black`, `ruff`, `pylint` (≥9.0) |
+| **Linting** | Repository-configured formatter, Ruff, type checker, and Pylint score ≥9.0 when Pylint is configured |
 | **Type Hints** | Strict typing required |
 | **Docstrings** | Google-style |
-| **Package Manager** | `uv` (preferred) |
+| **Package Manager** | `uv` for new projects and standalone scripts |
 
 ## Documentation Contract
 
-For new scripts, place the module-level docstring immediately below the shebang, with one blank line between them. The module docstring must explain the script's purpose, provide a short overview, include a numbered workflow when there are multiple steps, and include CLI usage examples when the file is meant to be run directly. AWS Lambda handlers and import-only modules do not need CLI usage examples.
+Only executable standalone scripts need a shebang. For a PEP 723 script, place inline metadata immediately after `#!/usr/bin/env -S uv run --script`; the `dependencies` field is required even when empty. Put the module docstring after the metadata. Import-only modules, tests, package files, and AWS Lambda handlers do not need a uv shebang.
 
 ```python
-#!/usr/bin/env -S uv run
-"""
-Process user export files and publish normalized records.
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.14"
+# dependencies = []
+# ///
+"""Process user export files and publish normalized records.
 
 This script reads a JSON export, validates each record, writes a cleaned
 CSV file, and optionally uploads the result to object storage.
@@ -127,18 +136,17 @@ Usage:
 """
 ```
 
-Every public function, class, and method must use Google-style docstrings. Put the description on a new line after the opening triple quotes, then document arguments, return value, raised exceptions, and examples when helpful.
+Every public function, class, and method must use Google-style docstrings. Start with a concise summary immediately after the opening triple quotes, then document arguments, return values, raised exceptions, and examples when helpful.
 
 ```python
 def load_users(input_path: Path) -> list[User]:
-    """
-    Load user records from a JSON file.
+    """Load user records from a JSON file.
 
     Args:
-        input_path (Path): Path to the JSON file containing user records.
+        input_path: Path to the JSON file containing user records.
 
     Returns:
-        list[User]: Validated user records parsed from the input file.
+        Validated user records parsed from the input file.
 
     Raises:
         FileNotFoundError: If the input file does not exist.
@@ -166,21 +174,24 @@ def process(items: List[str], config: Optional[Dict[str, int]] = None) -> Tuple[
     ...
 ```
 
+Annotate function parameters, return values, public attributes, empty collections, and local variables whose inferred type is unclear or intentionally wider than the initializer. Do not annotate every obvious local assignment; redundant annotations add noise without improving static analysis.
+
+## Imports, Strings, and Naming
+
+- Group imports as standard library, third-party, and local, with one blank line between groups.
+- Sort imports alphabetically using Ruff's `I` rules or isort rather than maintaining order manually.
+- Use double quotes by default. Configure Ruff or Black to preserve the convention and allow single quotes when they avoid escaping embedded double quotes.
+- Use precise domain names. A leading underscore is reserved for intentionally non-public APIs.
+
 ## Python 3.14 Features (Released Oct 2025)
 
 ### Template String Literals (PEP 750)
 
-Safe custom string processing with t-strings:
+T-strings preserve static text and interpolations for a processor to inspect. They do not parameterize SQL or escape HTML on their own; safety depends on the processor.
 
 ```python
-# SQL query with safe parameterization
-query = t"SELECT * FROM users WHERE id = {user_id}"
-
-# HTML generation with auto-escaping
-html = t"<div>{user_input}</div>"
-
-# Custom formatting
-config = t"server={host}:{port}"
+message_template = t"Processed order {order_id} for {customer_name}"
+message = render_audit_message(message_template)
 ```
 
 ### Deferred Annotation Evaluation (PEP 649)
@@ -197,49 +208,42 @@ def process(data: ComplexType) -> Result:
 
 ### Free-Threading Support (PEP 779)
 
-True parallelism without the GIL (experimental):
+Free-threaded CPython builds can run threads in parallel without the GIL. They are optional, can use more memory, and may re-enable the GIL when an extension is not compatible. Benchmark the real dependency set before selecting this runtime.
 
 ```python
 # Enable with: python3.14t (free-threaded build)
-# Performance penalty reduced to 5-10% for single-threaded code
 import concurrent.futures
 
 with concurrent.futures.ThreadPoolExecutor() as executor:
     results = executor.map(cpu_intensive_task, items)
 ```
 
-### datetime Improvements
-
-Direct parsing of date and time strings:
-
-```python
-from datetime import date, time
-
-# Python 3.14+
-d = date.fromisoformat("2025-10-07")
-t = time.fromisoformat("14:30:00")
-```
-
-### UUID7 and UUID8 Support
+### UUID6, UUID7, and UUID8 Support
 
 Modern UUID versions with better properties:
 
 ```python
 import uuid
 
-# UUID7: Time-ordered, sortable (recommended for databases)
-id = uuid.uuid7()
+# UUID7: time-ordered and useful when index locality matters
+event_id = uuid.uuid7()
 
-# UUID8: Custom format
-id = uuid.uuid8(bytes16)
+# UUID8: application-defined integer blocks, not cryptographically secure
+custom_id = uuid.uuid8(0x12345678, 0x9ABCDEF0, 0x11223344)
+
+# Use UUID4 for a security-sensitive random identifier
+security_token_id = uuid.uuid4()
 ```
 
 ## Code Structure
 
 ```python
-#!/usr/bin/env -S uv run
-"""
-Module purpose and overview.
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.14"
+# dependencies = []
+# ///
+"""Module purpose and overview.
 
 Workflow:
 1. Load configuration
@@ -249,6 +253,7 @@ Workflow:
 
 # Standard library
 import logging
+import sys
 
 # Third-party
 import requests
@@ -257,19 +262,21 @@ import requests
 from utils import helper
 
 
-def helper_function() -> None:
-    """Helper functions first."""
+def load_configuration() -> Config:
+    """Load the application configuration."""
     pass
 
 
 def main() -> int:
-    """Main function last."""
+    """Run the application."""
     return 0
 
 
 if __name__ == "__main__":
     sys.exit(main())
 ```
+
+Order functions by call hierarchy so readers encounter dependencies before callers when practical. Keep the entry point last.
 
 ## Key Patterns
 
@@ -292,19 +299,22 @@ def foo(items: list[str] = []):
 
 # GOOD
 def foo(items: list[str] | None = None):
-    items = items or []
+    if items is None:
+        items = []
     ...
 ```
 
 ### Error Handling
 
 ```python
-# Re-raise with context at boundaries
+# Catch the specific failure that this boundary can translate.
 try:
     data = load_database()
-except Exception as e:
-    raise RuntimeError(f"Failed to load database: {e}") from e
+except DatabaseConnectionError as error:
+    raise RuntimeError("Failed to load database") from error
 ```
+
+Catch `Exception` only at an intentional process, task, or request boundary that must record failure before terminating or returning a safe response. Log with traceback context and re-raise or translate; never continue as though the operation succeeded.
 
 ### Logging Setup
 
@@ -329,12 +339,16 @@ logger = setup_logger(__name__)
 
 ## Package Management (uv)
 
+Use `pyproject.toml` and `uv.lock` for new projects. Do not introduce `requirements.txt` into a new uv-managed project, but do not migrate an existing supported requirements workflow unless the task includes that migration.
+
 ```bash
 # Install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Project setup
 uv init my-project
+cd my-project
+uv python pin 3.14.7
 uv add boto3 pydantic
 uv add --dev pytest black ruff
 uv sync
@@ -345,27 +359,16 @@ uv run python main.py
 
 ## Pydantic Validation
 
-```python
-from pydantic import BaseModel, field_validator
-
-class User(BaseModel):
-    name: str
-    age: int
-    
-    @field_validator("age")
-    @classmethod
-    def valid_age(cls, v: int) -> int:
-        if v < 0 or v > 150:
-            raise ValueError("Invalid age")
-        return v
-```
+Use Pydantic at structured trust boundaries when runtime validation, explicit coercion, or schema generation adds value. Do not add it for already trusted internal data that a dataclass or typed domain object represents clearly. Follow the [Pydantic validation reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/pydantic-validation.md).
 
 ## Quick Checklist
 
-- [ ] Shebang line with `uv`
+- [ ] `uv run --script` shebang and complete PEP 723 metadata for executable standalone scripts
+- [ ] Exact tested Python patch pinned for deterministic project execution
 - [ ] Type hints on all functions
 - [ ] Google-style docstrings
-- [ ] Imports grouped and sorted
+- [ ] Imports grouped and alphabetically sorted
+- [ ] Double-quote convention enforced by formatter
 - [ ] `if __name__ == "__main__":` guard
 - [ ] Logging configured
 - [ ] Input validation
@@ -387,6 +390,9 @@ class User(BaseModel):
 - **CLI & User Experience**: See [CLI and user experience](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/cli-user-experience.md)
 - **Modern Python Features**: See [modern Python](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/modern-python.md)
 - **Async & Concurrency**: See [async and concurrency](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/async-concurrency.md)
+- **HTTP Clients**: See [HTTP client resilience](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/http-client-resilience.md)
+- **Pagination & Streaming**: See [pagination and streaming](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/pagination-streaming.md)
+- **Pydantic**: See [Pydantic validation](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/pydantic-validation.md)
 - **Testing Patterns**: See [testing patterns](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/testing-patterns.md)
 - **AWS Lambda**: See [AWS Lambda](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/aws-lambda.md)
 - **AWS and Boto3**: See [AWS and Boto3](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/aws-boto3.md)

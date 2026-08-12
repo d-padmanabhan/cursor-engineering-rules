@@ -22,10 +22,10 @@ def retry(max_attempts: int = 3):
             for attempt in range(1, max_attempts + 1):
                 try:
                     return func(*args, **kwargs)
-                except Exception as e:
-                    last_exception = e
+                except (requests.ConnectionError, requests.Timeout) as error:
+                    last_exception = error
                     if attempt < max_attempts:
-                        logger.warning(f"Attempt {attempt} failed: {e}, retrying...")
+                        logger.warning(f"Attempt {attempt} failed: {error}, retrying...")
                     else:
                         logger.error(f"All {max_attempts} attempts failed")
             raise last_exception

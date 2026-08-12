@@ -2,7 +2,7 @@
 
 ## Why uv?
 
-**Prefer `uv` for new projects** - Fast, modern Python package installer and resolver.
+Use `uv`, `pyproject.toml`, and `uv.lock` for new projects. Preserve an existing supported `requirements.txt` workflow unless migration is explicitly in scope.
 
 **Installation:**
 
@@ -18,6 +18,9 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # Initialize new project
 uv init my-project
 cd my-project
+
+# Pin the exact patch tested by this project; update intentionally
+uv python pin 3.14.7
 
 # Add dependencies
 uv add boto3 pydantic
@@ -93,9 +96,40 @@ import requests
 from pydantic import BaseModel
 
 # Local
-from utils import setup_logger
 from models import User
+from utils import setup_logger
 ```
+
+Ruff's `I` rules or isort should enforce alphabetical order within standard-library, third-party, and local groups.
+
+## Standalone Executable Scripts
+
+PEP 723 scripts own their dependency declaration and do not use the surrounding project's dependencies.
+
+```python
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.14"
+# dependencies = [
+#   "requests>=2.32",
+# ]
+# ///
+"""Fetch data from the ACME API."""
+```
+
+The `dependencies` field is required even when empty. To lock a standalone script's dependencies, run:
+
+```bash
+uv lock --script script.py
+```
+
+For a one-off exact interpreter request:
+
+```bash
+uv run --python 3.14.7 script.py
+```
+
+Patch versions above are examples of an exact tested version, not evergreen defaults.
 
 **Integration with pre-commit:**
 

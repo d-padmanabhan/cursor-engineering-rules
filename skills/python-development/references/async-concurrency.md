@@ -4,30 +4,45 @@
 
 | Pattern | Use Case |
 |---------|----------|
-| **asyncio** | I/O-bound tasks (network, file I/O) |
+| **asyncio** | High-concurrency I/O with async-compatible libraries |
 | **threading** | I/O-bound with blocking libraries |
-| **multiprocessing** | CPU-bound tasks |
+| **process pool / multiprocessing** | Measured CPU-bound work that benefits after serialization overhead |
+| **sequential code** | Default when concurrency does not provide measured value |
 
-## asyncio Basics
+Ordinary file operations remain blocking unless they are delegated to a thread or use a platform-specific async implementation.
+
+## Structured asyncio
+
+Reuse clients, bound concurrency, set deadlines, and let cancellation propagate. `TaskGroup` cancels sibling tasks when one fails and waits for their cleanup.
 
 ```python
 import asyncio
 
-async def fetch_data(url: str) -> dict:
-    async with aiohttp.ClientSession() as session:
+import aiohttp
+
+
+async def fetch_data(
+    session: aiohttp.ClientSession,
+    limiter: asyncio.Semaphore,
+    url: str,
+) -> dict[str, object]:
+    async with limiter:
         async with session.get(url) as response:
+            response.raise_for_status()
             return await response.json()
 
-async def main():
-    # Run multiple coroutines concurrently
-    results = await asyncio.gather(
-        fetch_data("https://api.acme.com/users"),
-        fetch_data("https://api.acme.com/products"),
-    )
-    return results
 
-# Run the async main function
-asyncio.run(main())
+async def fetch_all(urls: list[str]) -> list[dict[str, object]]:
+    limiter = asyncio.Semaphore(20)
+    timeout = aiohttp.ClientTimeout(total=30, connect=5)
+
+    async with aiohttp.ClientSession(timeout=timeout) as session:
+        tasks: list[asyncio.Task[dict[str, object]]] = []
+        async with asyncio.timeout(60), asyncio.TaskGroup() as task_group:
+            for url in urls:
+                tasks.append(task_group.create_task(fetch_data(session, limiter, url)))
+
+    return [task.result() for task in tasks]
 ```
 
 ## Threading
@@ -44,7 +59,7 @@ def process_item(item: str) -> str:
 with ThreadPoolExecutor(max_workers=4) as executor:
     results = list(executor.map(process_item, items))
 
-# Thread-safe operations
+# Protect shared mutable state explicitly
 lock = threading.Lock()
 with lock:
     shared_resource.update()
@@ -63,20 +78,6 @@ with Pool(processes=cpu_count()) as pool:
     results = pool.map(cpu_intensive_task, [1000000, 2000000, 3000000])
 ```
 
-## Session Reuse
-
-```python
-import requests
-
-# Reuse session for multiple requests (connection pooling)
-session = requests.Session()
-session.headers.update({"Authorization": "Bearer token"})
-
-for url in urls:
-    response = session.get(url)
-    process(response)
-```
-
 ## Generators for Memory Efficiency
 
 ```python
@@ -91,45 +92,7 @@ for line in read_large_file("large_data.txt"):
     process(line)
 ```
 
-## Retry with Exponential Backoff
-
-```python
-from tenacity import retry, stop_after_attempt, wait_exponential
-
-@retry(
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(min=1, max=10)
-)
-def fetch_with_retry(url: str) -> dict:
-    response = requests.get(url)
-    response.raise_for_status()
-    return response.json()
-```
-
-## Custom Retry Decorator
-
-```python
-import functools
-import time
-
-def retry(max_attempts: int = 3, base_delay: float = 0.2):
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            attempt = 1
-            delay = base_delay
-            while True:
-                try:
-                    return func(*args, **kwargs)
-                except Exception as exc:
-                    if attempt >= max_attempts:
-                        raise
-                    time.sleep(delay)
-                    delay = min(delay * 2, 2.0)
-                    attempt += 1
-        return wrapper
-    return decorator
-```
+For connection ownership, retries, `Retry-After`, idempotency, and request budgets, use the [HTTP client resilience reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/http-client-resilience.md).
 
 ## Performance Profiling
 

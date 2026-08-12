@@ -42,9 +42,11 @@ logger = setup_custom_logger(__name__)
 import logging
 import json
 
+STANDARD_LOG_RECORD_FIELDS = frozenset(logging.makeLogRecord({}).__dict__)
+
 # JSON formatter for structured logging
 class JSONFormatter(logging.Formatter):
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         log_data = {
             "timestamp": self.formatTime(record, self.datefmt),
             "level": record.levelname,
@@ -57,10 +59,14 @@ class JSONFormatter(logging.Formatter):
         
         if record.exc_info:
             log_data["exception"] = self.formatException(record.exc_info)
-        
-        if hasattr(record, "extra"):
-            log_data.update(record.extra)
-        
+
+        extra_fields = {
+            key: value
+            for key, value in record.__dict__.items()
+            if key not in STANDARD_LOG_RECORD_FIELDS
+        }
+        log_data.update(extra_fields)
+
         return json.dumps(log_data)
 
 # Configure JSON logger
