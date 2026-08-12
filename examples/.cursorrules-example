@@ -49,8 +49,7 @@ rulesDirectory: .cursor/rules
 # rules:
 #   - .cursor/rules/100-core.mdc            # Core standards
 #   - .cursor/rules/130-git.mdc             # Git conventions
-#   - .cursor/rules/240-typescript.mdc      # TypeScript patterns
-#   - .cursor/rules/230-javascript.mdc      # JavaScript patterns
+#   - .cursor/rules/225-javascript-typescript.mdc  # JavaScript and TypeScript gates
 #   - .cursor/rules/420-gcp.mdc             # GCP patterns
 #   - .cursor/rules/440-docker.mdc          # Docker containers
 #   - .cursor/rules/310-security.mdc        # Security
@@ -72,8 +71,7 @@ rulesDirectory: .cursor/rules
 #   - .cursor/rules/100-core.mdc            # Core standards
 #   - .cursor/rules/130-git.mdc             # Git conventions
 #   - .cursor/rules/200-python.mdc          # Backend (Python)
-#   - .cursor/rules/240-typescript.mdc      # Frontend (TypeScript)
-#   - .cursor/rules/230-javascript.mdc      # Frontend (JavaScript)
+#   - .cursor/rules/225-javascript-typescript.mdc  # Frontend language gates
 #   - .cursor/rules/410-aws.mdc             # Cloud (AWS)
 #   - .cursor/rules/180-terraform.mdc       # Infrastructure
 #   - .cursor/rules/470-postgresql.mdc      # Database

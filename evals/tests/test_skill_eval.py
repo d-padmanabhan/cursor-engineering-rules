@@ -540,6 +540,11 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(benchmark["with_skill"]["pass_rate"], 1.0)
         self.assertEqual(benchmark["without_skill"]["pass_rate"], 0.5)
         self.assertEqual(benchmark["pass_rate_lift"], 0.5)
+        self.assertEqual(benchmark["paired_win_rate"], 0.5)
+        self.assertEqual(benchmark["with_skill"]["median_duration_seconds"], 1.25)
+        self.assertEqual(benchmark["with_skill"]["p95_duration_seconds"], 1.5)
+        self.assertFalse(benchmark["activation_telemetry_supported"])
+        self.assertIsNone(benchmark["activation_rate"])
 
 
 class SuiteExecutionTests(unittest.TestCase):

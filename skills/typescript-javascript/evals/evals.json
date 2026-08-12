@@ -1,0 +1,73 @@
+{
+  "skill_name": "typescript-javascript",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Review this TypeScript trust boundary:\n\nconst user = (await response.json()) as unknown as User;\nreturn user.email;\n\nProvide the smallest safe correction.",
+      "expected_output": "Check response status, bound and parse the body, validate unknown data at runtime with a schema or explicit type guard, and remove the double assertion.",
+      "files": [],
+      "checks": [
+        {
+          "id": "validates-runtime-data",
+          "type": "contains_all",
+          "values": [
+            "response.ok",
+            "unknown",
+            "validate"
+          ]
+        },
+        {
+          "id": "rejects-double-assertion",
+          "type": "contains_all",
+          "values": [
+            "double assertion",
+            "User"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "A production JavaScript module has no TypeScript migration planned. State the minimum static type contract and explain why JSDoc does not validate request JSON.",
+      "expected_output": "Use // @ts-check and precise JSDoc for production JavaScript, while validating request JSON at runtime because type comments are erased and untrusted data remains unknown.",
+      "files": [],
+      "checks": [
+        {
+          "id": "requires-checked-javascript",
+          "type": "contains_all",
+          "values": [
+            "// @ts-check",
+            "JSDoc",
+            "runtime"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Review a Node.js API server that uses permissive CORS, unlimited JSON bodies, fetch without an AbortSignal, and process.exit() on SIGTERM. List the smallest production corrections.",
+      "expected_output": "Use an explicit CORS allowlist, bounded request bodies, outbound timeouts/AbortSignal plus status and schema checks, and graceful shutdown that stops accepting traffic and drains in-flight work.",
+      "files": [],
+      "checks": [
+        {
+          "id": "hardens-server",
+          "type": "contains_all",
+          "values": [
+            "CORS",
+            "body",
+            "AbortSignal",
+            "graceful shutdown"
+          ]
+        },
+        {
+          "id": "validates-http-response",
+          "type": "contains_all",
+          "values": [
+            "status",
+            "schema"
+          ]
+        }
+      ]
+    }
+  ]
+}

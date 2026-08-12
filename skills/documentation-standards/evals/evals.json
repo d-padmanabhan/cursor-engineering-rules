@@ -1,0 +1,59 @@
+{
+  "skill_name": "documentation-standards",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Write a three-sentence release note for a bug fix. Decide whether it needs a table of contents, Mermaid diagram, or alert.",
+      "expected_output": "Provide a concise release note without unnecessary table of contents, diagram, or alert.",
+      "files": [],
+      "checks": [
+        {
+          "id": "avoids-documentation-ceremony",
+          "type": "not_regex",
+          "pattern": "(?im)^## table of contents|```mermaid|> \\[!(?:NOTE|TIP|IMPORTANT|WARNING|CAUTION)\\]"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Create a concise multi-section architecture note explaining a request flow from client to API to database, with failure handling and links to the API and database docs.",
+      "expected_output": "Use one H1, logical sections, clickable descriptive links, soft-wrapped prose, and a focused Mermaid sequence or flow diagram because the interaction benefits from visualization.",
+      "files": [],
+      "checks": [
+        {
+          "id": "uses-proportionate-structure",
+          "type": "contains_all",
+          "values": [
+            "# ",
+            "```mermaid",
+            "Client",
+            "API",
+            "Database"
+          ]
+        },
+        {
+          "id": "uses-clickable-links",
+          "type": "regex",
+          "pattern": "\\[[^\\]]*(?:API|database)[^\\]]*\\]\\([^)]+\\)"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Review this Markdown navigation sentence and correct it: `See \\`https://docs.acme.com/api\\` and \\`docs/setup.md\\`.`",
+      "expected_output": "Convert both navigational targets to descriptive clickable Markdown links and explain that backticks are for literal values, not navigation.",
+      "files": [],
+      "checks": [
+        {
+          "id": "fixes-navigation-links",
+          "type": "contains_all",
+          "values": [
+            "](https://docs.acme.com/api)",
+            "](docs/setup.md)",
+            "navigation"
+          ]
+        }
+      ]
+    }
+  ]
+}

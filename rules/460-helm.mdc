@@ -1,267 +1,42 @@
 ---
-title: Helm & Kubernetes Package Management
-description: Helm charts, best practices, templating, values management, and GitOps deployment patterns
+title: Helm Engineering Gates
+description: Mandatory Helm chart validation, supply-chain, secret, and deployment gates.
 priority: 460
 alwaysApply: false
-files:
-  include:
-    - "**/Chart.yaml"
-    - "**/values.yaml"
-    - "**/values-*.yaml"
-    - "**/templates/**/*.yaml"
-    - "**/helmfile.yaml"
+globs:
+  - "**/Chart.yaml"
+  - "**/Chart.lock"
+  - "**/values*.{yaml,yml}"
+  - "**/values.schema.json"
+  - "**/templates/**/*.{yaml,yml,tpl}"
+  - "**/_helpers.tpl"
+  - "**/helmfile.{yaml,yml}"
+  - "**/helmfile.d/**/*.{yaml,yml}"
 ---
 
-# Helm & Kubernetes Package Management
+# Helm Engineering Gates
 
-## Guiding Principles
+This rule owns mandatory policy only. Use the [Kubernetes containers skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/kubernetes-containers/SKILL.md) and [Helm chart reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/kubernetes-containers/references/helm-charts.md) for chart structure, templating, testing, GitOps, and troubleshooting.
 
-1. **Reusability**: Create modular, reusable charts
-2. **Configurability**: Use values.yaml for environment-specific configuration
-3. **Best Practices**: Follow Helm and Kubernetes conventions
-4. **Testing**: Validate charts before deployment
-5. **Version Control**: Track charts and values in Git
+## Chart and Values Contract
 
----
+- Keep chart metadata, dependency constraints, generated `Chart.lock`, and vendored dependencies consistent. Review lock changes as supply-chain changes.
+- Define safe defaults and validate user-facing values with `values.schema.json` when practical.
+- Quote strings deliberately, use explicit types, and fail rendering for required values rather than silently producing invalid resources.
+- Centralize stable naming and labels in helpers; avoid templates whose output depends on ambient cluster state unless that dependency is explicit and tested.
+- Do not place credentials or rendered secret values in committed values files, command lines, logs, diffs, or release notes.
+- Production workloads must resolve to immutable image digests.
 
-## Helm Chart Structure
+## Preflight and Mutation
 
-```
-mychart/
- Chart.yaml              # Chart metadata
- values.yaml             # Default values
- values-prod.yaml        # Production values
- values-staging.yaml     # Staging values
- charts/                 # Chart dependencies
- templates/              # Kubernetes manifests
-    deployment.yaml
-    service.yaml
-    ingress.yaml
-    configmap.yaml
-    secret.yaml
-    hpa.yaml
-    _helpers.tpl       # Template helpers
-    NOTES.txt          # Post-install notes
- README.md
-```
+- Before any install or upgrade, run `helm lint` and render with the exact intended values using `helm template`.
+- Validate rendered manifests with repository policy checks and an admission-aware dry-run when available.
+- Inspect the release, namespace, cluster, chart version, values sources, rendered diff, hooks, CRDs, and deletion impact before mutation.
+- `helm install`, `helm upgrade`, `helm rollback`, `helm uninstall`, dependency publication, and registry publication are remote mutations requiring explicit authorization under the [agent audit rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/020-agent-audit.mdc).
+- Do not use `--force`, `--no-hooks`, `--disable-openapi-validation`, or broad cleanup flags as routine recovery.
 
----
+## Verification and Recovery
 
-## Chart.yaml
-
-```yaml
-apiVersion: v2
-name: webapp
-description: Web application Helm chart
-type: application
-version: 1.0.0
-appVersion: "1.0.0"
-keywords:
-  - webapp
-  - nodejs
-home: https://github.com/acme/webapp
-sources:
-  - https://github.com/acme/webapp
-maintainers:
-  - name: DevOps Team
-    email: devops@acme.com
-dependencies:
-  - name: postgresql
-    version: "12.x"
-    repository: "https://charts.bitnami.com/bitnami"
-    condition: postgresql.enabled
-```
-
----
-
-## values.yaml
-
-```yaml
-# Default values
-replicaCount: 2
-
-image:
-  repository: acme/webapp
-  pullPolicy: IfNotPresent
-  tag: ""  # Defaults to Chart appVersion
-
-imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
-
-serviceAccount:
-  create: true
-  annotations: {}
-  name: ""
-
-podAnnotations: {}
-
-podSecurityContext:
-  runAsNonRoot: true
-  runAsUser: 1000
-  fsGroup: 1000
-
-securityContext:
-  allowPrivilegeEscalation: false
-  capabilities:
-    drop:
-      - ALL
-  readOnlyRootFilesystem: true
-
-service:
-  type: ClusterIP
-  port: 80
-  targetPort: 8080
-
-ingress:
-  enabled: true
-  className: "nginx"
-  annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-  hosts:
-    - host: webapp.acme.com
-      paths:
-        - path: /
-          pathType: Prefix
-  tls:
-    - secretName: webapp-tls
-      hosts:
-        - webapp.acme.com
-
-resources:
-  limits:
-    cpu: 500m
-    memory: 512Mi
-  requests:
-    cpu: 250m
-    memory: 256Mi
-
-autoscaling:
-  enabled: true
-  minReplicas: 2
-  maxReplicas: 10
-  targetCPUUtilizationPercentage: 70
-  targetMemoryUtilizationPercentage: 80
-
-env:
-  - name: NODE_ENV
-    value: production
-  - name: LOG_LEVEL
-    value: info
-
-envFrom:
-  - secretRef:
-      name: webapp-secrets
-
-postgresql:
-  enabled: true
-  auth:
-    database: webapp
-    username: webapp
-```
-
----
-
-## Common Helm Commands
-
-> [!CAUTION]
-> **Remote/stateful operations:** `helm install` / `helm upgrade` / `helm uninstall` modify a live cluster.
-> Run only with explicit approval; prefer `helm template` (dry-run) first.
-
-```bash
-# Create new chart
-helm create mychart
-
-# Lint chart
-helm lint mychart/
-
-# Template (dry-run)
-helm template mychart/ --values mychart/values-prod.yaml
-
-# Install
-helm install webapp mychart/ \
-  --namespace production \
-  --create-namespace \
-  --values mychart/values-prod.yaml
-
-# Upgrade
-helm upgrade webapp mychart/ \
-  --namespace production \
-  --values mychart/values-prod.yaml \
-  --wait
-
-# Rollback
-helm rollback webapp 1 --namespace production
-
-# List releases
-helm list --namespace production
-
-# Get values
-helm get values webapp --namespace production
-
-# Uninstall
-helm uninstall webapp --namespace production
-```
-
----
-
-## Best Practices
-
-### Use _helpers.tpl
-
-```yaml
-{{/*
-Expand the name of the chart.
-*/}}
-{{- define "webapp.name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
-{{- end }}
-
-{{/*
-Create a default fully qualified app name.
-*/}}
-{{- define "webapp.fullname" -}}
-{{- if .Values.fullnameOverride }}
-{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- $name := default .Chart.Name .Values.nameOverride }}
-{{- if contains $name .Release.Name }}
-{{- .Release.Name | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
-{{- end }}
-{{- end }}
-{{- end }}
-
-{{/*
-Common labels
-*/}}
-{{- define "webapp.labels" -}}
-helm.sh/chart: {{ include "webapp.chart" . }}
-{{ include "webapp.selectorLabels" . }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- end }}
-
-{{/*
-Selector labels
-*/}}
-{{- define "webapp.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "webapp.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-{{- end }}
-```
-
----
-
-## Related Files
-
-- `450-kubernetes.mdc` - Kubernetes patterns
-- `180-terraform.mdc` - Infrastructure as Code
-- `160-github-actions.mdc` - CI/CD for Helm deployments
-
----
-
-**Purpose**: Helm and Kubernetes package management best practices
+- Use bounded waits and verify release status, workload rollout, hooks, events, health, and expected resource ownership.
+- Use `--atomic` only when its rollback semantics are understood and safe for hooks, migrations, CRDs, and stateful changes.
+- Prefer a reviewed values/chart fix or Git revert. Direct cluster patches create drift and must be break-glass, recorded, bounded, and reconciled immediately.

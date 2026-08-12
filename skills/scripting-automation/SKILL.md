@@ -5,6 +5,8 @@ description: Advanced Bash automation patterns for production-grade scripts and 
 
 # Scripting & Automation
 
+Use the [Bash skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/bash-shell-scripting/SKILL.md) for baseline shell authoring. This skill owns automation-specific retries, locks, signals, idempotency, deployment workflows, and BATS patterns.
+
 ## Guiding Principles
 
 - **"Fail fast, fail clearly"** - Use strict mode, validate early, provide clear error messages
@@ -566,4 +568,4 @@ my_script() {
 
 ## Detailed References
 
-- **Bash Best Practices**: See [references/bash.md](references/bash.md) for comprehensive Bash patterns, performance optimization, advanced error handling, testing, security, cross-platform compatibility, and comprehensive examples
+- **Bash authoring**: See the [Bash skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/bash-shell-scripting/SKILL.md)

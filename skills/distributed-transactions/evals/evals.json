@@ -1,0 +1,166 @@
+{
+  "skill_name": "distributed-transactions",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Review this order-service design: update the order in PostgreSQL, commit, then publish OrderConfirmed to Kafka. If publish fails, retry the whole HTTP request. Provide the smallest correct design and its failure semantics.",
+      "expected_output": "Identify the dual-write gap. Write the order change and Outbox row in one local transaction, publish through a relay, use a stable event ID, and require consumer idempotency because publish may succeed before publication marking.",
+      "files": [],
+      "checks": [
+        {
+          "id": "identifies-dual-write",
+          "type": "contains_all",
+          "values": [
+            "dual write",
+            "Outbox",
+            "same",
+            "transaction"
+          ]
+        },
+        {
+          "id": "covers-relay-redelivery",
+          "type": "contains_all",
+          "values": [
+            "relay",
+            "event ID",
+            "duplicate",
+            "idempotent"
+          ]
+        },
+        {
+          "id": "does-not-keep-direct-publish",
+          "type": "not_contains",
+          "value": "commit, then publish"
+        },
+        {
+          "id": "observes-distributed-skill",
+          "type": "loaded_skill",
+          "skill": "distributed-transactions",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "A payment consumer inserts the message ID into Redis, calls a payment provider, then writes the order status. Explain why this is not duplicate-safe and propose a durable design.",
+      "expected_output": "Explain the crash windows and that Redis dedupe is not atomic with the business effect. Use a durable Inbox/local transaction for database effects and the provider's stable idempotency key plus durable command state and reconciliation for the external payment.",
+      "files": [],
+      "checks": [
+        {
+          "id": "finds-consumer-crash-window",
+          "type": "contains_all",
+          "values": [
+            "crash",
+            "Inbox",
+            "transaction",
+            "Redis"
+          ]
+        },
+        {
+          "id": "protects-external-effect",
+          "type": "contains_all",
+          "values": [
+            "idempotency key",
+            "durable",
+            "reconciliation"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Choose Saga orchestration or choreography for a production order workflow with payment authorization, inventory reservation, fraud review, a 24-hour human approval, shipping, ordered compensation, and one operations team owning the end-to-end SLA. Explain the trade-off.",
+      "expected_output": "Choose durable orchestration because the workflow has many ordered steps, long waits, deadlines, compensation order, central ownership, and operator visibility. Keep participant transactions local and idempotent.",
+      "files": [],
+      "checks": [
+        {
+          "id": "chooses-orchestration",
+          "type": "contains_all",
+          "values": [
+            "orchestration",
+            "durable",
+            "24-hour",
+            "compensation",
+            "operator"
+          ]
+        },
+        {
+          "id": "explains-choreography-cost",
+          "type": "contains_any",
+          "values": [
+            "implicit workflow",
+            "event graph",
+            "harder to"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "A Saga charged a card and reserved inventory. Shipping failed, then the refund compensation failed permanently. The current code marks the Saga rolled_back after issuing the refund command. Correct the state and recovery workflow.",
+      "expected_output": "Do not report rollback success. Persist compensation_failed or manual_resolution_required, keep retry and attempt history, reconcile provider state, alert an owner, and expose an authorized idempotent operator action.",
+      "files": [],
+      "checks": [
+        {
+          "id": "represents-compensation-failure",
+          "type": "contains_any",
+          "values": [
+            "compensation_failed",
+            "manual_resolution_required"
+          ]
+        },
+        {
+          "id": "requires-operational-recovery",
+          "type": "contains_all",
+          "values": [
+            "reconcile",
+            "alert",
+            "authorized",
+            "idempotent"
+          ]
+        },
+        {
+          "id": "rejects-false-rollback",
+          "type": "contains_all",
+          "values": [
+            "Do not",
+            "rolled_back"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "A team says Kafka transactions give its database, broker, payment provider, and email service exactly-once business processing, so consumers need no idempotency. Review the claim.",
+      "expected_output": "Reject the end-to-end exactly-once claim. Kafka transactions cover a bounded Kafka read/process/write scope, not unrelated databases or external providers. Require stable operation IDs, idempotent business effects, Outbox/Inbox where applicable, and reconciliation.",
+      "files": [],
+      "checks": [
+        {
+          "id": "bounds-exactly-once",
+          "type": "contains_all",
+          "values": [
+            "exactly once",
+            "Kafka",
+            "database",
+            "payment provider"
+          ]
+        },
+        {
+          "id": "requires-end-to-end-controls",
+          "type": "contains_all",
+          "values": [
+            "idempotent",
+            "Outbox",
+            "Inbox",
+            "reconciliation"
+          ]
+        },
+        {
+          "id": "does-not-endorse-claim",
+          "type": "not_contains",
+          "value": "consumers need no idempotency"
+        }
+      ]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 ---
 name: containers-orchestration
-description: Docker and container orchestration best practices for production-ready containers. Covers multi-stage builds, security scanning, distroless images, Docker Compose patterns, health checks, and CI/CD integration. Use when working with Dockerfile, docker-compose.yml, .dockerignore files, or when asking about Docker, containers, image optimization, or container security.
+description: Docker and container best practices for production images, multi-stage builds, cache reuse, Docker Compose, health checks, scanning, publishing, and signing. Use when working with Dockerfiles, Containerfiles, Compose files, .dockerignore, image optimization, container security, docker push, Cosign, or Notation.
 ---
 
 # Containers & Orchestration
@@ -16,12 +16,12 @@ description: Docker and container orchestration best practices for production-re
 
 | Aspect | Standard |
 |--------|----------|
-| **Base Images** | Official, pinned versions (`python:3.14.0-slim`) |
+| **Base Images** | Official image; pin the immutable digest for production |
 | **Multi-Stage** | Required for compiled languages (Go, Rust, C++) |
 | **User** | Run as non-root (use `USER node` or create user) |
-| **Health Checks** | Always include `HEALTHCHECK` instruction |
+| **Health Checks** | Include a meaningful `HEALTHCHECK` when the runtime exposes one |
 | **Scanning** | Registry-native scanning gates (JFrog Xray / AWS ECR enhanced scanning) |
-| **Signing** | Sign images with cosign or Docker Content Trust |
+| **Signing** | Sign images with Sigstore/Cosign or Notation |
 
 ## Dockerfile Best Practices
 
@@ -41,6 +41,8 @@ FROM ubuntu:latest
 ```
 
 ### Pin Versions Explicitly
+
+For production, pin the immutable digest (`image:tag@sha256:digest`) and use dependency automation for reviewed digest updates. The tag examples below are for readability and local development.
 
 ```dockerfile
 # ✅ GOOD - Explicit version pinning
@@ -126,7 +128,7 @@ Optimize cache invalidation rather than minimizing the number of layers:
 - **Treat BuildKit cache mounts as performance-only.** Use them where supported, but require the build to succeed when the cache is empty or garbage-collected.
 - Verify a repeated BuildKit build reports unchanged dependency copy and installation steps as cached. If building is unavailable, report that limitation instead of claiming verification.
 
-Do not collapse stable dependency work and frequently changing application work merely to reduce the layer count. See the canonical [Docker rule](../../rules/440-docker.mdc#build-cache-contract-non-negotiable) and [Docker cache guidance](https://docs.docker.com/build/cache/optimize/).
+Do not collapse stable dependency work and frequently changing application work merely to reduce the layer count. Detailed patterns are canonical in the [Docker reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/containers-orchestration/references/docker.md); current cache behavior is documented in [Docker's cache guidance](https://docs.docker.com/build/cache/optimize/).
 
 ### Order Instructions by Change Frequency
 
@@ -230,11 +232,9 @@ CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ### Production-Ready Compose File
 
 ```yaml
-version: '3.9'
-
 services:
   web:
-    image: acme.com/webapp:${VERSION:-latest}
+    image: acme.com/webapp@sha256:${IMAGE_DIGEST:?set IMAGE_DIGEST}
     container_name: webapp
     restart: unless-stopped
 
@@ -323,7 +323,7 @@ COPY requirements.txt .
 
 # Mount pip cache to speed up builds
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir -r requirements.txt
+    pip install -r requirements.txt
 
 COPY src/ ./src/
 CMD ["python", "-m", "src.main"]
@@ -392,4 +392,4 @@ docker logs <container_id>
 
 ## Detailed References
 
-- **Docker Best Practices**: See [references/docker.md](references/docker.md) for comprehensive Docker patterns, multi-stage builds, security, Compose, CI/CD integration, and troubleshooting
+- **Docker Best Practices**: See [references/docker.md](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/containers-orchestration/references/docker.md) for comprehensive Docker patterns, multi-stage builds, security, Compose, CI/CD integration, and troubleshooting

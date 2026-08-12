@@ -5,6 +5,8 @@ description: TypeScript and JavaScript development standards for modern web and 
 
 # TypeScript & JavaScript Development
 
+Mandatory gates are owned by the [JavaScript and TypeScript rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/225-javascript-typescript.mdc). This skill and its references own procedures and examples.
+
 ## Guiding Principles
 
 1. **Type Safety**: Leverage strict mode, avoid `any`, use discriminated unions
@@ -226,5 +228,5 @@ results.forEach(result => {
 
 ## Detailed References
 
-- **TypeScript Patterns**: See [references/typescript-patterns.md](references/typescript-patterns.md) for advanced types, generics, mapped types
-- **JavaScript Patterns**: See [references/javascript-patterns.md](references/javascript-patterns.md) for JSDoc, ESM, performance
+- **TypeScript Patterns**: See [TypeScript patterns](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/typescript-javascript/references/typescript-patterns.md) for advanced types, generics, and mapped types
+- **JavaScript Patterns**: See [JavaScript patterns](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/typescript-javascript/references/javascript-patterns.md) for JSDoc, ESM, and performance

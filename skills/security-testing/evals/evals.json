@@ -1,0 +1,79 @@
+{
+  "skill_name": "security-testing",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Review this endpoint: `GET /users/:id` authenticates the caller, then returns the requested user record without checking ownership. Explain the issue, attack path, smallest correction, and negative test.",
+      "expected_output": "Identify broken object-level authorization, explain ID substitution, enforce same-user-or-authorized-role server-side, return 403, and test cross-user access.",
+      "files": [],
+      "checks": [
+        {
+          "id": "finds-authorization-flaw",
+          "type": "contains_all",
+          "values": [
+            "authorization",
+            "ID",
+            "403"
+          ]
+        },
+        {
+          "id": "adds-negative-test",
+          "type": "contains_all",
+          "values": [
+            "test",
+            "another user"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Review a server endpoint that fetches an arbitrary user-provided HTTPS URL and follows redirects. Provide the smallest safe SSRF correction and tests.",
+      "expected_output": "Use a destination allowlist, resolve and reject private/link-local/loopback/metadata addresses, revalidate redirects, bound time and size, and test DNS/redirect bypasses.",
+      "files": [],
+      "checks": [
+        {
+          "id": "mitigates-ssrf",
+          "type": "contains_all",
+          "values": [
+            "allowlist",
+            "private",
+            "link-local",
+            "redirect",
+            "timeout"
+          ]
+        },
+        {
+          "id": "tests-bypasses",
+          "type": "contains_any",
+          "values": [
+            "DNS rebinding",
+            "redirect bypass",
+            "metadata"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "The user requests a full repository security audit. Choose the appropriate workflow and explain why a short OWASP checklist is insufficient.",
+      "expected_output": "Route to the codebase security audit skill and its layered secrets, SAST, SCA, taint/data-flow, semantic/CPG, IaC, custom-rule, and DAST workflow.",
+      "files": [],
+      "checks": [
+        {
+          "id": "routes-full-audit",
+          "type": "contains_all",
+          "values": [
+            "codebase security audit",
+            "secrets",
+            "SAST",
+            "SCA",
+            "taint",
+            "IaC",
+            "DAST"
+          ]
+        }
+      ]
+    }
+  ]
+}

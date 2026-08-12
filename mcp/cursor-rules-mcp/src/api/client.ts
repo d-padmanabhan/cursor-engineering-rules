@@ -67,8 +67,8 @@ export class ApiClient {
         python: '200-python.mdc',
         go: '210-go.mdc',
         rust: '220-rust.mdc',
-        javascript: '230-javascript.mdc',
-        typescript: '240-typescript.mdc',
+        javascript: '225-javascript-typescript.mdc',
+        typescript: '225-javascript-typescript.mdc',
         frontend: '260-frontend.mdc',
       },
       infrastructure: {

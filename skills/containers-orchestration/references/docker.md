@@ -30,6 +30,8 @@ FROM ubuntu:latest
 
 ### Pin Versions Explicitly
 
+For production, pin the immutable digest (`image:tag@sha256:digest`) and let dependency automation propose reviewed digest updates. The tag examples below are readable development inputs, not immutable production locks.
+
 ```dockerfile
 # ✅ GOOD - Explicit version pinning
 FROM python:3.14.0-slim-bookworm
@@ -290,15 +292,10 @@ CMD ["python", "-m", "src.main"]
 
 ### Sign Images
 
-```bash
-# Docker Content Trust
-export DOCKER_CONTENT_TRUST=1
-docker push acme.com/myapp:v1.0.0
+Use the organization's approved Sigstore/Cosign or Notation workflow against an immutable image digest. Keep signing keys outside the model and local shell history; prefer workload identity or keyless CI signing where policy permits it.
 
-# Cosign (Sigstore)
-cosign sign --key cosign.key acme.com/myapp:v1.0.0
-cosign verify --key cosign.pub acme.com/myapp:v1.0.0
-```
+> [!WARNING]
+> Docker Content Trust and Notary v1 are being retired. Do not introduce `DOCKER_CONTENT_TRUST=1` or `docker trust` into new workflows. Follow [Docker's retirement guidance](https://docs.docker.com/retired/#docker-content-trust-dct).
 
 ---
 
@@ -386,7 +383,7 @@ COPY requirements.txt .
 
 # Mount pip cache to speed up builds
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir -r requirements.txt
+    pip install -r requirements.txt
 
 COPY src/ ./src/
 CMD ["python", "-m", "src.main"]
@@ -436,11 +433,9 @@ CMD ["/main"]
 ### Production-Ready Compose File
 
 ```yaml
-version: '3.9'
-
 services:
   web:
-    image: acme.com/webapp:${VERSION:-latest}
+    image: acme.com/webapp@sha256:${IMAGE_DIGEST:?set IMAGE_DIGEST}
     container_name: webapp
     restart: unless-stopped
 
@@ -547,8 +542,6 @@ secrets:
 
 ```yaml
 # docker-compose.override.yml (for local development)
-version: '3.9'
-
 services:
   web:
     build:

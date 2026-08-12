@@ -54,7 +54,7 @@ Use `podtrace` for on-demand eBPF diagnostics when `kubectl describe`, logs, and
 
 - Prefer short runs such as `--diagnose 20s`
 - Treat captured application-layer fields as sensitive
-- See [references/podtrace.md](references/podtrace.md) for workflow, prerequisites, and command examples
+- See [Podtrace reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/kubernetes-containers/references/podtrace.md) for workflow, prerequisites, and command examples
 
 ## Deployment Pattern
 
@@ -235,17 +235,9 @@ containers:
 
 Exceptions are narrow: CNI / CSI components, eBPF observability, runtime security agents, node problem detectors, and short-lived break-glass diagnostics. Require an owner, reason, dedicated namespace, scoped service account/RBAC, duration, and review date before allowing an exception.
 
-## Argo CD Sync Gate (Non-Negotiable)
+## Argo CD Synchronization Workflow
 
-Treat `argocd app sync`, rollback, and sync-window overrides as remote cluster mutations. Before a production sync:
-
-- verify the Application, AppProject, destination cluster/namespace, and explicit revision;
-- inspect refreshed status, diff, dry-run output, hooks, waves, shared resources, and every prune action;
-- show the target, diff, prune set, and recovery plan at the human approval gate;
-- avoid `--force`, use a bounded wait, and require both `Synced` and `Healthy`;
-- preserve operation evidence and recover through a reviewed Git revert by default.
-
-For automated sync, set `automated.enabled` explicitly and review `prune`, `selfHeal`, and `allowEmpty` as separate risk decisions. Keep `allowEmpty: false`, prefer `FailOnSharedResource=true`, and use `PruneLast=true` when pruning unless a reviewed dependency requires different ordering. Every production policy review must state the applicable sync window and confirm that hooks are idempotent and sync-wave ordering is tested. See [Argo CD synchronization](references/argocd-sync.md) for commands, policy examples, and failure handling.
+The mandatory authorization, preview, automation, and recovery gates live in the [Kubernetes rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/450-kubernetes.mdc#argo-cd-synchronization). Follow the [Argo CD synchronization runbook](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/kubernetes-containers/references/argocd-sync.md) for read-only preflight, approval evidence, exact-revision sync, bounded verification, and Git-based recovery.
 
 ## Helm Quick Reference
 
@@ -267,6 +259,6 @@ helm diff upgrade my-app ./chart
 
 ## Detailed References
 
-- **Kubernetes Patterns**: See [references/kubernetes-patterns.md](references/kubernetes-patterns.md)
-- **Helm Charts**: See [references/helm-charts.md](references/helm-charts.md)
-- **Podtrace**: See [references/podtrace.md](references/podtrace.md) for runtime diagnostics in Kubernetes
+- **Kubernetes Patterns**: See [Kubernetes patterns](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/kubernetes-containers/references/kubernetes-patterns.md)
+- **Helm Charts**: See [Helm charts](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/kubernetes-containers/references/helm-charts.md)
+- **Podtrace**: See [Podtrace reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/kubernetes-containers/references/podtrace.md) for runtime diagnostics in Kubernetes

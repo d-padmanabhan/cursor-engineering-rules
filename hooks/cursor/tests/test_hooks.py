@@ -48,6 +48,54 @@ class ShellGuardTests(unittest.TestCase):
     def test_git_global_options_do_not_bypass_push_gate(self) -> None:
         self.assert_permission("git -C repo push origin main", "ask")
 
+    def test_git_commit_requires_approval(self) -> None:
+        self.assert_permission("git commit -m 'docs: update guide'", "ask")
+
+    def test_git_discard_commands_require_approval(self) -> None:
+        for command in (
+            "git restore src/app.py",
+            "git checkout -- src/app.py",
+            "git reset --hard HEAD~1",
+            "git clean -fd",
+        ):
+            with self.subTest(command=command):
+                self.assert_permission(command, "ask")
+
+    def test_destructive_git_branch_and_worktree_commands_require_approval(self) -> None:
+        for command in ("git branch -D feat/old", "git worktree remove ../old-worktree"):
+            with self.subTest(command=command):
+                self.assert_permission(command, "ask")
+
+    def test_read_only_git_commands_are_allowed(self) -> None:
+        for command in (
+            "git status --short",
+            "git diff",
+            "git fetch origin --prune",
+            "git log --oneline",
+        ):
+            with self.subTest(command=command):
+                self.assert_permission(command, "allow")
+
+    def test_force_push_has_specific_approval_message(self) -> None:
+        decision: guard_before_shell.Decision = guard_before_shell.evaluate_command(
+            "git push --force-with-lease origin feat/rewrite"
+        )
+        self.assertEqual(decision.permission, "ask")
+        self.assertIn("force-push", decision.user_message or "")
+        self.assertIn("normal push approval", decision.agent_message or "")
+
+    def test_image_publish_and_sign_commands_require_approval(self) -> None:
+        for command in (
+            "docker push acme.com/app@sha256:0123456789abcdef",
+            "cosign sign acme.com/app@sha256:0123456789abcdef",
+            "notation sign acme.com/app@sha256:0123456789abcdef",
+        ):
+            with self.subTest(command=command):
+                self.assert_permission(command, "ask")
+
+    def test_local_docker_build_is_allowed(self) -> None:
+        self.assert_permission("docker build -t app:test .", "allow")
+
     def test_infrastructure_global_options_do_not_bypass_gate(self) -> None:
         self.assert_permission("terraform -chdir=infra apply", "ask")
 

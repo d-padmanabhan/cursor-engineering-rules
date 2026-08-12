@@ -342,7 +342,7 @@ rules:
 rules:
   - .cursor/rules/100-core.mdc
   - .cursor/rules/130-git.mdc
-  - .cursor/rules/240-typescript.mdc     # Frontend
+  - .cursor/rules/225-javascript-typescript.mdc  # Frontend
   - .cursor/rules/200-python.mdc         # Backend
   - .cursor/rules/470-postgresql.mdc     # Database
   - .cursor/rules/320-api-design.mdc     # API patterns
@@ -593,8 +593,8 @@ files:
 | `*.py`, `pyproject.toml` | `200-python.mdc` |
 | `*.tf`, `*.tfvars` | `180-terraform.mdc` |
 | `*.go`, `go.mod` | `210-go.mdc` |
-| `*.ts`, `*.tsx` | `240-typescript.mdc` |
-| `*.js`, `*.jsx` | `230-javascript.mdc` |
+| `*.ts`, `*.tsx` | `225-javascript-typescript.mdc` |
+| `*.js`, `*.jsx` | `225-javascript-typescript.mdc` |
 | `Dockerfile`, `docker-compose.yml` | `440-docker.mdc` |
 | `*.yaml` in `.github/workflows/` | `160-github-actions.mdc` |
 

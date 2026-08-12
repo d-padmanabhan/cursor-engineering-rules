@@ -1,0 +1,90 @@
+{
+  "skill_name": "bash-shell-scripting",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Write a Bash wrapper that forwards every argument unchanged to a command named acme-tool and fails clearly when the command is unavailable.",
+      "expected_output": "Use a Bash shebang, controlled error mode, command -v validation, an argument-array-safe invocation with \"$@\", and a main entry point.",
+      "files": [],
+      "checks": [
+        {
+          "id": "preserves-arguments",
+          "type": "contains_all",
+          "values": [
+            "\"$@\"",
+            "command -v",
+            "main"
+          ]
+        },
+        {
+          "id": "declares-bash",
+          "type": "contains_all",
+          "values": [
+            "#!/usr/bin/env bash",
+            "pipefail"
+          ]
+        },
+        {
+          "id": "avoids-unsafe-forwarding",
+          "type": "not_regex",
+          "pattern": "(?m)^\\s*acme-tool\\s+\\$[@*]\\s*$"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Review this shell fragment and provide the smallest safe rewrite:\n\ncmd=\"curl $URL -H 'Authorization: Bearer $TOKEN'\"\neval \"$cmd\"\necho -e \"$RESULT\"",
+      "expected_output": "Reject eval and command strings, validate the URL, use an argument array, keep the token out of tracing/logs, and use printf.",
+      "files": [],
+      "checks": [
+        {
+          "id": "rejects-eval",
+          "type": "contains_all",
+          "values": [
+            "array",
+            "eval",
+            "printf"
+          ]
+        },
+        {
+          "id": "protects-secret",
+          "type": "contains_all",
+          "values": [
+            "TOKEN",
+            "set -x"
+          ]
+        },
+        {
+          "id": "does-not-recommend-eval",
+          "type": "not_regex",
+          "pattern": "(?m)^\\s*eval\\s"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Create a temporary working directory in Bash, ensure it is removed on normal exit and signals, and state the verification commands required before completion.",
+      "expected_output": "Use mktemp -d, install a quoted cleanup trap immediately, and require shellcheck plus shfmt.",
+      "files": [],
+      "checks": [
+        {
+          "id": "safe-temp-cleanup",
+          "type": "contains_all",
+          "values": [
+            "mktemp -d",
+            "trap",
+            "rm -rf --"
+          ]
+        },
+        {
+          "id": "requires-quality-gates",
+          "type": "contains_all",
+          "values": [
+            "shellcheck",
+            "shfmt"
+          ]
+        }
+      ]
+    }
+  ]
+}

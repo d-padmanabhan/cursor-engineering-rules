@@ -5,6 +5,8 @@ description: Core coding standards and best practices for code review and genera
 
 # Core Engineering Standards
 
+Mandatory universal gates are owned by the [core rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/100-core.mdc). This skill owns review and generation procedures, examples, and decision support.
+
 ## Guiding Principles
 
 - **Simplicity First:** Simple code is maintainable code. Apply DRY, KISS, YAGNI, and SOLID principles.
@@ -69,7 +71,7 @@ Organize feedback by impact:
 
 **Evaluation Areas:** Security, Error Handling, Testing, Observability, Resource Management, Concurrency, Performance
 
-For detailed review patterns and formats, see [references/code-review.md](references/code-review.md).
+For detailed review patterns and formats, see [code review reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/core-engineering/references/code-review.md).
 
 ## Code Generation Essentials
 
@@ -83,7 +85,9 @@ For detailed review patterns and formats, see [references/code-review.md](refere
 
 **What NOT to Include:** Over-engineered abstractions, premature optimization, extensive test suites, complex frameworks when stdlib suffices
 
-For detailed generation patterns, see [references/code-generation.md](references/code-generation.md).
+For detailed generation patterns, see [code generation reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/core-engineering/references/code-generation.md).
+
+For end-to-end architecture, capacity planning, SLOs, service/data boundaries, failure design, and migration strategy, use the [system design skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/system-design/SKILL.md). This skill remains focused on code-level engineering.
 
 ## AI-Assisted Coding
 
@@ -110,7 +114,7 @@ The agent (an LLM in Cursor / Claude / Codex / etc.) is a fast, persuasive, part
 1. **Read the diff before the summary.** Summaries embellish; the diff is the source of truth.
 2. **Verify every external reference.** Library version, API signature, CVE id, CHANGELOG line, citation. Half of fabrications are confident-sounding but wrong.
 3. **Ask for a counterexample.** If the agent claims X is always true and can't produce a case where it isn't, the claim is suspect.
-4. **Bound the autonomy.** Long-running agent tasks need HITL gates before destructive or irreversible steps. See [zero-trust skill / hitl-gates](../zero-trust/references/hitl-gates.md).
+4. **Bound the autonomy.** Long-running agent tasks need HITL gates before destructive or irreversible steps. See [zero-trust skill / hitl-gates](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/zero-trust/references/hitl-gates.md).
 5. **The "would a senior engineer have written this" test.** If the answer is no, edit before merging.
 
 ### Current vendor docs are mandatory
@@ -283,7 +287,7 @@ Before delivering code or feedback:
 
 ## Git & Version Control
 
-For commit message standards, branch naming, PR hygiene, and repository scaffolding, see [references/git-workflow.md](references/git-workflow.md).
+Use the dedicated [Git workflow skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/SKILL.md) for commit standards, branches, worktrees, signing, recovery, and remote synchronization.
 
 ## Quick Reference: Language Best Practices
 

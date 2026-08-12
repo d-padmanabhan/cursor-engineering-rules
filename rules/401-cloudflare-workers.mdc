@@ -27,7 +27,7 @@ files:
 
 - `400-cloudflare.mdc` - broad Cloudflare platform playbook (Workers + Access + AOP + WAF + Workflows + etc.). This file is the file-scoped Worker-authoring tightening.
 - `405-cloudflare-waf-rules.mdc` - file-scoped WAF rule playbook. Same pattern (file-scoped tactical rule).
-- `240-typescript.mdc` - general TypeScript standards. This file layers Workers-specific TS rules on top.
+- `225-javascript-typescript.mdc` - general JavaScript and TypeScript gates. This file layers Workers-specific TypeScript rules on top.
 - `320-api-design.mdc` - REST API design. Applies when the Worker exposes HTTP endpoints.
 - `325-networking.mdc` - HTTP / gRPC client reuse, idle timeouts. Workers have specific subrequest semantics covered here.
 
@@ -340,7 +340,7 @@ For Workers managed by Wrangler (which should be: all of them), the `wrangler.js
 
 - `400-cloudflare.mdc` - broader Cloudflare platform playbook
 - `405-cloudflare-waf-rules.mdc` - file-scoped WAF rule playbook (same architectural pattern as this file)
-- `240-typescript.mdc` - general TypeScript standards
+- `225-javascript-typescript.mdc` - general JavaScript and TypeScript gates
 - `320-api-design.mdc` - REST API design (applies when the Worker is an HTTP endpoint)
 - `325-networking.mdc` - HTTP / gRPC client reuse, idle timeouts
 - `skills/cloudflare-workers-author/` - the workflow companion

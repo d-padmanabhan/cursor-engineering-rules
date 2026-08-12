@@ -4,7 +4,7 @@ description: Fix issues, summarize progress, run pre-commit, propose commit mess
 
 # CHECK PROGRESS MODE ACTIVATED
 
-Review current work progress without staging or committing. Fix issues, run quality checks, and propose commit messages following `100-core.mdc` and `130-git.mdc` standards.
+Review current work progress without staging or committing. Fix issues, run quality checks, and propose commit messages using the [core rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/100-core.mdc) and [Git workflow skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/SKILL.md).
 
 > [!IMPORTANT]
 > **Fix mode.** Fix errors and formatting issues, then report what was fixed.
@@ -143,7 +143,7 @@ Provide a structured summary:
 
 **Only if no Critical issues found after fixes:**
 
-Propose **one primary commit message** following `130-git.mdc` format:
+Propose **one primary commit message** following the [Git workflow reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/git-workflow.md):
 
 ```
 <type>(<scope>): <short summary>
@@ -242,6 +242,7 @@ If CodeRabbit is available and configured:
 **Integration:** This workflow aligns with:
 
 - `100-core.mdc` Coding standards and Priority Framework
-- `130-git.mdc` Commit message standards
+- [`git-workflow`](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/SKILL.md) Commit message standards
+- `130-git.mdc` Mandatory commit approval and signing gates
 - `010-workflow.mdc` Review phase patterns
 - Tooling baseline for all supported languages

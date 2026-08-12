@@ -5,6 +5,8 @@ description: Python development standards for code review and generation. Covers
 
 # Python Development
 
+Mandatory gates are owned by the [Python rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/200-python.mdc). This skill and its references own procedures and examples.
+
 ## Guiding Principle
 
 Apply features only when they add clarity, correctness, performance, or security. Prefer simple, intentional solutions (DRY, KISS, YAGNI, Fail Fast).
@@ -373,18 +375,18 @@ class User(BaseModel):
 
 ## Detailed References
 
-- **Code Quality Tools**: See [references/code-quality-tools.md](references/code-quality-tools.md) for black, ruff, isort, mypy, pylint configuration
-- **Package Management**: See [references/package-management.md](references/package-management.md) for uv, isort, dependency management
-- **Standard Library**: See [references/standard-library.md](references/standard-library.md) for pathlib, textwrap, contextlib, dataclasses, enum, typing, secrets, heapq, graphlib
-- **Logging & Observability**: See [references/logging-observability.md](references/logging-observability.md) for logger setup, structured logging, log levels
-- **Security & Validation**: See [references/security-validation.md](references/security-validation.md) for bandit, input validation, Pydantic, regex patterns
-- **Error Handling**: See [references/error-handling.md](references/error-handling.md) for exception handling, retry patterns, custom exceptions
-- **Performance Optimization**: See [references/performance-optimization.md](references/performance-optimization.md) for profiling, optimization examples, concurrency guide
-- **Troubleshooting & Debugging**: See [references/troubleshooting-debugging.md](references/troubleshooting-debugging.md) for pdb, profiling, common issues
-- **Design Patterns**: See [references/design-patterns.md](references/design-patterns.md) for decorator, factory, singleton, strategy patterns
-- **CLI & User Experience**: See [references/cli-user-experience.md](references/cli-user-experience.md) for argparse, typer, rich, UX best practices
-- **Modern Python Features**: See [references/modern-python.md](references/modern-python.md) for match-case, walrus operator, dataclasses, functional patterns
-- **Async & Concurrency**: See [references/async-concurrency.md](references/async-concurrency.md) for asyncio, threading, multiprocessing
-- **Testing Patterns**: See [references/testing-patterns.md](references/testing-patterns.md) for pytest, mocking, fixtures
-- **AWS Lambda**: See [references/aws-lambda.md](references/aws-lambda.md) for handlers, dry-run safety, observability, tracing, and measured performance tuning
-- **AWS & Boto3**: See [references/aws-boto3.md](references/aws-boto3.md) for canonical client lifecycle, retry, region, error, pagination, and waiter guidance
+- **Code Quality Tools**: See [code quality tools](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/code-quality-tools.md) for Black, Ruff, mypy, and Pylint configuration
+- **Package Management**: See [package management](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/package-management.md) for uv and dependency management
+- **Standard Library**: See [standard library](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/standard-library.md)
+- **Logging & Observability**: See [logging and observability](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/logging-observability.md)
+- **Security & Validation**: See [security and validation](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/security-validation.md)
+- **Error Handling**: See [error handling](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/error-handling.md)
+- **Performance Optimization**: See [performance optimization](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/performance-optimization.md)
+- **Troubleshooting & Debugging**: See [troubleshooting and debugging](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/troubleshooting-debugging.md)
+- **Design Patterns**: See [design patterns](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/design-patterns.md)
+- **CLI & User Experience**: See [CLI and user experience](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/cli-user-experience.md)
+- **Modern Python Features**: See [modern Python](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/modern-python.md)
+- **Async & Concurrency**: See [async and concurrency](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/async-concurrency.md)
+- **Testing Patterns**: See [testing patterns](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/testing-patterns.md)
+- **AWS Lambda**: See [AWS Lambda](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/aws-lambda.md)
+- **AWS and Boto3**: See [AWS and Boto3](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/aws-boto3.md)

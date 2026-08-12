@@ -35,6 +35,9 @@ MUTATING_COMMAND_SEQUENCES: tuple[tuple[str, ...], ...] = (
     ("kubectl", "delete"),
     ("helm", "upgrade"),
     ("helm", "uninstall"),
+    ("docker", "push"),
+    ("cosign", "sign"),
+    ("notation", "sign"),
     ("aws", "cloudformation", "deploy"),
     ("aws", "cloudformation", "delete-stack"),
     ("aws", "s3", "rm"),
@@ -336,18 +339,41 @@ def mutating_git_command(segment: list[str]) -> bool:
     if not segment or Path(segment[0]).name != "git":
         return False
     subcommand, subcommand_index = command_after_global_options(segment, 0, GIT_GLOBAL_OPTIONS_WITH_VALUES)
-    if subcommand in {"push", "rebase"}:
-        return True
     arguments: list[str] = segment[subcommand_index + 1 :]
-    if subcommand == "reset" and "--hard" in arguments:
-        return True
-    if subcommand == "clean" and any(
+    forced_clean: bool = subcommand == "clean" and any(
         argument == "--force"
         or (argument.startswith("-") and not argument.startswith("--") and "f" in argument.lstrip("-"))
         for argument in arguments
-    ):
-        return True
-    return False
+    )
+    return (
+        subcommand in {"commit", "push", "rebase", "restore"}
+        or (subcommand == "checkout" and "--" in arguments)
+        or (subcommand == "reset" and "--hard" in arguments)
+        or (subcommand == "branch" and any(argument in {"-d", "-D", "--delete"} for argument in arguments))
+        or (subcommand == "worktree" and "remove" in arguments)
+        or forced_clean
+    )
+
+
+def force_git_push(segment: list[str]) -> bool:
+    """Detect an explicitly forced Git push.
+
+    Args:
+        segment: One parsed command segment.
+
+    Returns:
+        ``True`` when the push contains a force-update option.
+    """
+    if not segment or Path(segment[0]).name != "git":
+        return False
+    subcommand, subcommand_index = command_after_global_options(segment, 0, GIT_GLOBAL_OPTIONS_WITH_VALUES)
+    if subcommand != "push":
+        return False
+    return any(
+        argument in {"--force", "--force-with-lease", "--force-if-includes"}
+        or (argument.startswith("-") and not argument.startswith("--") and "f" in argument.lstrip("-"))
+        for argument in segment[subcommand_index + 1 :]
+    )
 
 
 def mutating_gh_command(segment: list[str]) -> bool:
@@ -402,8 +428,11 @@ def contains_mutating_sequence(segment: list[str]) -> bool:
     normalized_tokens: list[str] = [Path(token).name for token in segment]
     if normalized_tokens[0] not in {
         "aws",
+        "cosign",
+        "docker",
         "helm",
         "kubectl",
+        "notation",
         "terraform",
         "terragrunt",
     }:
@@ -458,14 +487,34 @@ def evaluate_command(command: str, recursion_depth: int = 0) -> Decision:
         )
 
     for segment in segments:
-        if mutating_git_command(segment) or mutating_gh_command(segment) or contains_mutating_sequence(segment):
-            return Decision(
-                permission="ask",
-                user_message=f"Approval required for: {command.strip()}",
-                agent_message=(
+        is_force_push: bool = force_git_push(segment)
+        is_mutation: bool = (
+            is_force_push
+            or mutating_git_command(segment)
+            or mutating_gh_command(segment)
+            or contains_mutating_sequence(segment)
+        )
+        if is_mutation:
+            user_message: str = (
+                f"Explicit force-push authorization required for: {command.strip()}"
+                if is_force_push
+                else f"Approval required for: {command.strip()}"
+            )
+            agent_message: str = (
+                (
+                    "A normal push approval does not authorize a force update. Show the exact ref, "
+                    "remote divergence, affected commits, and rollback plan, then wait for explicit approval."
+                )
+                if is_force_push
+                else (
                     "This command changes remote state, rewrites history, or has a "
                     "large blast radius. Explain the impact and wait for approval."
-                ),
+                )
+            )
+            return Decision(
+                permission="ask",
+                user_message=user_message,
+                agent_message=agent_message,
             )
         for embedded_command in embedded_shell_commands(segment):
             embedded_decision: Decision = evaluate_command(embedded_command, recursion_depth + 1)

@@ -31,6 +31,8 @@ files:
 - Default is **at-least-once**. Design consumers to be idempotent.
 - If you truly need “exactly-once”, define what that means end-to-end (Kafka transactions alone may not be sufficient).
 
+For cross-service consistency, Transactional Outbox/Inbox, Saga orchestration/choreography, compensation, and dual-write remediation, use the [distributed transactions skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/distributed-transactions/SKILL.md).
+
 ### Consumer idempotency (default expectation)
 
 - Use stable event identifiers and de-dup at the sink or state store.
@@ -75,7 +77,7 @@ files:
 
 - Choose commit strategy explicitly:
   - commit after processing (common)
-  - commit with transactional/outbox patterns when needed
+  - combine the business effect and durable Inbox/Outbox state in one local transaction when needed
 - Retry strategy must avoid infinite poison-pill loops:
   - bounded retries with backoff
   - dead-letter topic (DLT/DLQ) for quarantining
@@ -120,4 +122,3 @@ files:
 - [ ] Retry + DLQ strategy prevents poison-pill loops
 - [ ] Security is least privilege (ACLs, TLS, secret handling)
 - [ ] Lag and failures are monitored with alerting
-

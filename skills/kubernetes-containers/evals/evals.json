@@ -192,6 +192,134 @@
           ]
         }
       ]
+    },
+    {
+      "id": 4,
+      "prompt": "Review this production Pod fragment and give the smallest safe correction:\n\nspec:\n  serviceAccountName: default\n  containers:\n    - name: api\n      image: registry.acme.com/api:latest\n      securityContext:\n        privileged: true\n      resources: {}\n      env:\n        - name: API_TOKEN\n          value: plaintext-token",
+      "expected_output": "Reject plaintext credentials and privileged execution, use a dedicated least-privilege ServiceAccount, pin the image by digest, apply the Restricted Pod Security baseline, and define measured resource requests and limits.",
+      "files": [],
+      "checks": [
+        {
+          "id": "rejects-plaintext-secret",
+          "type": "contains_all",
+          "values": [
+            "plaintext",
+            "Secret"
+          ]
+        },
+        {
+          "id": "requires-restricted-security",
+          "type": "contains_all",
+          "values": [
+            "runAsNonRoot",
+            "allowPrivilegeEscalation",
+            "readOnlyRootFilesystem",
+            "seccomp"
+          ]
+        },
+        {
+          "id": "pins-image-and-resources",
+          "type": "contains_all",
+          "values": [
+            "digest",
+            "requests",
+            "limits"
+          ]
+        },
+        {
+          "id": "narrows-service-account",
+          "type": "contains_all",
+          "values": [
+            "ServiceAccount",
+            "least privilege"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Provide the safe preflight and execution sequence for upgrading the production Helm release orders in namespace orders from ./charts/orders with values-prod.yaml. The chart changes CRDs and includes a database migration hook.",
+      "expected_output": "Identify the cluster, namespace, release, chart and values; review dependency locks, CRDs, hooks and rollback semantics; lint and render exact values; validate and dry-run; obtain authorization before upgrade; avoid force; wait with a timeout; and verify release and workload health.",
+      "files": [],
+      "checks": [
+        {
+          "id": "renders-before-mutation",
+          "type": "contains_all",
+          "values": [
+            "helm lint",
+            "helm template",
+            "values-prod.yaml"
+          ]
+        },
+        {
+          "id": "reviews-risky-chart-behavior",
+          "type": "contains_all",
+          "values": [
+            "Chart.lock",
+            "CRD",
+            "hook",
+            "migration"
+          ]
+        },
+        {
+          "id": "requires-approval",
+          "type": "contains_all",
+          "values": [
+            "authorization",
+            "production",
+            "helm upgrade"
+          ]
+        },
+        {
+          "id": "verifies-with-bounds",
+          "type": "contains_all",
+          "values": [
+            "timeout",
+            "status",
+            "rollout",
+            "health"
+          ]
+        },
+        {
+          "id": "avoids-force",
+          "type": "not_regex",
+          "pattern": "helm upgrade[^\\n]*--force"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "A Kubernetes controller update receives an expected resourceVersion conflict. A reviewer says all retries are forbidden and the controller must fail permanently. Explain the smallest correct handling and when the conflict becomes an operational defect.",
+      "expected_output": "Re-read current state and use a bounded retry or requeue for expected optimistic concurrency. Do not retry blindly. Repeated conflicts require field-ownership and competing-writer diagnosis, narrow updates or Server-Side Apply where appropriate, and conflict metrics.",
+      "files": [],
+      "checks": [
+        {
+          "id": "allows-bounded-conflict-handling",
+          "type": "contains_all",
+          "values": [
+            "re-read",
+            "bounded",
+            "retry"
+          ]
+        },
+        {
+          "id": "diagnoses-repeated-conflicts",
+          "type": "contains_all",
+          "values": [
+            "field ownership",
+            "competing",
+            "metrics"
+          ]
+        },
+        {
+          "id": "avoids-blind-retry",
+          "type": "contains_all",
+          "values": [
+            "Do not",
+            "blindly"
+          ]
+        }
+      ]
     }
   ]
 }

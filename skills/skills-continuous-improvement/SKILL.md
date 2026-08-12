@@ -24,18 +24,28 @@ Run every two weeks, or sooner when:
 
 Review both layers:
 
-- **Rules** (`rules/*.mdc`) - concise non-negotiables and file-scoped policy.
-- **Skills** (`skills/*/SKILL.md` plus one-level `references/*.md`) - workflow and examples.
+- **Rules** (`rules/*.mdc`) - concise invariant gates and file-scoped policy.
+- **Skills** (`skills/*/SKILL.md` plus one-level references) - canonical workflows, explanations, and examples.
 - **Skill evals** (`skills/*/evals/evals.json` and synthetic fixtures) - measurable behavior and regression coverage.
+
+### Ownership Contract
+
+- A rule owns only requirements that must apply whenever its scope matches.
+- A skill owns procedures, examples, command sequences, troubleshooting, and detailed references.
+- A rule may summarize a gate and link to the skill, but must not copy the skill's tutorial content.
+- A skill may link to a mandatory rule, but must not become a second policy source.
+- Treat duplicated prose and bidirectional "canonical" claims as defects.
+- Use supported Cursor activation metadata: `globs` for file-scoped rules and precise `name`/`description` metadata for skills. Do not invent unsupported skill frontmatter such as `paths`.
+- Use absolute `file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/...` links for cross-file handbook references so agents do not resolve them against another active repository.
 
 Prioritize skills with paired rules first:
 
-- [Python rule](../../rules/200-python.mdc) ↔ [Python skill](../python-development/)
-- [Go rule](../../rules/210-go.mdc) ↔ [Go/Rust skill](../go-rust-systems/)
-- [JavaScript rule](../../rules/230-javascript.mdc) / [TypeScript rule](../../rules/240-typescript.mdc) ↔ [TypeScript/JavaScript skill](../typescript-javascript/)
-- [Bash rule](../../rules/140-bash.mdc) ↔ [Bash skill](../bash-shell-scripting/) and [scripting automation skill](../scripting-automation/)
-- [Cloudflare rule](../../rules/400-cloudflare.mdc) / [Cloudflare Workers rule](../../rules/401-cloudflare-workers.mdc) / [Cloudflare WAF rule](../../rules/405-cloudflare-waf-rules.mdc) ↔ Cloudflare skills
-- [Kubernetes rule](../../rules/450-kubernetes.mdc) / [Helm rule](../../rules/460-helm.mdc) ↔ [Kubernetes containers skill](../kubernetes-containers/)
+- [Python rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/200-python.mdc) ↔ [Python skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/SKILL.md)
+- [Go rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/210-go.mdc) ↔ [Go/Rust skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/go-rust-systems/SKILL.md)
+- [JavaScript and TypeScript rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/225-javascript-typescript.mdc) ↔ [TypeScript/JavaScript skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/typescript-javascript/SKILL.md)
+- [Bash rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/140-bash.mdc) ↔ [Bash skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/bash-shell-scripting/SKILL.md) and [scripting automation skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/scripting-automation/SKILL.md)
+- [Cloudflare rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/400-cloudflare.mdc) / [Cloudflare Workers rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/401-cloudflare-workers.mdc) / [Cloudflare WAF rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/405-cloudflare-waf-rules.mdc) ↔ Cloudflare skills
+- [Kubernetes rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/450-kubernetes.mdc) / [Helm rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/460-helm.mdc) ↔ [Kubernetes containers skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/kubernetes-containers/SKILL.md)
 
 ## Review Workflow
 
@@ -54,9 +64,11 @@ Then map rule/skill pairs manually. Do not assume every skill has a rule or ever
 
 For each rule/skill pair, verify:
 
-- Non-negotiables in the rule are mirrored in the skill summary.
+- Every requirement has one canonical owner.
+- Rules contain only invariant gates and link to the canonical skill for procedures.
 - Skill examples do not contradict the rule.
 - Reference files demonstrate the current preferred pattern.
+- Rule frontmatter uses supported `globs`; skill descriptions name concrete files, tasks, and trigger phrases without overlapping unrelated skills.
 - README skill index still lists new skills.
 - Cross-links are clickable Markdown links, not backticked paths, when intended for navigation.
 
@@ -123,7 +135,7 @@ uv run python -m evals.skill_eval validate
 uv run python -m unittest discover -s evals/tests -v
 ```
 
-Run a model-backed with-skill versus baseline comparison when a change affects triggering, workflow order, required outputs, safety gates, or other behavior covered by the suite. Follow the [eval harness documentation](../../evals/README.md); do not put model credentials or paid runs in pull-request CI.
+Run a model-backed with-skill versus baseline comparison when a change affects triggering, workflow order, required outputs, safety gates, or other behavior covered by the suite. Follow the [eval harness documentation](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/evals/README.md); do not put model credentials or paid runs in pull-request CI.
 
 If broad pre-commit is too large or noisy, run targeted hooks and clearly report any skipped checks.
 
@@ -158,5 +170,6 @@ End every pass with a short report:
 - Do not "modernize" examples unless they conflict with current rules or current official docs.
 - Preserve intentional BAD/GOOD examples; make the label clear instead of deleting the BAD example.
 - Do not change unrelated user edits in a dirty tree.
-- Do not add always-on behavior to skills. If guidance must always load, put the principle in a rule and keep the workflow in a skill.
+- Do not add always-on behavior to skills. If guidance must always load, put only the invariant gate in a rule and keep the workflow in a skill.
+- Do not mirror full rule sections into skills or full skill sections into rules.
 - Keep eval fixtures synthetic and public-safe. Never use production credentials, customer data, private incidents, or live external mutations.

@@ -1,12 +1,12 @@
 ---
-description: Generate/modify/review JavaScript using 230-javascript.mdc
+description: Generate/modify/review JavaScript using 225-javascript-typescript.mdc
 ---
 
 # JAVASCRIPT MODE ACTIVATED
 
 You are now in **JAVASCRIPT MODE**. Any work on JavaScript MUST follow:
 
-- `rules/230-javascript.mdc` (secure-by-default JS, @ts-check patterns)
+- `rules/225-javascript-typescript.mdc` (shared JavaScript/TypeScript safety and type gates)
 - `rules/100-core.mdc` (minimal, production-ready changes)
 - `rules/310-security.mdc` (no secrets, OWASP-minded)
 
@@ -33,7 +33,7 @@ Produce complete code with:
 
 - Clear exports
 - Error handling
-- JSDoc + `@ts-check` when it improves safety (per `230-javascript.mdc`)
+- JSDoc + `@ts-check` for production JavaScript (per `225-javascript-typescript.mdc`)
 
 ## Modify
 

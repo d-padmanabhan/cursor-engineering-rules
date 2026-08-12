@@ -10,10 +10,10 @@ The eval files follow the portable Agent Skills conventions documented by [agent
 - Eval schema and fixture integrity
 - Deterministic output and artifact requirements
 - With-skill pass rate versus the same baseline cases without the skill
-- Runtime duration and optional adapter-reported usage
+- Paired win rate, median/p95 duration, and optional adapter-reported token/cost usage
 - Observed skill activation when an agent runtime emits a `skill_loaded` event
 
-The harness does not treat answer similarity as proof that a skill loaded. Automatic activation is runtime-specific and requires an adapter that reports actual load events.
+The harness does not treat answer similarity, self-report, or reading `SKILL.md` as proof that a skill loaded. Automatic activation is runtime-specific and requires an authoritative runtime event. Cursor's current SDK does not expose that event, so Cursor benchmarks report `activation_telemetry_supported: false` and `activation_rate: null` while still measuring behavioral lift.
 
 ## Pilot Skills
 
@@ -27,7 +27,8 @@ The fixtures contain only synthetic, public-safe examples. Do not add customer d
 
 - Python 3.14 or newer
 - [uv](https://docs.astral.sh/uv/) for Python and development-tool management
-- No harness runtime package dependencies
+- No package dependencies for deterministic validation
+- The optional `eval` dependency group for Cursor SDK model-backed runs
 - An executable adapter only for model-backed runs
 
 ## Validate Skills and Evals
@@ -142,6 +143,8 @@ Response:
 
 Only `output` is required. `events` and `usage` may be empty. Usage values must be numeric. Events accept only `type` and optional `name`. Unknown response or event fields are rejected so adapters cannot accidentally persist hidden traces or undocumented data.
 
+Adapters that cannot observe activation may emit `{"type":"activation_telemetry_unavailable","name":"<runtime>"}` for diagnostic clarity. This event does not satisfy `loaded_skill` and does not produce an activation rate.
+
 An adapter is responsible for:
 
 1. Starting a clean agent session.
@@ -172,6 +175,24 @@ uv run python -m evals.skill_eval run \
   --adapter-arg /absolute/path/to/adapter.py \
   --skill cloudflare-waf-author
 ```
+
+### Cursor SDK adapter
+
+The repository adapter uses a fresh local agent, project-only settings, and the read-only `read`, `grep`, `glob`, and `ls` tool allowlist. It stages the with-skill copy under `.cursor/skills/<name>` and leaves the baseline workspace without that skill.
+
+```bash
+export CURSOR_API_KEY="set-outside-shell-history"
+export CURSOR_EVAL_MODEL="a-model-id-returned-for-your-account"
+
+uv run --group eval python -m evals.skill_eval run \
+  --adapter /usr/bin/env \
+  --adapter-arg python3 \
+  --adapter-arg "$PWD/evals/adapters/cursor_sdk_adapter.py" \
+  --skill core-engineering \
+  --iterations 1
+```
+
+Use at least three iterations before treating lift as stable. The adapter reports token usage and settled billed cost when available. It deliberately emits no `skill_loaded` event because the Cursor SDK does not provide authoritative automatic skill or rule activation telemetry.
 
 The command exits:
 

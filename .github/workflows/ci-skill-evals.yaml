@@ -11,6 +11,7 @@ on:
       - "evals/**"
       - "hooks/cursor/**"
       - "pyproject.toml"
+      - "rules/**"
       - "skills/**"
       - "uv.lock"
   pull_request:
@@ -21,6 +22,7 @@ on:
       - "evals/**"
       - "hooks/cursor/**"
       - "pyproject.toml"
+      - "rules/**"
       - "skills/**"
       - "uv.lock"
 

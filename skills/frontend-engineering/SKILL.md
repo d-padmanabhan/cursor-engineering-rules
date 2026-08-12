@@ -196,7 +196,7 @@ The top three that show up in every audit:
 ## Related
 
 - Rule: `260-frontend.mdc` - cross-cutting non-negotiables (the rule this skill backs)
-- Rule: `230-javascript.mdc`, `240-typescript.mdc` - language foundations
+- Rule: `225-javascript-typescript.mdc` - JavaScript and TypeScript language gates
 - Rule: `320-api-design.mdc`, `325-networking.mdc` - the backend / transport layer your frontend calls
 - Rule: `310-security.mdc` - OWASP context
 - Rule: `330-observability.mdc` - RUM patterns

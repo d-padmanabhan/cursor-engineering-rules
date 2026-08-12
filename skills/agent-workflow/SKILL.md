@@ -5,6 +5,8 @@ description: Structured development workflow with Plan/Implement/Review phases, 
 
 # Agent Workflow
 
+Mandatory classification, approval, scope, implementation, and review gates are owned by the [workflow rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/010-workflow.mdc). This skill owns detailed procedures and templates.
+
 ## Golden Rules
 
 **Follow this three-phase approach for all non-trivial work:**
@@ -102,6 +104,6 @@ AI: "Let me design a solution first. Key decisions needed:
 
 ## Audit Requirements
 
-For audit requirements covering remote-mutation authorization, risk-based checkpoints, and proportional reports, see [references/audit-requirements.md](references/audit-requirements.md).
+For audit requirements covering remote-mutation authorization, risk-based checkpoints, and proportional reports, see [audit requirements](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/agent-workflow/references/audit-requirements.md).
 
-For detailed context management and QA validation, see [references/context-management.md](references/context-management.md).
+For detailed context management and QA validation, see [context management](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/agent-workflow/references/context-management.md).

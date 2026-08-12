@@ -97,4 +97,4 @@ You are now in **REVIEW** phase.
 
 ## After Review
 
-If ready to commit, prepare commit message following 130-git.mdc standards.
+If ready to commit, use the [Git workflow skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/SKILL.md) for message format and the [Git rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/130-git.mdc) for mandatory approval and signing gates.

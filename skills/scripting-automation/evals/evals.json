@@ -1,0 +1,59 @@
+{
+  "skill_name": "scripting-automation",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Design a Bash retry wrapper for an idempotent HTTP operation. It must stop after a bounded number of attempts, honor cancellation, avoid retrying permanent client errors, and add jitter.",
+      "expected_output": "Validate idempotency, classify retryable failures, use bounded exponential backoff with jitter, preserve signals, and return the final status.",
+      "files": [],
+      "checks": [
+        {
+          "id": "bounds-and-classifies-retries",
+          "type": "contains_all",
+          "values": [
+            "idempotent",
+            "maximum",
+            "jitter",
+            "4xx"
+          ]
+        },
+        {
+          "id": "preserves-cancellation",
+          "type": "contains_any",
+          "values": [
+            "SIGTERM",
+            "SIGINT",
+            "cancellation"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Provide the safe locking and cleanup design for a cron Bash job that must never overlap. Include stale-lock behavior and tests.",
+      "expected_output": "Prefer flock where available, hold the lock for the process lifetime, clean up fallback lock directories with traps, validate ownership before stale-lock removal, and test contention and signals with BATS.",
+      "files": [],
+      "checks": [
+        {
+          "id": "safe-lock-lifecycle",
+          "type": "contains_all",
+          "values": [
+            "flock",
+            "trap",
+            "stale",
+            "ownership"
+          ]
+        },
+        {
+          "id": "tests-contention",
+          "type": "contains_all",
+          "values": [
+            "BATS",
+            "contention",
+            "signal"
+          ]
+        }
+      ]
+    }
+  ]
+}

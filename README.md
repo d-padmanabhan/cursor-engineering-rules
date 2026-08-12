@@ -21,14 +21,13 @@ Comprehensive, battle-tested configuration for AI coding agents. Curated **rules
 - **[015-context-engineering.mdc](rules/015-context-engineering.mdc)** - Context engineering (prompt packing, retrieval, compaction)
 - **[010-workflow.mdc](rules/010-workflow.mdc)** - Development workflow patterns
 - **[020-agent-audit.mdc](rules/020-agent-audit.mdc)** - Agent audit requirements
-- **[130-git.mdc](rules/130-git.mdc)** - Git conventions, commit standards, and mandatory commit signing (with documented exceptions)
+- **[130-git.mdc](rules/130-git.mdc)** - Mandatory Git authorization, preservation, signing, and remote-write gates
 
 ### Programming Languages
 
 - **[200-python.mdc](rules/200-python.mdc)** - Python best practices (PEP 8, type hints, async)
 - **[210-go.mdc](rules/210-go.mdc)** - Go patterns (error handling, concurrency, generics)
-- **[230-javascript.mdc](rules/230-javascript.mdc)** - JavaScript/Node.js (ES modules, async/await)
-- **[240-typescript.mdc](rules/240-typescript.mdc)** - TypeScript (type safety, advanced types)
+- **[225-javascript-typescript.mdc](rules/225-javascript-typescript.mdc)** - Shared JavaScript/TypeScript safety and type gates
 - **[260-frontend.mdc](rules/260-frontend.mdc)** - Frontend architecture cross-cutting non-negotiables (SSG/SSR/SPA/ISR choice, bundle budgets, state buckets, WCAG, Core Web Vitals, supply-chain); pairs with the `frontend-engineering` skill
 - **[220-rust.mdc](rules/220-rust.mdc)** - Rust (ownership, borrowing, async)
 - **[140-bash.mdc](rules/140-bash.mdc)** - Shell scripting (POSIX compliance, safety)
@@ -55,7 +54,7 @@ Comprehensive, battle-tested configuration for AI coding agents. Curated **rules
 - **[160-github-actions.mdc](rules/160-github-actions.mdc)** - GitHub Actions (workflows, security, OIDC)
 - **[190-ansible.mdc](rules/190-ansible.mdc)** - Ansible (playbooks, roles, idempotency)
 - **[460-helm.mdc](rules/460-helm.mdc)** - Helm charts and templating
-- **[440-docker.mdc](rules/440-docker.mdc)** - Docker & containers (multi-stage builds, security)
+- **[440-docker.mdc](rules/440-docker.mdc)** - Mandatory Docker security, reproducibility, cache, and publishing gates
 - **[150-justfile.mdc](rules/150-justfile.mdc)** - Justfile patterns (modern command runner)
 
 ### Security & Testing
@@ -198,14 +197,19 @@ Rules with `alwaysApply: true` in their frontmatter load automatically when plac
 **Best for:** Personal setup, global rules across all projects
 
 ```bash
-# Symlink to your home directory (applies to all projects)
+# Create one stable handbook root, then expose rules and skills from it
 mkdir -p ~/.cursor
-ln -s /path/to/agent-engineering-handbook/rules ~/.cursor/rules
+ln -s /absolute/path/to/agent-engineering-handbook ~/.cursor/agent-engineering-handbook
+ln -s ~/.cursor/agent-engineering-handbook/rules ~/.cursor/rules
+ln -s ~/.cursor/agent-engineering-handbook/skills ~/.cursor/skills
 
 # Or symlink per-project
 mkdir -p .cursor
-ln -s /path/to/agent-engineering-handbook/rules .cursor/rules
+ln -s ~/.cursor/agent-engineering-handbook/rules .cursor/rules
+ln -s ~/.cursor/agent-engineering-handbook/skills .cursor/skills
 ```
+
+The always-on workflow rule publishes the stable root to agents, so handbook references resolve correctly even when the active workspace is another repository.
 
 **Rules that auto-load (`alwaysApply: true`):**
 
@@ -217,10 +221,9 @@ ln -s /path/to/agent-engineering-handbook/rules .cursor/rules
 | `100-core.mdc` | Core coding standards |
 | `110-configuration.mdc` | Configuration management |
 | `120-utilities.mdc` | CLI tools |
-| `130-git.mdc` | Git conventions and signed commits |
+| `130-git.mdc` | Mandatory Git safety and signing gates |
 | `310-security.mdc` | Security best practices |
 | `316-zero-trust.mdc` | Distinguished Engineer - Zero Trust |
-| `800-markdown.mdc` | Markdown formatting |
 
 Other rules load based on file patterns or explicit request.
 
@@ -295,7 +298,7 @@ Symlink the entire rules directory:
 
 ```bash
 # From your project root
-ln -s /absolute/path/to/agent-engineering-handbook/rules .cursor/rules
+ln -s ~/.cursor/agent-engineering-handbook/rules .cursor/rules
 ```
 
 Configure `.cursorrules`:
@@ -482,10 +485,10 @@ The bullets above orient; this table is the reference for "what do I put in the 
 
 | | Rules (`.mdc`) | Skills (`SKILL.md`) |
 |---|---|---|
-| **Frontmatter fields** | `title`, `description`, `priority`, `alwaysApply`, `files.include` | `name`, `description`, optionally `disable-model-invocation` |
+| **Frontmatter fields** | `title`, `description`, `priority`, `alwaysApply`, `globs` | `name`, `description`, optionally `disable-model-invocation` |
 | **`alwaysApply` honored?** | Yes - core mechanism | **No** - not in the skills schema; silently ignored |
-| **Activation triggers** | `alwaysApply: true` (every conversation), `files.include` glob (when matching file opens), or agent-selected | Agent reads `description` and self-selects; user runs `/skill-name` |
-| **Cost of being "always on"** | A few hundred tokens per conversation - fine | Entire `SKILL.md` + references loaded per conversation - token explosion + agent confusion |
+| **Activation triggers** | `alwaysApply: true` (every conversation), `globs` (matching files), or agent-selected | Agent reads `description` and self-selects; user runs `/skill-name` |
+| **Cost of being "always on"** | Keep global rules concise because every line consumes context | Skill body loads when selected; references should be retrieved only as needed |
 | **How to get "always-on" semantics for skill-domain content** | Put the principles in a rule (with `alwaysApply: true`); leave the workflow in a skill. Many domains in this repo do both - `316-zero-trust.mdc` + `skills/zero-trust/`; `260-frontend.mdc` + `skills/frontend-engineering/`; `325-networking.mdc` + `skills/networking-transport/` | n/a (do not try) |
 
 Short answer to "should this skill have `alwaysApply: true`?": **no**. If the content needs to be loaded every conversation, lift the principles into a rule and keep the playbook in the skill.
@@ -498,6 +501,8 @@ Skills under `skills/` cover repeatable end-to-end workflows that pair with the 
 
 - **[skills/agent-workflow](skills/agent-workflow/)** - Plan/Implement/Review workflow + audit
 - **[skills/core-engineering](skills/core-engineering/)** - core engineering principles, code review
+- **[skills/system-design](skills/system-design/)** - production architecture, SLOs, capacity, boundaries, reliability, cost, and migration
+- **[skills/git-workflow](skills/git-workflow/)** - commits, branches, worktrees, signing, recovery, and remote synchronization
 - **[skills/python-development](skills/python-development/)** - Python 3.14+ patterns
 - **[skills/typescript-javascript](skills/typescript-javascript/)** - TS/JS patterns
 - **[skills/frontend-engineering](skills/frontend-engineering/)** - framework-agnostic frontend playbook (rendering, bundles, state, a11y, perf, testing, security)
@@ -525,6 +530,7 @@ Skills under `skills/` cover repeatable end-to-end workflows that pair with the 
 - **[skills/kubernetes-containers](skills/kubernetes-containers/)** - Kubernetes / Helm
 - **[skills/database-postgresql](skills/database-postgresql/)** - PostgreSQL patterns
 - **[skills/data-engineering](skills/data-engineering/)** - data pipelines, contracts, quality
+- **[skills/distributed-transactions](skills/distributed-transactions/)** - Transactional Outbox/Inbox, Saga orchestration/choreography, compensation, and idempotency
 - **[skills/snowflake](skills/snowflake/)** - Snowflake operational playbook
 - **[skills/databricks](skills/databricks/)** - Databricks operational playbook
 - **[skills/cicd-github-actions](skills/cicd-github-actions/)** - GitHub Actions patterns
@@ -551,16 +557,26 @@ Skills under `skills/` cover repeatable end-to-end workflows that pair with the 
 
 ## Evaluating Skills
 
-The dependency-free [Agent Skills eval harness](evals/) validates every skill and supports with-skill versus baseline comparisons through a vendor-neutral command adapter. Pull-request CI runs deterministic schema and unit checks without model credentials or paid calls.
+The dependency-free [Agent Skills eval harness](evals/) validates every skill and supports with-skill versus baseline comparisons through a vendor-neutral command adapter. An optional Python Cursor SDK adapter measures real behavioral lift, paired wins, latency, token use, and cost. Cursor does not expose authoritative automatic skill/rule activation events, so activation remains explicitly unknown rather than inferred. Pull-request CI runs deterministic schema and unit checks without model credentials or paid calls.
 
 The initial suites cover:
 
 - [Containers and orchestration evals](skills/containers-orchestration/evals/evals.json)
+- [Agent workflow evals](skills/agent-workflow/evals/evals.json)
+- [Bash shell scripting evals](skills/bash-shell-scripting/evals/evals.json)
 - [Core engineering evals](skills/core-engineering/evals/evals.json)
 - [Cloudflare WAF author evals](skills/cloudflare-waf-author/evals/evals.json)
+- [Documentation standards evals](skills/documentation-standards/evals/evals.json)
+- [Distributed transactions evals](skills/distributed-transactions/evals/evals.json)
+- [Git workflow evals](skills/git-workflow/evals/evals.json)
 - [IAM security advisor evals](skills/iam-security-advisor/evals/evals.json)
 - [Kubernetes containers evals](skills/kubernetes-containers/evals/evals.json)
 - [Memory architecture evals](skills/memory-architecture/evals/evals.json)
+- [Python development evals](skills/python-development/evals/evals.json)
+- [Scripting automation evals](skills/scripting-automation/evals/evals.json)
+- [Security testing evals](skills/security-testing/evals/evals.json)
+- [System design evals](skills/system-design/evals/evals.json)
+- [TypeScript and JavaScript evals](skills/typescript-javascript/evals/evals.json)
 
 ```bash
 uv run python -m evals.skill_eval validate

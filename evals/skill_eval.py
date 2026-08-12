@@ -20,6 +20,7 @@ import dataclasses
 import datetime
 import hashlib
 import json
+import math
 import os
 import re
 import shutil
@@ -803,12 +804,45 @@ def build_benchmark(
         mode_results = [result[mode] for result in case_results if mode in result]
         passed = sum(1 for result in mode_results if result.passed)
         total = len(mode_results)
+        durations = [result.duration_seconds for result in mode_results]
+        usage_totals: dict[str, int | float] = {}
+        for result in mode_results:
+            for key, value in result.response.usage.items():
+                usage_totals[key] = usage_totals.get(key, 0) + value
+        sorted_durations = sorted(durations)
+        p95_index = max(0, math.ceil(len(sorted_durations) * 0.95) - 1) if sorted_durations else 0
         mode_metrics[mode] = {
             "passed": passed,
             "total": total,
             "pass_rate": passed / total if total else 0.0,
-            "duration_seconds": sum(result.duration_seconds for result in mode_results),
+            "duration_seconds": sum(durations),
+            "median_duration_seconds": (
+                sorted_durations[len(sorted_durations) // 2]
+                if len(sorted_durations) % 2 == 1
+                else (
+                    sum(sorted_durations[len(sorted_durations) // 2 - 1 : len(sorted_durations) // 2 + 1]) / 2
+                    if sorted_durations
+                    else 0.0
+                )
+            ),
+            "p95_duration_seconds": sorted_durations[p95_index] if sorted_durations else 0.0,
+            "usage_totals": usage_totals,
         }
+
+    paired_wins = sum(
+        1 for result in case_results if result["with_skill"].passed and not result["without_skill"].passed
+    )
+    with_skill_results = [result["with_skill"] for result in case_results]
+    activation_supported = any(
+        event["type"] in {"activation_telemetry_supported", "skill_loaded"}
+        for result in with_skill_results
+        for event in result.response.events
+    )
+    loaded_count = sum(
+        1
+        for result in with_skill_results
+        if any(event["type"] == "skill_loaded" and event.get("name") == skill_name for event in result.response.events)
+    )
 
     return {
         "protocol_version": PROTOCOL_VERSION,
@@ -817,6 +851,19 @@ def build_benchmark(
         "with_skill": mode_metrics["with_skill"],
         "without_skill": mode_metrics["without_skill"],
         "pass_rate_lift": (mode_metrics["with_skill"]["pass_rate"] - mode_metrics["without_skill"]["pass_rate"]),
+        "paired_win_rate": paired_wins / len(case_results) if case_results else 0.0,
+        "activation_telemetry_supported": activation_supported,
+        "activation_rate": (
+            loaded_count / len(with_skill_results) if activation_supported and with_skill_results else None
+        ),
+        "activation_telemetry_note": (
+            "Adapter emitted authoritative activation telemetry."
+            if activation_supported
+            else (
+                "Automatic skill/rule activation is unknown because the adapter "
+                "emitted no authoritative activation event."
+            )
+        ),
         "cases": [
             {
                 "id": result["id"],
@@ -1014,7 +1061,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 f"{suite.skill_name}: with_skill="
                 f"{benchmark['with_skill']['pass_rate']:.1%}, baseline="
                 f"{benchmark['without_skill']['pass_rate']:.1%}, "
-                f"lift={benchmark['pass_rate_lift']:+.1%}"
+                f"lift={benchmark['pass_rate_lift']:+.1%}, "
+                f"paired_wins={benchmark['paired_win_rate']:.1%}, "
+                "activation="
+                + (f"{benchmark['activation_rate']:.1%}" if benchmark["activation_rate"] is not None else "unknown")
             )
             if arguments.minimum_lift is None and benchmark["pass_rate_lift"] <= 0:
                 print(

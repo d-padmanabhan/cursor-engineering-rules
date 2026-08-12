@@ -1,0 +1,54 @@
+---
+title: JavaScript and TypeScript Engineering Gates
+description: Mandatory JavaScript and TypeScript type, trust-boundary, runtime, server, and quality gates.
+priority: 225
+alwaysApply: false
+globs:
+  - "**/*.{js,cjs,mjs,jsx,ts,cts,mts,tsx}"
+  - "**/package.json"
+  - "**/package-lock.json"
+  - "**/npm-shrinkwrap.json"
+  - "**/pnpm-lock.yaml"
+  - "**/yarn.lock"
+  - "**/tsconfig*.json"
+  - "**/eslint.config.*"
+---
+
+# JavaScript and TypeScript Engineering Gates
+
+This rule owns mandatory policy only. Use the [TypeScript and JavaScript skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/typescript-javascript/SKILL.md) for language patterns, configuration, testing, performance, and examples.
+
+## Shared Runtime and Supply-Chain Gates
+
+- Pin the supported Node.js runtime and package-manager version. Use the committed lock file with immutable CI installation.
+- Do not use `eval`, `Function`, unsafe deserialization, or shell-interpreted command strings with untrusted input.
+- Validate external data at runtime before assigning domain types. Type declarations do not validate JSON, environment variables, messages, storage, or request bodies.
+- Keep secrets out of source, browser bundles, logs, errors, command arguments, and committed configuration.
+- Use ESM unless repository compatibility requires another module format; do not mix module systems accidentally.
+
+## HTTP and Server Gates
+
+- Reuse clients or agents where the runtime supports pooling. Every outbound request requires a timeout or abort signal, status handling, bounded body processing, and runtime response validation.
+- Validate URLs and constrain outbound destinations when input can influence a fetch. Do not follow redirects into untrusted networks without revalidation.
+- Servers require bounded request bodies, explicit CORS policy, security headers, structured error handling, timeouts, and graceful shutdown.
+- Authentication and authorization are separate. Enforce resource authorization on the server for every protected operation.
+- Await or deliberately supervise every promise. Fire-and-forget work requires explicit lifecycle ownership and error reporting.
+
+## JavaScript Gates
+
+- Production JavaScript uses `// @ts-check` and JSDoc types unless the repository documents an alternative static-analysis contract.
+- Do not silence type errors with broad `@ts-ignore`; use a narrow `@ts-expect-error` only with a reason and a testable compatibility boundary.
+- Treat JSDoc assertions as compile-time aids, never as runtime validation.
+
+## TypeScript Gates
+
+- Enable strict type checking. Do not weaken `strict`, `noUncheckedIndexedAccess`, or related safety settings merely to make code compile.
+- Avoid `any`; prefer `unknown` and narrow it. Prohibit double assertions and `as any` at trust boundaries.
+- Use discriminated unions, exhaustive checks, and precise return types for stateful or failure-prone behavior.
+- Do not use non-null assertions unless an invariant is established locally and cannot be expressed more safely.
+
+## Verification
+
+- Run the repository's tests, lint with zero warnings, formatter check, type check, and build/package step before completion.
+- Run the package manager's dependency audit when dependencies or lock files change.
+- Add focused tests for changed success, validation, timeout, cancellation, authorization, and shutdown behavior where applicable.

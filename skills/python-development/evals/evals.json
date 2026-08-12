@@ -1,0 +1,75 @@
+{
+  "skill_name": "python-development",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "A new Python application has no compatibility constraints. Choose its runtime baseline and quality gates. Then explain what changes if the same code is a published library claiming Python 3.11 support.",
+      "expected_output": "Use Python 3.14+ for the application. A library must honor and test its declared compatibility range and avoid unsupported syntax. Require tests, Ruff, format check, type checking, and dependency scanning when dependencies change.",
+      "files": [],
+      "checks": [
+        {
+          "id": "distinguishes-app-and-library",
+          "type": "contains_all",
+          "values": [
+            "3.14",
+            "library",
+            "3.11",
+            "compatibility"
+          ]
+        },
+        {
+          "id": "requires-quality-gates",
+          "type": "contains_all",
+          "values": [
+            "tests",
+            "ruff",
+            "format",
+            "type"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Review this Python boundary:\n\ndef load(payload: dict) -> User:\n    return payload  # type: ignore\n\nProvide the smallest safe correction without using Any or an unchecked cast.",
+      "expected_output": "Treat payload as untrusted input, parse and validate it into User, use precise types such as Mapping[str, object] or unknown-equivalent objects, and return a real User.",
+      "files": [],
+      "checks": [
+        {
+          "id": "validates-boundary",
+          "type": "contains_all",
+          "values": [
+            "validate",
+            "User",
+            "Mapping"
+          ]
+        },
+        {
+          "id": "rejects-ignore-and-any",
+          "type": "contains_all",
+          "values": [
+            "type: ignore",
+            "Any"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Review this import in an application: `from vendor_sdk._internal import Client`. Explain the ownership issue and the smallest safe alternative.",
+      "expected_output": "A leading underscore is non-public API. Use the supported public Client import or an adapter around a documented interface; if no public API exists, require an explicit pinned exception with tests and an upgrade owner.",
+      "files": [],
+      "checks": [
+        {
+          "id": "protects-public-api-boundary",
+          "type": "contains_all",
+          "values": [
+            "non-public",
+            "public",
+            "upgrade"
+          ]
+        }
+      ]
+    }
+  ]
+}

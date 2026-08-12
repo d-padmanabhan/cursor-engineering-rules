@@ -152,8 +152,7 @@ For a new frontend PR:
 ## See also
 
 - Skill: `frontend-engineering` - depth on rendering choice, bundle budgets, INP debugging, state management, perf workflows
-- Rule: `230-javascript.mdc` - JavaScript foundations (ESM, async/await, error handling)
-- Rule: `240-typescript.mdc` - TypeScript strict mode, React + TypeScript snippets
+- Rule: `225-javascript-typescript.mdc` - shared JavaScript and TypeScript language gates
 - Rule: `320-api-design.mdc` - API surface (REST / GraphQL / gRPC) for frontend-to-backend calls
 - Rule: `325-networking.mdc` - HTTP/n choice, TTFB, connection reuse for the frontend's outbound calls
 - Rule: `310-security.mdc` - OWASP for application security context

@@ -11,6 +11,8 @@ description: >-
 
 # Documentation Standards
 
+Mandatory Markdown gates are owned by the [Markdown rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/800-markdown.mdc). This skill owns document design, Mermaid guidance, templates, and writing workflows.
+
 ## Core Principles
 
 1. **Audience-First**: Write for your reader, not yourself
@@ -110,15 +112,15 @@ def hello():
 ```markdown
 [Link text](https://acme.com)
 [Reference link][1]
-[Python rule](../rules/200-python.mdc)
-[Generation Contract](../rules/140-bash.mdc#generation-contract-for-non-trivial-scripts)
+[Python rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/200-python.mdc)
+[Bash rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/140-bash.mdc)
 
 [1]: https://acme.com
 ```
 
 Prefer clickable same-repo references:
 
-- Good: `[Python skill](../skills/python-development/)`
+- Good: `[Python skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/SKILL.md)`
 - Avoid for navigation: `` `skills/python-development/` ``
 - Good for literals: `` `src/app.ts` `` when discussing a path value or config example
 
@@ -132,7 +134,7 @@ Prefer clickable same-repo references:
 ## Interactive vs static diagrams
 
 - **Static (Markdown):** Mermaid in this skill and in `rules/800-markdown.mdc`.
-- **Interactive (React SPA):** `@xyflow/react` patterns, playbook, and rule **`rules/815-reactflow-diagrams.mdc`** - use skill **`skills/reactflow-architecture-diagrams/`**. See [references/static-vs-interactive.md](../reactflow-architecture-diagrams/references/static-vs-interactive.md) for a short comparison table.
+- **Interactive (React SPA):** `@xyflow/react` patterns, playbook, and rule **`rules/815-reactflow-diagrams.mdc`** - use skill **`skills/reactflow-architecture-diagrams/`**. See [static versus interactive diagrams](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/reactflow-architecture-diagrams/references/static-vs-interactive.md) for a short comparison table.
 
 ### AI diagram tooling
 
@@ -202,6 +204,6 @@ graph LR
 ## Detailed References
 
 - **React Flow (interactive canvases)**: See `skills/reactflow-architecture-diagrams/SKILL.md` and `rules/815-reactflow-diagrams.mdc`
-- **Markdown & Mermaid**: See [references/markdown-mermaid.md](references/markdown-mermaid.md)
-- **Technical Writing**: See [references/technical-writing.md](references/technical-writing.md)
-- **Open Source**: See [references/open-source.md](references/open-source.md)
+- **Markdown & Mermaid**: See [Markdown and Mermaid](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/documentation-standards/references/markdown-mermaid.md)
+- **Technical Writing**: See [technical writing](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/documentation-standards/references/technical-writing.md)
+- **Open Source**: See [open source](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/documentation-standards/references/open-source.md)

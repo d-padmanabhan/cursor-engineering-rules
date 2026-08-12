@@ -1,0 +1,201 @@
+{
+  "skill_name": "system-design",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Design a notification platform for our company. We have not provided traffic, delivery channels, latency, compliance, or reliability requirements. Give a production design.",
+      "expected_output": "Frame the missing requirements first. Ask only material questions or proceed with labeled assumptions, define non-goals and channel-specific SLOs, and avoid choosing infrastructure before scale and delivery semantics are known.",
+      "files": [],
+      "checks": [
+        {
+          "id": "frames-unknowns",
+          "type": "contains_all",
+          "values": [
+            "assumption",
+            "non-goal",
+            "SLO",
+            "delivery"
+          ]
+        },
+        {
+          "id": "asks-material-questions",
+          "type": "contains_any",
+          "values": [
+            "questions",
+            "clarify",
+            "need to know"
+          ]
+        },
+        {
+          "id": "observes-system-design-skill",
+          "type": "loaded_skill",
+          "skill": "system-design",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Design image ingestion for 120 million uploads per month. Average image size is 4 MB, peak traffic is 8 times average, and originals are retained for 365 days. Show first-order request-rate, bandwidth, and storage estimates before selecting components.",
+      "expected_output": "Show unit-aware arithmetic: monthly uploads converted to average and peak requests per second, payload multiplied into bandwidth, and 365-day raw storage with overhead/replication stated separately. Label estimates and headroom rather than presenting false precision.",
+      "files": [],
+      "checks": [
+        {
+          "id": "shows-capacity-arithmetic",
+          "type": "contains_all",
+          "values": [
+            "requests per second",
+            "8",
+            "bandwidth",
+            "storage"
+          ]
+        },
+        {
+          "id": "states-estimation-limits",
+          "type": "contains_any",
+          "values": [
+            "first-order",
+            "estimate",
+            "assumption",
+            "headroom"
+          ]
+        },
+        {
+          "id": "covers-overhead",
+          "type": "contains_any",
+          "values": [
+            "replication",
+            "overhead",
+            "derived"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Review an API design where a checkout request synchronously calls identity, pricing, inventory, fraud, payment, shipping, email, and analytics services with a 200 ms p99 target. Every client retries twice on timeout. Identify the main production risks and smallest corrections.",
+      "expected_output": "Identify impossible or unproven latency composition, availability multiplication, retry amplification, duplicate side effects, and a large synchronous blast radius. Keep only response-critical calls synchronous, set an end-to-end deadline and bounded retry budget, make effects idempotent, and move notifications/analytics asynchronously.",
+      "files": [],
+      "checks": [
+        {
+          "id": "finds-chain-risks",
+          "type": "contains_all",
+          "values": [
+            "latency",
+            "availability",
+            "retry",
+            "blast radius"
+          ]
+        },
+        {
+          "id": "proposes-bounded-corrections",
+          "type": "contains_all",
+          "values": [
+            "deadline",
+            "idempotent",
+            "asynchronous"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Design consistency for limited-stock checkout. Customers must never receive confirmation for stock that was not reserved, reads may be a few seconds stale, payment authorization can time out and later succeed, and duplicate requests are common.",
+      "expected_output": "State the invariant and authoritative inventory owner, use atomic reservation with expected-state/version checks, use a stable idempotency key, distinguish payment timeout from failure, and define durable workflow/reconciliation and compensation for late outcomes.",
+      "files": [],
+      "checks": [
+        {
+          "id": "protects-inventory-invariant",
+          "type": "contains_all",
+          "values": [
+            "invariant",
+            "reservation",
+            "authoritative",
+            "version"
+          ]
+        },
+        {
+          "id": "handles-payment-uncertainty",
+          "type": "contains_all",
+          "values": [
+            "idempotency",
+            "timeout",
+            "reconciliation",
+            "late"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "A 10-year-old monolith processes orders reliably but deploys slowly. Propose a migration to an independently scalable fulfillment capability without a big-bang rewrite or unsafe database dual writes.",
+      "expected_output": "Establish baseline and ownership, create compatible contracts, isolate the fulfillment boundary incrementally, use an Outbox or change capture rather than application dual writes, shadow or dual-read and reconcile, canary traffic, retain rollback compatibility, and define exit criteria before removing the old path.",
+      "files": [],
+      "checks": [
+        {
+          "id": "plans-incremental-migration",
+          "type": "contains_all",
+          "values": [
+            "baseline",
+            "compatible",
+            "incremental",
+            "canary"
+          ]
+        },
+        {
+          "id": "avoids-unsafe-dual-write",
+          "type": "contains_any",
+          "values": [
+            "Outbox",
+            "change data capture",
+            "CDC"
+          ]
+        },
+        {
+          "id": "preserves-validation-and-recovery",
+          "type": "contains_all",
+          "values": [
+            "reconcile",
+            "rollback",
+            "exit criteria"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "A new internal CRUD application expects 40 requests per second, one team, one PostgreSQL database, and no independently scaled workloads. The proposal starts with 14 microservices, Kafka, Kubernetes, a service mesh, and three caches for future scale. Review it.",
+      "expected_output": "Reject the speculative complexity. Recommend a modular monolith with one database and clear internal boundaries, identify concrete triggers for later extraction, and preserve observability, security, backups, and performance testing without deploying distributed infrastructure prematurely.",
+      "files": [],
+      "checks": [
+        {
+          "id": "rejects-premature-distribution",
+          "type": "contains_all",
+          "values": [
+            "modular monolith",
+            "speculative",
+            "complexity"
+          ]
+        },
+        {
+          "id": "defines-evolution-trigger",
+          "type": "contains_any",
+          "values": [
+            "extraction trigger",
+            "revisit trigger",
+            "when"
+          ]
+        },
+        {
+          "id": "retains-production-basics",
+          "type": "contains_all",
+          "values": [
+            "observability",
+            "security",
+            "backup"
+          ]
+        }
+      ]
+    }
+  ]
+}

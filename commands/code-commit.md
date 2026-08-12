@@ -112,12 +112,10 @@ Stage **explicitly** by file name:
 - `git add <file1> <file2> ...`
 
 > [!IMPORTANT]
-> Stage files safely (handles spaces) by iterating line-by-line:
+Stage only the reviewed paths explicitly:
 >
 > ```bash
-> git status --porcelain=v1 | awk '{print $2}' | while IFS= read -r f; do
->   [ -n "$f" ] && git add -- "$f"
-> done
+> git add -- path/to/file1 path/to/file2
 > ```
 
 Constraints:
@@ -129,7 +127,7 @@ Constraints:
 
 ## Step 5: Draft a Conventional Commit message (HITL gate)
 
-Draft a commit message following `rules/130-git.mdc`:
+Draft a commit message following the [Git workflow reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/git-workflow.md). The [Git rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/130-git.mdc#commit-authorization-and-signing) owns the mandatory approval and signing gate.
 
 - Conventional Commits (`feat`, `fix`, `docs`, `chore`, `refactor`, `ci`, `test`, `perf`)
 - First line ≤ 72 chars, imperative mood
@@ -146,7 +144,7 @@ And ask:
 `Should I proceed with this commit? (yes/no)`
 
 > [!IMPORTANT]
-> Do not add Cursor attribution trailers (see `rules/130-git.mdc`).
+> Do not add Cursor attribution trailers (see the [Git rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/130-git.mdc#commit-authorization-and-signing)).
 
 ---
 

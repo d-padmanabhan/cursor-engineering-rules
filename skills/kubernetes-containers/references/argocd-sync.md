@@ -153,10 +153,10 @@ An emergency `argocd app rollback` is a break-glass mutation, not the default Gi
 
 ## References
 
-- [Automated sync policy](https://argo-cd.readthedocs.io/en/release-3.4/user-guide/auto_sync/)
-- [`argocd app diff`](https://argo-cd.readthedocs.io/en/release-3.4/user-guide/commands/argocd_app_diff/)
-- [`argocd app sync`](https://argo-cd.readthedocs.io/en/release-3.4/user-guide/commands/argocd_app_sync/)
-- [`argocd app wait`](https://argo-cd.readthedocs.io/en/release-3.4/user-guide/commands/argocd_app_wait/)
-- [Sync options](https://argo-cd.readthedocs.io/en/release-3.4/user-guide/sync-options/)
-- [Sync phases and waves](https://argo-cd.readthedocs.io/en/release-3.4/user-guide/sync-waves/)
-- [Sync windows](https://argo-cd.readthedocs.io/en/release-3.4/user-guide/sync_windows/)
+- [Automated sync policy](https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/)
+- [`argocd app diff`](https://argo-cd.readthedocs.io/en/stable/user-guide/commands/argocd_app_diff/)
+- [`argocd app sync`](https://argo-cd.readthedocs.io/en/stable/user-guide/commands/argocd_app_sync/)
+- [`argocd app wait`](https://argo-cd.readthedocs.io/en/stable/user-guide/commands/argocd_app_wait/)
+- [Sync options](https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/)
+- [Sync phases and waves](https://argo-cd.readthedocs.io/en/stable/user-guide/sync-waves/)
+- [Sync windows](https://argo-cd.readthedocs.io/en/stable/user-guide/sync_windows/)
