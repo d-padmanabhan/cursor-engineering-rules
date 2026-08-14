@@ -1,0 +1,66 @@
+{
+  "skill_name": "okta",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Explain Okta XAA for an enterprise AI agent calling a SaaS resource app on behalf of a user. Correct the phrase 'Extensible Access Architecture,' identify the actors, and trace the token flow without claiming that the user's ID token is accepted directly by the resource API.",
+      "expected_output": "State that XAA means Cross App Access. Identify the user, requesting app/agent, Okta IdP, resource app authorization server, and resource API. Trace ID token to audience-bound ID-JAG at Okta, then ID-JAG plus requesting-client authentication to a scoped resource-app access token.",
+      "files": [],
+      "checks": [
+        {
+          "id": "uses-current-xaa-name",
+          "type": "contains_all",
+          "values": [
+            "Cross App Access",
+            "not",
+            "Extensible Access Architecture"
+          ]
+        },
+        {
+          "id": "traces-two-exchanges",
+          "type": "contains_all",
+          "values": [
+            "requesting app",
+            "ID-JAG",
+            "resource",
+            "scoped access token"
+          ]
+        },
+        {
+          "id": "observes-okta-skill",
+          "type": "loaded_skill",
+          "skill": "okta",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "An Okta administrator disables a managed XAA connection during an incident and declares all access revoked immediately. Review the claim and provide containment verification.",
+      "expected_output": "Explain that disabling the connection blocks new ID-JAG exchanges but existing access tokens are controlled by the resource app and can remain valid. Require short lifetimes, resource-app token/session invalidation, requesting-client disablement or rotation, correlated audit evidence, and tests proving both new exchanges fail and existing access is contained.",
+      "files": [],
+      "checks": [
+        {
+          "id": "corrects-revocation-claim",
+          "type": "contains_all",
+          "values": [
+            "new",
+            "ID-JAG",
+            "existing access tokens",
+            "resource app"
+          ]
+        },
+        {
+          "id": "requires-coordinated-containment",
+          "type": "contains_all",
+          "values": [
+            "lifetime",
+            "invalidate",
+            "audit",
+            "verify"
+          ]
+        }
+      ]
+    }
+  ]
+}

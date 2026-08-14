@@ -7,7 +7,7 @@ description: Workload identity playbook (SPIFFE/SPIRE, cloud IAM, OIDC federatio
 
 **Companion rule:** `318-workload-identity.mdc`. This skill turns the principles into end-to-end workflows.
 
-**Scope:** the *infrastructure* layer of identity. For the *application* layer (cross-app, agent-on-behalf-of-user), use `skills/okta` (XAA / ID-JAG) and `skills/zero-trust` (HITL gates, threat models).
+**Scope:** the *infrastructure* layer of identity. For application-layer agent-on-behalf-of-user delegation, use the [Okta skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/okta/SKILL.md) for Cross App Access (XAA) and ID-JAG, and the [Zero Trust skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/zero-trust/SKILL.md) for HITL gates and threat models.
 
 ---
 
@@ -243,9 +243,9 @@ SUGGESTION = tightens posture / improves operability.
 
 - Rule: `318-workload-identity.mdc` (the principles)
 - Rule: `316-zero-trust.mdc` (always-on)
-- Rule: `317-okta.mdc` (Okta + XAA at the application layer)
+- Rule: `317-okta.mdc` (Okta at the application layer)
 - Rule: `412-aws-iam.mdc` (IRSA, Pod Identity, VPC Lattice)
 - Rule: `450-kubernetes.mdc` (mesh patterns)
 - Skill: `zero-trust` (threat models, HITL, MCP hardening)
 - Skill: `aws-iam` (AWS IAM operational patterns)
-- Skill: `okta` (Okta operations, XAA workflows)
+- Skill: `okta` (Okta operations and Cross App Access workflows)

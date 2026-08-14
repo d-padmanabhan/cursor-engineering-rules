@@ -153,6 +153,26 @@ See [references/threat-model-template.md](references/threat-model-template.md).
 
 ---
 
+## Workflow 6 - Adversarially Validate an Architecture Pattern
+
+Use after proposing a Zero Trust architecture and before treating the design as ready.
+
+### Steps
+
+1. **Restate the claimed guarantees.** Name the protected assets, principals, enforcement points, failure domains, and assumptions.
+2. **Run the reality check.** Test scale, quotas, latency, availability, operational ownership, cost, control-plane dependency, and degraded behavior.
+3. **Challenge necessity.** Identify a simpler design and state when the proposed pattern should not be used.
+4. **Simulate abuse defensively.** For each credible path, record preconditions, affected control, blast radius, persistence, and observable evidence. Include identity theft, replay, confused deputy, privilege escalation, lateral movement, data exfiltration, agent tool abuse, and control-plane compromise where applicable.
+5. **Switch to defender analysis.** Map each path to prevention, detection, containment, recovery, owner, and a deterministic test.
+6. **Test chained failure.** Assume one preventive control fails; verify another distinct control detects or contains the attack rather than repeating the same decision.
+7. **Revise and re-run.** Update the architecture, then repeat the reality and abuse checks until blockers are resolved or explicitly accepted.
+
+**Deliverable:** adversarial architecture review with prioritized findings, simpler alternative, when-not-to-use criteria, control/test mapping, and unresolved risk owners.
+
+Follow the [adversarial architecture review reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/zero-trust/references/adversarial-architecture-review.md).
+
+---
+
 ## Review Output Format
 
 When reviewing, structure findings like this:
@@ -200,6 +220,7 @@ Each of these is in `316-zero-trust.mdc` with principle and fix.
 - [references/injection-threat-model.md](references/injection-threat-model.md) - Prompt injection threat model and defenses
 - [references/hitl-gates.md](references/hitl-gates.md) - HITL gate design, receipt format, verification
 - [references/threat-model-template.md](references/threat-model-template.md) - One-page Zero Trust threat model
+- [adversarial architecture review](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/zero-trust/references/adversarial-architecture-review.md) - Reality check, defensive abuse simulation, and design iteration
 
 ## Related
 

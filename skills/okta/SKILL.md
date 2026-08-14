@@ -1,6 +1,6 @@
 ---
 name: okta
-description: Okta Workforce Identity playbook. Workflows for new SSO app integration, sign-on policy hardening, SCIM provisioning rollout, IdP migration, login-failure debugging, signing key rotation, and admin role audit. Use when designing, operating, or auditing Okta (orgs, apps, users/groups, policies, lifecycle, Workflows, ASA, Admin API, terraform-provider-okta).
+description: Okta Workforce Identity playbook. Workflows for SSO, policy hardening, SCIM, IdP migration, troubleshooting, key rotation, admin audit, and Cross App Access. Use when designing, operating, or auditing Okta orgs, apps, lifecycle, Workflows, ASA, Admin API, terraform-provider-okta, XAA, ID-JAG, resource server connectors, or agent-on-behalf-of-user access.
 ---
 
 # Okta Workforce Identity - Playbook
@@ -23,6 +23,7 @@ Use when the user:
 - Must rotate signing keys, API tokens, or certificates
 - Is auditing admin roles, API token usage, or lifecycle hygiene
 - Is designing Workflows for JML or cross-app orchestration
+- Is configuring or reviewing Cross App Access (XAA), ID-JAG exchanges, or resource server connectors
 - Is managing Okta via `terraform-provider-okta`
 
 ---
@@ -224,6 +225,25 @@ Quarterly or after any org change.
 
 ---
 
+## Workflow 8 - Cross App Access
+
+Use Cross App Access (XAA) for an Okta-managed directional connection where a requesting app or AI agent accesses a resource app on behalf of a user.
+
+1. **Verify terminology and availability.** XAA means Cross App Access. Confirm current Okta prerequisites, supported integration types, and configuration surface.
+2. **Identify actors.** User, requesting app, Okta as enterprise IdP, resource authorization server, and protected resource.
+3. **Establish direct OAuth trust.** The requesting app must be a client recognized by the resource app's authorization server; XAA does not replace client authentication.
+4. **Configure the managed connection.** Bind the exact resource URL, issuer, audience/tenant, requesting app, and resource app.
+5. **Trace both exchanges.** User identity assertion to audience-bound ID-JAG at Okta, then ID-JAG to scoped access token at the resource authorization server.
+6. **Validate and downscope.** Enforce signature, issuer, audience, subject, client/actor, lifetime, replay protection, and least-privilege resource scope.
+7. **Test revocation honestly.** Disabling the connection blocks new exchanges; separately invalidate or wait out existing resource-app access tokens.
+8. **Audit and roll out.** Correlate both token exchanges and resource calls, test failures, start with a narrow group, and document kill switches.
+
+**Deliverable:** managed-connection configuration, protocol flow, least-privilege scope map, negative tests, audit queries, and coordinated revocation runbook.
+
+Follow the [Cross App Access reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/okta/references/cross-app-access.md).
+
+---
+
 ## Review Output Format
 
 When reviewing an Okta change, structure findings like this:
@@ -263,6 +283,7 @@ SUGGESTION = cleanup / best-practice.
 - [references/policy-hardening.md](references/policy-hardening.md) - Sign-On / Authenticator / MFA policy tiers and defaults
 - [references/scim-rollout.md](references/scim-rollout.md) - SCIM inbound + outbound rollout patterns
 - [references/system-log-queries.md](references/system-log-queries.md) - Useful System Log queries for debugging and audit
+- [Cross App Access](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/okta/references/cross-app-access.md) - XAA and ID-JAG architecture, rollout, validation, and revocation
 
 ## Related
 

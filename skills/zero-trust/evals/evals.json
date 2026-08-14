@@ -1,0 +1,78 @@
+{
+  "skill_name": "zero-trust",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Adversarially review a proposed Zero Trust platform that synchronously calls a single-region external policy engine for every request across 4,000 services. It assumes unlimited quota, retries three times at every layer, logs all token claims, and has no bypass-resistant degraded mode. Include a simpler alternative and when not to use the pattern.",
+      "expected_output": "Challenge the availability, latency, quota, retry-amplification, privacy, cost, and control-plane assumptions. Recommend bounded deadlines/retries, safe claim logging, local or distributed enforcement/cache behavior with freshness constraints, failure testing, and a simpler scoped design. State when the pattern should not be used.",
+      "files": [],
+      "checks": [
+        {
+          "id": "runs-reality-check",
+          "type": "contains_all",
+          "values": [
+            "quota",
+            "latency",
+            "retry",
+            "cost",
+            "availability"
+          ]
+        },
+        {
+          "id": "requires-safer-design",
+          "type": "contains_all",
+          "values": [
+            "deadline",
+            "degraded",
+            "claims",
+            "test"
+          ]
+        },
+        {
+          "id": "challenges-necessity",
+          "type": "contains_all",
+          "values": [
+            "simpler",
+            "not use"
+          ]
+        },
+        {
+          "id": "observes-zero-trust-skill",
+          "type": "loaded_skill",
+          "skill": "zero-trust",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Run a defensive abuse review for a multi-tenant AI agent that can search customer documents and invoke a refund tool. Cover prompt injection, stolen agent identity, cross-tenant access, and data exfiltration. Do not provide offensive exploitation instructions.",
+      "expected_output": "For each path, state preconditions, identity, blast radius, evidence, prevention, detection, containment, recovery, owner, and deterministic validation. Require per-tenant retrieval enforcement, narrow capability tokens, egress controls, HITL for refunds, and auditable tool decisions.",
+      "files": [],
+      "checks": [
+        {
+          "id": "maps-defensive-response",
+          "type": "contains_all",
+          "values": [
+            "preconditions",
+            "blast radius",
+            "detect",
+            "contain",
+            "recover"
+          ]
+        },
+        {
+          "id": "protects-agent-boundaries",
+          "type": "contains_all",
+          "values": [
+            "tenant",
+            "capability",
+            "egress",
+            "HITL",
+            "audit"
+          ]
+        }
+      ]
+    }
+  ]
+}
