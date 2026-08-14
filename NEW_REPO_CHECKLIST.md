@@ -136,11 +136,11 @@ Optional working directories some workflows expect (create only what you use):
 |---|---|
 | `tmp/pr/` | PR drafts |
 | `tmp/pr_reviews/` | `/self-review`, `/quick-review` output |
-| `tmp/agent_reports/` | `020-agent-audit.mdc` audit reports |
+| `.agent/reports/` | `020-agent-audit.mdc` audit reports and recordings |
 | `tmp/bug_reports/` | bug investigation notes |
 
 ```bash
-mkdir -p tmp/pr tmp/pr_reviews tmp/agent_reports tmp/bug_reports
+mkdir -p tmp/pr tmp/pr_reviews tmp/bug_reports .agent/reports
 ```
 
 ## 8. Pre-commit hooks (recommended)
@@ -183,11 +183,12 @@ For broader regex + entropy coverage (CI-grade), wire `gitleaks` into your GitHu
 
 ## 9. Git hygiene
 
-- [ ] **Git Hygiene:** Add the following to `.git/info/exclude` (preferred) instead of the repo `.gitignore`: `**/tmp/`, `.terraform/`, `.terragrunt-cache/`. Do not modify the repo `.gitignore` for these entries.
+- [ ] **Git Hygiene:** Add the following to `.git/info/exclude` (preferred) instead of the repo `.gitignore`: `**/tmp/`, `.agent/reports/`, `.terraform/`, `.terragrunt-cache/`. Do not modify the repo `.gitignore` for these entries.
 
 ```bash
 cat >> .git/info/exclude <<'EOF'
 **/tmp/
+.agent/reports/
 .terraform/
 .terragrunt-cache/
 EOF
@@ -212,9 +213,11 @@ ls .cursor/commands/*.md       | head -3             # expect 3+ matches
 # Templates resolve through the rules symlink
 ls .cursor/rules/templates/    | head -5             # expect template files
 
-# Workspace exclusion is in effect (tmp/ should not appear in `git status`)
+# Workspace exclusions are in effect
 mkdir -p tmp && touch tmp/x && git status --short | grep '^?? tmp' && echo "FAIL: tmp/ leaking into git" || echo "ok: tmp/ excluded"
 rm tmp/x
+mkdir -p .agent/reports && touch .agent/reports/x && git check-ignore -q .agent/reports/x && echo "ok: .agent/reports/ excluded" || echo "FAIL: .agent/reports/ leaking into git"
+rm .agent/reports/x
 ```
 
 For agent-side verification: open a known file type (`.py`, `.tf`, `.go`) and confirm the matching rule is detected in the agent's settings panel (Cursor: Settings -> Rules & Memories; Claude Code: `/rules` command).

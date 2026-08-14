@@ -34,6 +34,7 @@ yarn-error.log*
 tmp/
 temp/
 *.tmp
+.agent/reports/
 
 # Node
 node_modules/
