@@ -48,7 +48,7 @@ Organize feedback by impact:
 
 | Language | Linting/Formatting | Security |
 |----------|-------------------|----------|
-| Python | `ruff` + `black`, pylint (≥9.0) | `pip-audit` |
+| Python | Python 3.14 + `uv`; `ruff` check/format; pylint (≥9.0) | `pip-audit` |
 | Bash | `shfmt` + `shellcheck` | - |
 | Go | `gofmt` + `golangci-lint` | `govulncheck` |
 | JS/TS | `eslint --max-warnings=0` | `npm audit` |

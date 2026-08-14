@@ -36,6 +36,29 @@
           ]
         },
         {
+          "id": "explains-attack-path",
+          "type": "contains_any",
+          "values": [
+            "attack path",
+            "attacker supplies",
+            "caller-controlled"
+          ]
+        },
+        {
+          "id": "provides-sqlite-binding",
+          "type": "regex",
+          "pattern": "execute\\s*\\([^\\n]*,\\s*\\(\\s*email\\s*,\\s*\\)"
+        },
+        {
+          "id": "keeps-fix-minimal",
+          "type": "contains_any",
+          "values": [
+            "minimal",
+            "smallest safe",
+            "smallest correction"
+          ]
+        },
+        {
           "id": "avoids-broad-rewrite",
           "type": "not_contains",
           "value": "rewrite the entire"
@@ -44,8 +67,8 @@
     },
     {
       "id": 2,
-      "prompt": "Write a complete Python 3.14 command-line program that reads a local JSON array of objects and prints a count by the string field `status`. Use the standard library, validate the top-level shape, report useful errors to stderr, and include the entry point. Keep the solution proportionate.",
-      "expected_output": "A runnable, typed Python program using argparse, json, validation, explicit error handling, and an if __name__ == \"__main__\" entry point without third-party dependencies.",
+      "prompt": "Write a complete Python 3.14 command-line program that reads a local JSON array of objects and prints a count by the string field `status`. Use uv and the standard library, precise built-in type annotations, Google-style docstrings, top-level shape validation, useful errors to stderr, and an entry point that propagates the exit code. Keep the solution proportionate.",
+      "expected_output": "A runnable, typed Python 3.14 program using the uv-run shebang, argparse, json, validation, explicit error handling, built-in generic types, and an if __name__ == \"__main__\" entry point without third-party dependencies.",
       "files": [],
       "checks": [
         {
@@ -68,6 +91,39 @@
           ]
         },
         {
+          "id": "uses-precise-built-in-generics",
+          "type": "regex",
+          "pattern": "(?:list|dict)\\[[^\\]\\n]+\\]"
+        },
+        {
+          "id": "rejects-bare-dict-generics",
+          "type": "not_regex",
+          "pattern": "(?:list\\[dict\\]|(?:->|:)\\s*dict\\s*(?:=|\\)|,|:|$))"
+        },
+        {
+          "id": "uses-typed-main",
+          "type": "contains_all",
+          "values": [
+            "def main(",
+            "-> int"
+          ]
+        },
+        {
+          "id": "propagates-main-exit-code",
+          "type": "regex",
+          "pattern": "(?:raise\\s+SystemExit\\(main\\(\\)\\)|sys\\.exit\\(main\\(\\)\\))"
+        },
+        {
+          "id": "uses-function-docstrings",
+          "type": "regex",
+          "pattern": "def\\s+[a-z][a-z0-9_]*\\([^\\n]*\\)(?:\\s*->[^:]+)?:\\s*\\n\\s+\"\"\""
+        },
+        {
+          "id": "avoids-broad-exceptions",
+          "type": "not_regex",
+          "pattern": "except\\s+(?:Exception|BaseException)\\b"
+        },
+        {
           "id": "no-pandas",
           "type": "not_regex",
           "pattern": "(?:^|\\n)\\s*(?:from|import)\\s+pandas\\b"
@@ -76,13 +132,28 @@
           "id": "no-cli-framework",
           "type": "not_regex",
           "pattern": "(?:^|\\n)\\s*(?:from|import)\\s+(?:click|typer)\\b"
+        },
+        {
+          "id": "uses-uv-shebang",
+          "type": "contains",
+          "value": "#!/usr/bin/env -S uv run"
+        },
+        {
+          "id": "rejects-generic-python-shebang",
+          "type": "not_contains",
+          "value": "#!/usr/bin/env python3"
+        },
+        {
+          "id": "rejects-lower-python-versions",
+          "type": "not_regex",
+          "pattern": "Python\\s+3\\.(?:1[0-3]|[0-9])\\b|python-version\\s*:\\s*[\"']?3\\.(?:1[0-3]|[0-9])\\b"
         }
       ]
     },
     {
       "id": 3,
-      "prompt": "A repository still uses actions/checkout@v4 and actions/setup-python@v5. Using the attached official-release metadata, tell me the versions to use and provide the workflow snippet. Treat model memory as potentially stale, cite both sources, and state when the metadata was retrieved.",
-      "expected_output": "Use actions/checkout@v7 and actions/setup-python@v7, identify releases v7.0.1 and v7.0.0 from the supplied official repository release pages, cite both links, and state the retrieval date.",
+      "prompt": "A repository still uses actions/checkout@v4 and actions/setup-python@v5. Using the attached official-release metadata, tell me the versions to use and provide the workflow snippet. This repository requires Python 3.14 and uv; do not use an older Python, pip, or requirements.txt. Treat model memory as potentially stale, cite all three supplied release sources, and state when the metadata was retrieved.",
+      "expected_output": "Use actions/checkout@v7, actions/setup-python@v7, and astral-sh/setup-uv@v10; configure Python 3.14 and uv without pip or requirements.txt; identify releases v7.0.1, v7.0.0, and v10.0.0 from the supplied official repository release pages; cite all links; and state the retrieval date.",
       "files": [
         "evals/fixtures/current-action-releases.json"
       ],
@@ -93,7 +164,10 @@
           "values": [
             "verify",
             "verified",
-            "current release"
+            "current release",
+            "model memory",
+            "metadata",
+            "potentially stale"
           ]
         },
         {
@@ -119,8 +193,100 @@
           "type": "contains_all",
           "values": [
             "v7.0.1",
-            "v7.0.0"
+            "v7.0.0",
+            "v10.0.0"
           ]
+        },
+        {
+          "id": "uses-setup-uv-official-source",
+          "type": "contains",
+          "value": "github.com/astral-sh/setup-uv"
+        },
+        {
+          "id": "uses-python-3-14",
+          "type": "contains",
+          "value": "3.14"
+        },
+        {
+          "id": "uses-uv",
+          "type": "contains",
+          "value": "uv"
+        },
+        {
+          "id": "rejects-lower-python-versions",
+          "type": "not_regex",
+          "pattern": "python-version\\s*:\\s*[\"']?3\\.(?:1[0-3]|[0-9])\\b|Python\\s+3\\.(?:1[0-3]|[0-9])\\b"
+        },
+        {
+          "id": "rejects-pip-and-requirements",
+          "type": "not_regex",
+          "pattern": "(?:^|\\n)\\s*(?:(?:run\\s*:\\s*)?(?:python\\s+-m\\s+)?pip(?:3)?\\s+install\\b|cache\\s*:\\s*[\"']?pip\\b)"
+        },
+        {
+          "id": "configures-uv-in-ci",
+          "type": "contains_all",
+          "values": [
+            "astral-sh/setup-uv@v10",
+            "uv sync"
+          ]
+        },
+        {
+          "id": "uses-least-privilege-workflow",
+          "type": "regex",
+          "pattern": "permissions\\s*:\\s*(?:\\{\\s*contents\\s*:\\s*read\\s*\\}|[\\s\\S]{0,80}contents\\s*:\\s*read)"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "A 30-line local CSV conversion script currently handles one stable format. A proposal adds plugin discovery, abstract factories, repository and service classes, dependency injection, and configuration for hypothetical future formats. Review the proposal and recommend the proportionate design.",
+      "expected_output": "Reject the speculative architecture under KISS and YAGNI, retain a small functional design for the current requirement, identify concrete evidence that would justify an abstraction later, and avoid drafting the proposed class hierarchy.",
+      "files": [],
+      "checks": [
+        {
+          "id": "names-simplicity-principle",
+          "type": "contains_any",
+          "values": [
+            "KISS",
+            "YAGNI",
+            "over-engineering",
+            "speculative abstraction"
+          ]
+        },
+        {
+          "id": "acknowledges-current-small-scope",
+          "type": "contains_any",
+          "values": [
+            "30-line",
+            "30 line",
+            "small script",
+            "single stable format"
+          ]
+        },
+        {
+          "id": "recommends-current-simple-design",
+          "type": "contains_any",
+          "values": [
+            "function",
+            "functional",
+            "keep it simple",
+            "simplest"
+          ]
+        },
+        {
+          "id": "defines-reversal-evidence",
+          "type": "contains_any",
+          "values": [
+            "when a second format",
+            "multiple formats",
+            "evidence",
+            "revisit"
+          ]
+        },
+        {
+          "id": "does-not-draft-class-hierarchy",
+          "type": "not_regex",
+          "pattern": "class\\s+(?:Plugin|Abstract|Factory|Repository|Service)"
         }
       ]
     }

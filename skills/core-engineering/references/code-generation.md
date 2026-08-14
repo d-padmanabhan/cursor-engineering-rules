@@ -38,9 +38,9 @@ When making assumptions, document them clearly:
 ## Code Structure Template
 
 ```python
-"""
-Brief module description and purpose.
-"""
+#!/usr/bin/env -S uv run
+"""Brief module description and purpose."""
+
 # Imports (stdlib, third-party, local)
 
 # Constants and configuration
@@ -106,9 +106,12 @@ When asking questions (limit to ≤3), prioritize those that would most change t
 
 ## Best Practices by Language
 
-### Python (target 3.12+)
+### Python (target 3.14)
 
-- Use type hints and PEP 8
+- Use `uv` for runtime and dependency management; do not introduce `requirements.txt`
+- Start new executable scripts with `#!/usr/bin/env -S uv run`
+- Use built-in generics (`list[str]`, `dict[str, object]`) and `|` unions
+- Use precise type annotations and Google-style docstrings
 - Prefer `functools.cache`/`lru_cache`, `dataclasses`, modern `typing`
 - Use context managers for resources (`with` statements)
 - Prefer stdlib over adding dependencies

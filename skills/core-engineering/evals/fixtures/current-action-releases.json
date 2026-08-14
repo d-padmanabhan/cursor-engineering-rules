@@ -1,5 +1,5 @@
 {
-  "retrieved_at": "2026-07-22T00:00:00Z",
+  "retrieved_at": "2026-08-13T02:15:00Z",
   "sources": {
     "actions/checkout": {
       "latest_release": "v7.0.1",
@@ -8,6 +8,10 @@
     "actions/setup-python": {
       "latest_release": "v7.0.0",
       "url": "https://github.com/actions/setup-python/releases/tag/v7.0.0"
+    },
+    "astral-sh/setup-uv": {
+      "latest_release": "v10.0.0",
+      "url": "https://github.com/astral-sh/setup-uv/releases/tag/v10.0.0"
     }
   }
 }
