@@ -67,6 +67,36 @@
           ]
         }
       ]
+    },
+    {
+      "id": 4,
+      "prompt": "Implementation and deterministic checks are complete for a production IAM policy change. State the remaining workflow before release.",
+      "expected_output": "Route to independent verification against an immutable commit/diff hash in a read-only session, then require enforceable human approval before release.",
+      "files": [],
+      "checks": [
+        {
+          "id": "routes-independent-verification",
+          "type": "contains",
+          "value": "independent verification"
+        },
+        {
+          "id": "binds-immutable-target",
+          "type": "contains_all",
+          "values": [
+            "commit",
+            "hash"
+          ]
+        },
+        {
+          "id": "requires-human-release-gate",
+          "type": "contains_any",
+          "values": [
+            "human approval",
+            "CODEOWNERS",
+            "protected environment"
+          ]
+        }
+      ]
     }
   ]
 }

@@ -1,0 +1,695 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://acme.com/schemas/independent-verification-artifact-v1.json",
+  "title": "Independent Verification Artifact",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "verification_id",
+    "repository",
+    "target",
+    "risk",
+    "implementer",
+    "verifier",
+    "independence",
+    "prompt_version",
+    "evidence",
+    "findings",
+    "verdict",
+    "stale",
+    "revalidation",
+    "human_gate",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "verification_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{7,127}$"
+    },
+    "repository": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "base_commit",
+        "target_commit",
+        "target_type",
+        "snapshot_tree",
+        "diff_sha256",
+        "requirements_sha256",
+        "scope_manifest_sha256",
+        "policy_sha256",
+        "evidence_manifest_sha256"
+      ],
+      "properties": {
+        "base_commit": {
+          "$ref": "#/$defs/gitObjectId"
+        },
+        "target_commit": {
+          "$ref": "#/$defs/gitObjectId"
+        },
+        "target_type": {
+          "enum": [
+            "commit",
+            "working-tree-snapshot"
+          ]
+        },
+        "snapshot_tree": {
+          "$ref": "#/$defs/gitObjectId"
+        },
+        "diff_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "requirements_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "scope_manifest_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "policy_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "evidence_manifest_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "risk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier",
+        "rationale"
+      ],
+      "properties": {
+        "tier": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        }
+      }
+    },
+    "implementer": {
+      "$ref": "#/$defs/aiActor"
+    },
+    "verifier": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/aiActor"
+        },
+        {
+          "$ref": "#/$defs/humanActor"
+        }
+      ]
+    },
+    "independence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "level",
+        "different_session",
+        "different_model_family",
+        "different_provider",
+        "implementer_reasoning_shared"
+        ,
+        "controller_verified",
+        "read_only_capabilities"
+      ],
+      "properties": {
+        "level": {
+          "enum": [
+            "same-model-fresh-session",
+            "different-model-same-provider",
+            "different-provider",
+            "human-domain-owner"
+          ]
+        },
+        "different_session": {
+          "type": "boolean"
+        },
+        "different_model_family": {
+          "type": "boolean"
+        },
+        "different_provider": {
+          "type": "boolean"
+        },
+        "implementer_reasoning_shared": {
+          "const": false
+        },
+        "controller_verified": {
+          "const": true
+        },
+        "read_only_capabilities": {
+          "const": true
+        }
+      }
+    },
+    "prompt_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "deterministic_gate_passed",
+        "checks"
+      ],
+      "properties": {
+        "deterministic_gate_passed": {
+          "type": "boolean"
+        },
+        "checks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/check"
+          }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/finding"
+      }
+    },
+    "verdict": {
+      "enum": [
+        "PASS",
+        "PASS_WITH_NOTES",
+        "NEEDS_REVISION",
+        "INCONCLUSIVE"
+      ]
+    },
+    "stale": {
+      "type": "boolean"
+    },
+    "revalidation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "controller_version",
+        "revalidated_at",
+        "target_matches",
+        "diff_matches",
+        "requirements_match",
+        "policy_matches",
+        "evidence_matches"
+      ],
+      "properties": {
+        "controller_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "revalidated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "target_matches": {
+          "type": "boolean"
+        },
+        "diff_matches": {
+          "type": "boolean"
+        },
+        "requirements_match": {
+          "type": "boolean"
+        },
+        "policy_matches": {
+          "type": "boolean"
+        },
+        "evidence_matches": {
+          "type": "boolean"
+        }
+      }
+    },
+    "human_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required",
+        "status"
+      ],
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "not_required",
+            "pending",
+            "approved",
+            "rejected",
+            "expired"
+          ]
+        },
+        "approver_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "decided_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "request_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "approval_system": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "approval_record_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "controller_verified": {
+          "const": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "approved"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "approver_id",
+              "decided_at",
+              "request_sha256",
+              "approval_system",
+              "approval_record_id",
+              "controller_verified"
+            ]
+          }
+        }
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "risk": {
+            "properties": {
+              "tier": {
+                "enum": [
+                  "high",
+                  "critical"
+                ]
+              }
+            },
+            "required": [
+              "tier"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "human_gate": {
+            "properties": {
+              "required": {
+                "const": true
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "verdict": {
+            "enum": [
+              "PASS",
+              "PASS_WITH_NOTES"
+            ]
+          }
+        },
+        "required": [
+          "verdict"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "deterministic_gate_passed": {
+                "const": true
+              },
+              "checks": {
+                "not": {
+                  "contains": {
+                    "properties": {
+                      "status": {
+                        "const": "failed"
+                      }
+                    },
+                    "required": [
+                      "status"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "stale": {
+            "const": false
+          },
+          "revalidation": {
+            "properties": {
+              "target_matches": {
+                "const": true
+              },
+              "diff_matches": {
+                "const": true
+              },
+              "requirements_match": {
+                "const": true
+              },
+              "policy_matches": {
+                "const": true
+              },
+              "evidence_matches": {
+                "const": true
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "verdict": {
+            "const": "PASS"
+          }
+        },
+        "required": [
+          "verdict"
+        ]
+      },
+      "then": {
+        "properties": {
+          "findings": {
+            "maxItems": 0
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "verdict": {
+            "const": "PASS_WITH_NOTES"
+          }
+        },
+        "required": [
+          "verdict"
+        ]
+      },
+      "then": {
+        "properties": {
+          "findings": {
+            "items": {
+              "properties": {
+                "severity": {
+                  "enum": [
+                    "low",
+                    "note"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "human_gate": {
+            "properties": {
+              "required": {
+                "const": true
+              }
+            },
+            "required": [
+              "required"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "human_gate": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "pending",
+                  "approved",
+                  "rejected",
+                  "expired"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "human_gate": {
+            "properties": {
+              "status": {
+                "const": "not_required"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "gitObjectId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}(?:[0-9a-f]{24})?$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "aiActor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "tool",
+        "provider",
+        "model",
+        "session_id"
+      ],
+      "properties": {
+        "kind": {
+          "const": "ai"
+        },
+        "tool": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "provider": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "session_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
+    },
+    "humanActor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "identity",
+        "role"
+      ],
+      "properties": {
+        "kind": {
+          "const": "human"
+        },
+        "identity": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "mandatory",
+        "status",
+        "exit_code",
+        "artifact_sha256"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "mandatory": {
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "passed",
+            "failed",
+            "skipped"
+          ]
+        },
+        "exit_code": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "artifact_sha256": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "maxLength": 4096
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "passed"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "const": 0
+              },
+              "artifact_sha256": {
+                "$ref": "#/$defs/sha256"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "skipped"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "type": "null"
+              },
+              "artifact_sha256": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "severity",
+        "title",
+        "evidence",
+        "remediation"
+      ],
+      "properties": {
+        "severity": {
+          "enum": [
+            "blocker",
+            "high",
+            "medium",
+            "low",
+            "note"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "evidence": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "remediation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        }
+      }
+    }
+  }
+}

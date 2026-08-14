@@ -552,6 +552,7 @@ Skills under `skills/` cover repeatable end-to-end workflows that pair with the 
 
 ### Workflow patterns (meta)
 
+- **[skills/independent-verification](skills/independent-verification/)** - immutable, read-only, evidence-backed verification with human escalation for consequential AI-generated changes
 - **[skills/skills-composition](skills/skills-composition/)** - patterns for chaining skills, scope resolution, graceful degradation
 - **[skills/skills-continuous-improvement](skills/skills-continuous-improvement/)** - biweekly maintenance workflow for rule/skill drift, stale examples, unsafe snippets, and missing non-negotiables
 
@@ -570,13 +571,16 @@ The initial suites cover:
 - [Distributed transactions evals](skills/distributed-transactions/evals/evals.json)
 - [Git workflow evals](skills/git-workflow/evals/evals.json)
 - [IAM security advisor evals](skills/iam-security-advisor/evals/evals.json)
+- [Independent verification evals](skills/independent-verification/evals/evals.json)
 - [Kubernetes containers evals](skills/kubernetes-containers/evals/evals.json)
 - [Memory architecture evals](skills/memory-architecture/evals/evals.json)
+- [Okta evals](skills/okta/evals/evals.json)
 - [Python development evals](skills/python-development/evals/evals.json)
 - [Scripting automation evals](skills/scripting-automation/evals/evals.json)
 - [Security testing evals](skills/security-testing/evals/evals.json)
 - [System design evals](skills/system-design/evals/evals.json)
 - [TypeScript and JavaScript evals](skills/typescript-javascript/evals/evals.json)
+- [Zero Trust evals](skills/zero-trust/evals/evals.json)
 
 ```bash
 uv run python -m evals.skill_eval validate

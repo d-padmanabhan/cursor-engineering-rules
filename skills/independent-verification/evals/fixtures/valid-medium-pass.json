@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "verification_id": "verify-20260814-001",
+  "repository": "acme/payments",
+  "target": {
+    "base_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "target_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "target_type": "commit",
+    "snapshot_tree": "2222222222222222222222222222222222222222",
+    "diff_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "requirements_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "scope_manifest_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "policy_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "evidence_manifest_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "risk": {
+    "tier": "medium",
+    "rationale": "Authorization behavior changes but release is reversible."
+  },
+  "implementer": {
+    "kind": "ai",
+    "tool": "Cursor",
+    "provider": "OpenAI",
+    "model": "gpt-family",
+    "session_id": "implementer-session"
+  },
+  "verifier": {
+    "kind": "ai",
+    "tool": "Claude Code",
+    "provider": "Anthropic",
+    "model": "claude-family",
+    "session_id": "verifier-session"
+  },
+  "independence": {
+    "level": "different-provider",
+    "different_session": true,
+    "different_model_family": true,
+    "different_provider": true,
+    "implementer_reasoning_shared": false,
+    "controller_verified": true,
+    "read_only_capabilities": true
+  },
+  "prompt_version": "independent-verification-v1",
+  "evidence": {
+    "deterministic_gate_passed": true,
+    "checks": [
+      {
+        "name": "unit-tests",
+        "mandatory": true,
+        "status": "passed",
+        "exit_code": 0,
+        "artifact_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "summary": "All focused tests passed."
+      }
+    ]
+  },
+  "findings": [],
+  "verdict": "PASS",
+  "stale": false,
+  "revalidation": {
+    "controller_version": "verification-controller-v1",
+    "revalidated_at": "2026-08-14T18:00:00Z",
+    "target_matches": true,
+    "diff_matches": true,
+    "requirements_match": true,
+    "policy_matches": true,
+    "evidence_matches": true
+  },
+  "human_gate": {
+    "required": false,
+    "status": "not_required"
+  },
+  "created_at": "2026-08-14T18:00:00Z"
+}

@@ -94,6 +94,12 @@ AI: "Let me design a solution first. Key decisions needed:
 4. Identify cleanup opportunities
 5. Propose next steps
 
+## Independent Verification
+
+For security, IAM, production infrastructure, destructive migrations, sensitive data or financial logic, broad architecture, difficult rollback, or explicit assurance requirements, complete normal deterministic review first and then use the [independent verification skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/independent-verification/SKILL.md).
+
+The independent verifier reviews an immutable commit/diff hash in a fresh read-only session, reports findings without editing, and cannot replace required human approval.
+
 ## Quick Commands
 
 - **"Plan this:"** → Enter Planning phase

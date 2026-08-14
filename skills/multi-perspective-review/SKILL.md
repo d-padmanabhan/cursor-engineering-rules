@@ -30,6 +30,7 @@ Do *not* use for:
 - Single-lens reviews (just call the right specialist skill)
 - Creating or technically reviewing a production architecture; use the [system design skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/system-design/SKILL.md), then use this skill only when stakeholder weighting is needed
 - Decisions where one perspective dominates by mandate (compliance verdict, security veto)
+- Independent assurance or required human approval; one model simulating multiple advisors is not independent verification. Use the [independent verification skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/independent-verification/SKILL.md)
 - Quick judgement calls that do not need a structured trade-off
 
 ---

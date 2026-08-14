@@ -51,4 +51,19 @@ Do not demand a formal plan for typos, narrowly scoped obvious fixes, or read-on
 - Report what changed, verification performed, known limitations, and any deferred issue.
 - Do not implement review follow-ups unless they are within the approved scope.
 
+## Independent Verification Gate
+
+Security, IAM, production infrastructure, destructive migrations, sensitive-data or financial logic, broad architecture, difficult rollback, and explicitly assurance-gated work require independent verification before release:
+
+- Run deterministic checks first in a trusted controller.
+- Bind the review to an exact target commit and SHA-256 digest of the reviewed diff or patch.
+- Use a verifier distinct from the implementer, preferably a different model provider, in a fresh read-only session.
+- Do not provide implementer chain-of-thought, let the verifier edit, or use `--dangerously-skip-permissions`.
+- Invalidate the verdict when the target, requirements, policy, or evidence changes.
+- Treat AI verdicts as advisory. High or critical risk still requires enforceable human approval through CODEOWNERS, protected environments, change management, or a named domain owner.
+- Escalate stale, disputed, uncertain, or inconclusive verdicts to a human; models do not vote to break ties.
+- Store schema-valid evidence under `.agent/reports/verifications/<target-sha>/`.
+
+Use the [independent verification skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/independent-verification/SKILL.md) for the detailed protocol and artifact schema.
+
 Detailed complexity levels, QA workflows, context templates, and handoff procedures are canonical in the [agent workflow skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/agent-workflow/SKILL.md).
