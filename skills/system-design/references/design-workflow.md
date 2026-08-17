@@ -54,6 +54,10 @@ Use measurable targets:
 | Retention | | | |
 | Cost | | | |
 
+For every critical journey, define the SLI numerator, denominator, scope, and exclusion policy. Allocate end-to-end latency, availability/error, retry, concurrency, and quota budgets across required stages. Treat composed availability as an estimate only and identify correlated dependencies.
+
+Use the [decision and validation workflow](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/system-design/references/decision-and-validation-workflow.md) for quality-attribute scenarios, budget arithmetic, fitness signals, and decision lifecycle.
+
 ### Context and boundaries
 
 Describe:
@@ -62,6 +66,7 @@ Describe:
 - system boundary and trust zones;
 - external dependencies and their guarantees;
 - component responsibilities and team ownership;
+- tenant model, placement, isolation, lifecycle, and noisy-neighbor controls;
 - data authority and lifecycle.
 
 Use one context diagram and one component or critical-flow diagram when visuals materially improve understanding. A diagram does not replace contract text.
@@ -99,6 +104,20 @@ For each dependency, record:
 
 Cover overload, latency, unavailability, stale or corrupt data, credential failure, quota exhaustion, and operator error. Avoid automatic retry unless the operation is safe and the retry budget is bounded.
 
+Define admission priority, per-tenant fairness, hard resource bounds, load shedding, cancellation, queue-age limits, and the user-visible degraded outcome.
+
+Map correlated failure domains:
+
+| Domain | Shared dependency | Failure effect | Isolation/degraded mode | Exercise |
+|---|---|---|---|---|
+| Region/zone | | | | |
+| DNS/network | | | | |
+| Identity/policy | | | | |
+| Data/control plane | | | | |
+| Deployment/configuration | | | | |
+| Quota/account | | | | |
+| Observability/audit | | | | |
+
 ### Security and privacy
 
 Document:
@@ -121,11 +140,12 @@ Define:
 - dashboards and alerts tied to user impact;
 - capacity and saturation signals;
 - on-call ownership and runbooks;
+- operational expertise, cognitive load, service catalog, and escalation boundaries;
 - backup/restore and disaster-recovery exercises.
 
 ### Cost
 
-Identify dominant cost drivers and scaling dimensions. Compare expected, peak, and failure-mode cost. Include data transfer, retention, idle capacity, observability, third-party API, and operational labor where material.
+Identify dominant cost drivers and scaling dimensions. Compare expected, peak, and failure-mode cost. Include data transfer, retention, idle capacity, observability, third-party API, operational labor, allocation/tagging, anomaly controls, and unit economics such as cost per tenant, request, job, or transaction where material.
 
 ## Decision Record
 
@@ -134,12 +154,16 @@ For each consequential choice:
 ```text
 Decision:
 Status:
+Reversibility: reversible | costly | effectively irreversible
 Context and constraints:
 Options considered:
 Chosen option:
 Why:
 Consequences:
 Evidence:
+Validation or fitness signal:
+Review or expiry date:
+Rollback trigger:
 Revisit trigger:
 Owner:
 ```
@@ -178,6 +202,8 @@ State data rollback semantics separately from application rollback. A binary rol
 
 ## SLOs and capacity estimates
 
+## Decision evidence and dependency budgets
+
 ## Proposed architecture
 
 ## Critical flows
@@ -185,6 +211,8 @@ State data rollback semantics separately from application rollback. A binary rol
 ## Data ownership and consistency
 
 ## Reliability and recovery
+
+## Tenancy, failure domains, and overload
 
 ## Security and privacy
 

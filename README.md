@@ -501,7 +501,7 @@ Skills under `skills/` cover repeatable end-to-end workflows that pair with the 
 
 - **[skills/agent-workflow](skills/agent-workflow/)** - Plan/Implement/Review workflow + audit
 - **[skills/core-engineering](skills/core-engineering/)** - core engineering principles, code review
-- **[skills/system-design](skills/system-design/)** - production architecture, SLOs, capacity, boundaries, reliability, cost, and migration
+- **[skills/system-design](skills/system-design/)** - evidence-backed production architecture, SLO and dependency budgets, overload, multi-tenancy, cellular architecture, reliability, cost, and migration
 - **[skills/git-workflow](skills/git-workflow/)** - commits, branches, worktrees, signing, recovery, and remote synchronization
 - **[skills/python-development](skills/python-development/)** - Python 3.14+ patterns
 - **[skills/typescript-javascript](skills/typescript-javascript/)** - TS/JS patterns

@@ -1,6 +1,6 @@
 ---
 name: system-design
-description: Designs and reviews production software systems using requirements, SLOs, capacity estimates, service and data boundaries, consistency, scaling, reliability, security, observability, cost, and migration plans. Use when the user asks for system design, architecture design, architecture review, scalability, capacity planning, high availability, a technical design document, or an end-to-end production architecture.
+description: Designs and reviews production software systems using requirements, SLOs, capacity estimates, service and data boundaries, consistency, scaling, reliability, security, observability, cost, and migration plans. Use for system design, architecture review, scalability, capacity planning, high availability, multi-tenancy, cell-based or cellular architecture, deployment stamps, technical design documents, or end-to-end production architecture.
 ---
 
 # Production System Design
@@ -14,8 +14,10 @@ This is not an interview-diagram generator. Every component and complexity must 
 - Start with requirements, constraints, scale, and failure tolerance before selecting technologies.
 - Separate facts, assumptions, estimates, and decisions.
 - Quantify demand and SLOs enough to expose bottlenecks; never invent precision.
+- Tie every consequential mechanism to a quality-attribute scenario, measurable evidence, and a rollback or revisit trigger.
 - Prefer a modular monolith or one ownership boundary until independent scaling, deployment, security, data ownership, or team autonomy justifies a split.
 - Keep data ownership explicit. Shared databases and synchronous call chains create coupling even when diagrams show separate services.
+- Map correlated failure domains and hidden shared dependencies; replicated components are not isolated when they share a control plane, data store, quota, identity service, or deployment path.
 - State consistency and durability guarantees at each boundary.
 - Design degraded behavior, recovery, and migration—not only the healthy steady state.
 - Treat security, privacy, operability, and cost as design inputs, not review-stage additions.
@@ -40,7 +42,9 @@ Ask at most three focused questions that would materially change the architectur
 Specify:
 
 - availability and durability targets;
+- the SLI numerator, denominator, scope, and exclusion policy for each critical journey;
 - latency objectives by critical journey and percentile;
+- end-to-end latency and availability budgets allocated across required dependencies;
 - throughput, concurrency, data volume, retention, and growth;
 - recovery time objective and recovery point objective;
 - consistency and freshness requirements;
@@ -60,6 +64,7 @@ Define:
 
 - system context and external dependencies;
 - component or service responsibilities and owners;
+- tenancy model, placement boundary, noisy-neighbor controls, and tenant lifecycle;
 - synchronous APIs, asynchronous events, and compatibility rules;
 - data stores, authoritative ownership, indexes, and lifecycle;
 - identity, authorization, encryption, and secret boundaries.
@@ -73,7 +78,8 @@ Trace critical write and read paths. For every remote dependency, state:
 - timeout and retry ownership;
 - idempotency and duplicate behavior;
 - ordering and concurrency requirements;
-- backpressure, admission control, and overload behavior;
+- admission priority, tenant fairness, bounded queues and concurrency, backpressure, shedding, and user-visible overload behavior;
+- one end-to-end retry and deadline budget rather than retries at every layer;
 - cache correctness and invalidation;
 - partial failure and degraded mode.
 
@@ -86,8 +92,9 @@ Specify:
 - logs, metrics, traces, audit events, dashboards, and alerts;
 - health, dependency, saturation, queue-age, and business-invariant signals;
 - backup, restore, failover, reconciliation, and disaster-recovery tests;
+- failure-domain mapping across region, DNS, identity, configuration, deployment, quotas, observability, and shared control/data planes;
 - deployment, rollback, feature flag, and schema migration strategy;
-- runbooks, ownership, escalation, and manual intervention.
+- runbooks, on-call and escalation ownership, operational expertise, cognitive load, and manual intervention.
 
 Use the [security testing skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/security-testing/SKILL.md), [Zero Trust skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/zero-trust/SKILL.md), and [observability rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/330-observability.mdc) for specialist review.
 
@@ -99,7 +106,8 @@ Compare two or three credible options against the actual requirements. Include:
 - operational and migration cost;
 - failure blast radius;
 - lock-in and reversibility;
-- condition that would invalidate the choice.
+- validation signal, decision owner, and review or expiry date;
+- condition that would invalidate or roll back the choice.
 
 Choose one and record why it is the simplest option that meets the targets. Do not produce a technology shopping list without a decision.
 
@@ -115,6 +123,9 @@ Route depth instead of copying domain procedures:
 - APIs: [API design rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/320-api-design.mdc)
 - PostgreSQL: [database PostgreSQL](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/database-postgresql/SKILL.md)
 - Data platforms and pipelines: [data engineering](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/data-engineering/SKILL.md)
+- Event platforms and Kafka governance: [Kafka rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/483-kafka.mdc), [data engineering](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/data-engineering/SKILL.md), and [distributed transactions](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/distributed-transactions/SKILL.md)
+- Persistent AI memory and retrieval: [memory architecture](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/memory-architecture/SKILL.md)
+- Infrastructure implementation and topology automation: [infrastructure as code](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/infrastructure-iac/SKILL.md)
 - Containers: [containers orchestration](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/containers-orchestration/SKILL.md) and [Kubernetes containers](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/kubernetes-containers/SKILL.md)
 - Architecture visualization: [React Flow architecture diagrams](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/reactflow-architecture-diagrams/SKILL.md) or [documentation standards](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/documentation-standards/SKILL.md)
 - Stakeholder-weighted decisions: [multi-perspective review](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/multi-perspective-review/SKILL.md)
@@ -124,13 +135,15 @@ Route depth instead of copying domain procedures:
 When reviewing an existing design:
 
 1. Restate the claimed requirements and guarantees.
-2. Trace critical paths and state ownership.
-3. Test the design against peak load, dependency failure, regional failure, data corruption, and operator error.
+2. Trace critical paths, dependency budgets, tenant/cell placement, and state ownership.
+3. Test the design against peak load, unfair tenants, dependency and control-plane failure, regional failure, data corruption, and operator error.
 4. Identify unsupported assumptions and missing evidence.
 5. Rank findings as Critical, Recommended, or Optional.
 6. Propose the smallest correction and how to validate it.
 
 Use the [architecture review checklist](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/system-design/references/architecture-review-checklist.md).
+
+For cellular designs, use the [cell-based architecture reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/system-design/references/cell-based-architecture.md). For consequential decisions, use the [decision and validation workflow](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/system-design/references/decision-and-validation-workflow.md).
 
 ## Required Output
 

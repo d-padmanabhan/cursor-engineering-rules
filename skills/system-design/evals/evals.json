@@ -196,6 +196,185 @@
           ]
         }
       ]
+    },
+    {
+      "id": 7,
+      "prompt": "Review the attached cellular architecture proposal. Decide whether its claimed cell isolation is real, identify correlated failure domains, and give the smallest path to genuine containment.",
+      "expected_output": "Reject the cell claim because the database, queue, synchronous control plane, quotas, and simultaneous deployment remain shared. Require cell-local serving dependencies or explicitly bounded shared dependencies, last-known-good routing, per-cell deployment, capacity and placement, and tested isolation before calling these stacks cells.",
+      "files": [
+        "evals/fixtures/fake-cell-design.md"
+      ],
+      "checks": [
+        {
+          "id": "rejects-fake-isolation",
+          "type": "contains_all",
+          "values": [
+            "shared",
+            "database",
+            "control plane",
+            "correlated"
+          ]
+        },
+        {
+          "id": "requires-real-cell-contract",
+          "type": "contains_all",
+          "values": [
+            "last-known-good",
+            "per-cell",
+            "placement",
+            "test"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Design routing for 40 cells when the tenant-placement control plane may be unavailable for 30 minutes. Existing tenants must keep working, corrupt or uncertain mapping changes must not publish, and unrelated cells must survive one cell outage.",
+      "expected_output": "Use a thin deterministic router with versioned, validated, cached last-known-good mappings so the data plane remains statically stable without the control plane. Fail mapping changes conservatively, isolate an unavailable cell, and define mapping freshness, audit, rollback, and recovery tests.",
+      "files": [],
+      "checks": [
+        {
+          "id": "separates-routing-planes",
+          "type": "contains_all",
+          "values": [
+            "thin",
+            "versioned",
+            "last-known-good",
+            "control plane"
+          ]
+        },
+        {
+          "id": "requires-static-stability",
+          "type": "contains_all",
+          "values": [
+            "static stability",
+            "conservative",
+            "unaffected",
+            "test"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "A tenant has outgrown its cell. Design an online move to a new cell and explain why automatically failing every tenant from a dead cell into healthy cells may be unsafe.",
+      "expected_output": "Reserve destination headroom, copy non-authoritative state, reconcile, transfer write authority with a versioned fence, publish routing, redirect stale clients, preserve rollback, and delay cleanup. Warn that mass failover can overload healthy cells and requires explicit capacity, throttling, RPO/RTO, and tested evacuation semantics.",
+      "files": [],
+      "checks": [
+        {
+          "id": "transfers-authority-safely",
+          "type": "contains_all",
+          "values": [
+            "non-authoritative",
+            "reconcile",
+            "write authority",
+            "fence",
+            "stale"
+          ]
+        },
+        {
+          "id": "prevents-failover-cascade",
+          "type": "contains_all",
+          "values": [
+            "headroom",
+            "throttle",
+            "overload",
+            "evacuation"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "Review the attached active-active checkout design. Test the 99.99% and 500 ms claims, identify hidden shared failure domains, and specify the minimum evidence required before approval.",
+      "expected_output": "Reject the unsupported journey SLO. Define the checkout SLI denominator and exclusions, allocate end-to-end latency, availability/error, and retry budgets, and show that required synchronous dependencies cannot support the claim as written. Identify identity, DNS, configuration, database control plane, and simultaneous deployment as correlated failure domains; require load, regional, control-plane, and failover-capacity exercises.",
+      "files": [
+        "evals/fixtures/active-active-design.md"
+      ],
+      "checks": [
+        {
+          "id": "tests-slo-feasibility",
+          "type": "contains_all",
+          "values": [
+            "denominator",
+            "exclusion",
+            "latency budget",
+            "availability",
+            "retry budget"
+          ]
+        },
+        {
+          "id": "finds-correlated-domains",
+          "type": "contains_all",
+          "values": [
+            "identity",
+            "DNS",
+            "control plane",
+            "deployment",
+            "exercise"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "Review the attached multi-tenant report worker. Define production-safe overload behavior that prevents one tenant from starving the fleet and gives users an honest service outcome.",
+      "expected_output": "Add per-tenant quotas or fair-share scheduling, admission priority, bounded queue age, concurrency and memory, cancellation, load shedding or rejection, stable retry policy, and a backlog-recovery plan. Measure admitted/rejected work, per-tenant queue age, deadline completion, and user-visible status rather than CPU alone.",
+      "files": [
+        "evals/fixtures/multitenant-overload-design.md"
+      ],
+      "checks": [
+        {
+          "id": "enforces-fair-bounds",
+          "type": "contains_all",
+          "values": [
+            "per-tenant",
+            "fair",
+            "bounded",
+            "concurrency",
+            "queue age"
+          ]
+        },
+        {
+          "id": "defines-degraded-outcome",
+          "type": "contains_all",
+          "values": [
+            "shed",
+            "reject",
+            "cancel",
+            "user",
+            "backlog"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "A team wants to extract billing into six independently deployed services, but the same team will own all services, one shared database, one deployment pipeline, and one on-call rotation. There is no independent scale or security requirement. Review the organizational and technical design.",
+      "expected_output": "Reject the service split until a measurable boundary benefit exists. Keep a cohesive modular boundary, because data, deployment, ownership, and on-call remain coupled. Require explicit owners, operational expertise, cognitive-load and incident analysis, and a concrete extraction trigger tied to scaling, security, availability, data ownership, or team autonomy.",
+      "files": [],
+      "checks": [
+        {
+          "id": "finds-operating-model-coupling",
+          "type": "contains_all",
+          "values": [
+            "shared database",
+            "deployment",
+            "on-call",
+            "cognitive load"
+          ]
+        },
+        {
+          "id": "requires-evidence-before-split",
+          "type": "contains_all",
+          "values": [
+            "modular",
+            "measurable",
+            "extraction trigger",
+            "owner"
+          ]
+        }
+      ]
     }
   ]
 }

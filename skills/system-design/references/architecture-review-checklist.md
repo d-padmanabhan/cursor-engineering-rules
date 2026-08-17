@@ -6,6 +6,8 @@ Review claims against evidence, critical flows, and failure behavior. A missing 
 
 - [ ] Functional requirements, non-goals, constraints, and owners are explicit
 - [ ] SLOs apply to specific user journeys and percentiles
+- [ ] Each journey SLI defines numerator, denominator, eligibility, and exclusions
+- [ ] End-to-end latency, availability/error, retry, and dependency budgets are feasible
 - [ ] Capacity estimates show inputs, units, peak factor, growth, and uncertainty
 - [ ] Vendor guarantees, limits, defaults, and pricing are verified against current official sources
 - [ ] Assumptions have impact and a validation or revisit trigger
@@ -13,6 +15,7 @@ Review claims against evidence, critical flows, and failure behavior. A missing 
 ## Boundaries and Correctness
 
 - [ ] Components have cohesive responsibilities and named owners
+- [ ] Tenancy model, placement, lifecycle, isolation, and noisy-neighbor controls are explicit
 - [ ] Data has one authoritative owner; shared writes are eliminated or justified
 - [ ] APIs and events define versioning and compatibility
 - [ ] Transaction and consistency boundaries preserve business invariants
@@ -24,8 +27,9 @@ Review claims against evidence, critical flows, and failure behavior. A missing 
 
 - [ ] Every remote call has bounded timeout, retry ownership, and retry-safety analysis
 - [ ] Queues have backpressure, age limits, poison-message handling, and reconciliation
-- [ ] Overload behavior protects critical work and downstream dependencies
+- [ ] Overload policy defines admission priority, tenant fairness, hard resource bounds, shedding, and degraded user outcomes
 - [ ] Availability assumptions match each dependency's actual failure domain
+- [ ] Correlated failure domains cover DNS, identity, configuration/deployment, quotas, observability, and shared data/control planes
 - [ ] Partial, regional, and control-plane failures have defined degraded behavior
 - [ ] Backup restore, failover, recovery time, and recovery point are tested
 - [ ] Late success, duplicate completion, and operator retry cannot corrupt state
@@ -39,6 +43,7 @@ Review claims against evidence, critical flows, and failure behavior. A missing 
 - [ ] Connection pools, concurrency limits, and quotas are bounded
 - [ ] Load testing represents skew, burst, payload, dependency latency, and steady-state duration
 - [ ] Scaling signals and target utilization leave failure headroom
+- [ ] Cell/stamp boundaries, routing, placement, migration, and headroom are evidence-based where cellular architecture is proposed
 
 ## Security and Privacy
 
@@ -58,6 +63,7 @@ Review claims against evidence, critical flows, and failure behavior. A missing 
 - [ ] Dashboards expose dependency health, backlog age, capacity, and business completion
 - [ ] Runbooks cover diagnosis, mitigation, recovery, and escalation
 - [ ] Ownership spans deployment, incidents, migrations, and third-party failures
+- [ ] On-call scope, team expertise, cognitive load, and service-catalog ownership match the operational topology
 - [ ] Administrative repair actions are authorized, idempotent, and audited
 
 ## Evolvability and Delivery
@@ -68,13 +74,15 @@ Review claims against evidence, critical flows, and failure behavior. A missing 
 - [ ] Migration avoids unsafe dual writes and validates data equivalence
 - [ ] Rollout is incremental with canaries, stop criteria, and rollback compatibility
 - [ ] Irreversible decisions and vendor lock-in are identified
-- [ ] Each major decision has a concrete revisit trigger
+- [ ] Each major decision has a validation signal, owner, reversibility, review/expiry date, rollback trigger, and revisit trigger
+- [ ] Consequential architecture claims have executable fitness tests or production signals
 
 ## Cost and Sustainability
 
 - [ ] Dominant cost drivers and scaling dimensions are modeled
 - [ ] Expected, peak, and failure-mode cost are considered
 - [ ] Data transfer, retention, observability, and idle capacity are included
+- [ ] Allocation, anomaly controls, budgets, and meaningful unit economics are defined
 - [ ] Operational complexity and staffing are treated as costs
 - [ ] Cost controls cannot silently violate reliability or security targets
 
