@@ -82,6 +82,17 @@ func TestAdd(t *testing.T) {
 
 Prefer **`switch`** for multi-way dispatch on one expression (and type switches); keep **`if`** for errors, booleans, guards, and two-branch logic. Do not rewrite `errors.Is` / `errors.As` chains just to use `switch`. Detail: `rules/210-go.mdc` (Simplicity & Idiomatic Go) and `references/go-idioms.md`.
 
+### Go Documentation Contract
+
+- Every exported package, type, function, method, constant, and variable has an idiomatic doc comment.
+- A declaration comment starts with the exported identifier so `go doc` associates it correctly.
+- A package comment explains package purpose, scope, and material constraints.
+- Document errors, concurrency safety, ownership, blocking, side effects, and resource lifecycle when they are part of the contract.
+- Do not add comments to obvious unexported helpers or comments that merely restate a signature.
+- Keep comments accurate when behavior changes; stale documentation is a correctness defect.
+
+Follow the [Go idioms reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/go-rust-systems/references/go-idioms.md) for examples.
+
 ### Mandatory Hardening Add-On (Go)
 
 For HTTP/API client code, always apply the hardening checks from

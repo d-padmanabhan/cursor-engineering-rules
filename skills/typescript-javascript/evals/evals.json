@@ -68,6 +68,76 @@
           ]
         }
       ]
+    },
+    {
+      "id": 4,
+      "prompt": "Generate an exported JavaScript function createPayment(client, request, options) for production code. It returns a Promise, can reject on validation or provider failure, accepts a callback in options, and receives untrusted request data. Include the static and runtime contracts without migrating to TypeScript.",
+      "expected_output": "Use // @ts-check and precise JSDoc with @param, callback/object types, @returns, and @throws for the exported API. Explain meaningful side effects or errors, validate the untrusted request at runtime, and do not claim JSDoc performs runtime validation.",
+      "files": [],
+      "checks": [
+        {
+          "id": "requires-checked-jsdoc",
+          "type": "contains_all",
+          "values": [
+            "// @ts-check",
+            "@param",
+            "@returns",
+            "@throws"
+          ]
+        },
+        {
+          "id": "documents-callback-and-contract",
+          "type": "contains_all",
+          "values": [
+            "callback",
+            "Promise",
+            "error"
+          ]
+        },
+        {
+          "id": "retains-runtime-validation",
+          "type": "contains_all",
+          "values": [
+            "untrusted",
+            "runtime",
+            "validate"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Generate an exported TypeScript function reserveInventory(request, signal). It returns a reservation asynchronously, honors AbortSignal cancellation, is idempotent for a stable key, and throws InventoryUnavailableError. Show the public type and documentation contract without annotating every local variable.",
+      "expected_output": "Use explicit exported parameter and Promise return types plus useful TSDoc describing cancellation, idempotency, and the thrown error with tags such as @throws or @remarks. Keep obvious local variables inferred and avoid comments that merely repeat the signature.",
+      "files": [],
+      "checks": [
+        {
+          "id": "requires-explicit-public-types",
+          "type": "contains_all",
+          "values": [
+            "request:",
+            "signal:",
+            "Promise<"
+          ]
+        },
+        {
+          "id": "requires-useful-tsdoc",
+          "type": "contains_all",
+          "values": [
+            "@throws",
+            "idempotent",
+            "cancellation"
+          ]
+        },
+        {
+          "id": "preserves-local-inference",
+          "type": "contains_all",
+          "values": [
+            "local",
+            "infer"
+          ]
+        }
+      ]
     }
   ]
 }

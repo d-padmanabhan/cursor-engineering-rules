@@ -4,6 +4,8 @@
 
 Enable TypeScript checking in JavaScript files:
 
+Exported APIs need precise JSDoc types for parameters, returns, callbacks, generics, and shared object shapes. Document errors, ownership, side effects, constraints, and lifecycle only when callers need that information. Do not repeat names and types in prose. JSDoc provides static information; runtime validation still owns untrusted data.
+
 ```javascript
 // @ts-check
 

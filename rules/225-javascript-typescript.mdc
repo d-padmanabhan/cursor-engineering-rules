@@ -37,15 +37,22 @@ This rule owns mandatory policy only. Use the [TypeScript and JavaScript skill](
 ## JavaScript Gates
 
 - Production JavaScript uses `// @ts-check` and JSDoc types unless the repository documents an alternative static-analysis contract.
+- Exported JavaScript APIs document parameter, return, callback, generic, and shared object types with precise JSDoc.
 - Do not silence type errors with broad `@ts-ignore`; use a narrow `@ts-expect-error` only with a reason and a testable compatibility boundary.
 - Treat JSDoc assertions as compile-time aids, never as runtime validation.
 
 ## TypeScript Gates
 
 - Enable strict type checking. Do not weaken `strict`, `noUncheckedIndexedAccess`, or related safety settings merely to make code compile.
+- Exported functions and public methods have explicit parameter and return types; obvious local variables use inference.
 - Avoid `any`; prefer `unknown` and narrow it. Prohibit double assertions and `as any` at trust boundaries.
 - Use discriminated unions, exhaustive checks, and precise return types for stateful or failure-prone behavior.
 - Do not use non-null assertions unless an invariant is established locally and cannot be expressed more safely.
+
+## Public API Documentation
+
+- Add TSDoc or JSDoc when exported callers need behavior, errors, ownership, blocking, side effects, constraints, or lifecycle details that types cannot express.
+- Use tags only when they add contract information. Do not write comments that merely restate identifiers or signatures.
 
 ## Verification
 

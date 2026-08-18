@@ -1,5 +1,26 @@
 # TypeScript Advanced Patterns
 
+## Exported API Contracts
+
+Exported functions and public methods use explicit parameter and return types. Keep inferred types for obvious locals. Add TSDoc only when it communicates behavior that the type signature cannot express.
+
+```typescript
+/**
+ * Reserves inventory until the returned expiration time.
+ *
+ * @throws {InventoryUnavailableError} When requested stock is unavailable.
+ * @remarks The operation is idempotent for one stable reservation key.
+ */
+export async function reserveInventory(
+  request: ReservationRequest,
+  signal: AbortSignal,
+): Promise<Reservation> {
+  return inventoryClient.reserve(request, { signal });
+}
+```
+
+Document ownership, side effects, concurrency, cancellation, errors, and lifecycle where relevant. Do not annotate every local variable or add comments that merely repeat parameter names and return types.
+
 ## Strict tsconfig.json
 
 ```json

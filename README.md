@@ -570,6 +570,7 @@ The initial suites cover:
 - [Documentation standards evals](skills/documentation-standards/evals/evals.json)
 - [Distributed transactions evals](skills/distributed-transactions/evals/evals.json)
 - [Git workflow evals](skills/git-workflow/evals/evals.json)
+- [Go and Rust systems evals](skills/go-rust-systems/evals/evals.json)
 - [IAM security advisor evals](skills/iam-security-advisor/evals/evals.json)
 - [Independent verification evals](skills/independent-verification/evals/evals.json)
 - [Kubernetes containers evals](skills/kubernetes-containers/evals/evals.json)

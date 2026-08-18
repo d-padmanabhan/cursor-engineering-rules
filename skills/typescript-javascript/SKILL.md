@@ -78,6 +78,15 @@ Production applications normally use the newest supported active LTS Node.js lin
 }
 ```
 
+### NN-5: Exported APIs have explicit type and documentation contracts
+
+- Production JavaScript uses `// @ts-check` and precise JSDoc types for exported parameters, return values, callbacks, generics, and shared object shapes.
+- TypeScript exported functions and public methods use explicit parameter and return types. Keep type inference for obvious local variables.
+- Add TSDoc or JSDoc when callers need behavior, error, ownership, blocking, side-effect, constraint, or lifecycle information that the signature cannot express.
+- Use `@param`, `@returns`, `@throws`, `@remarks`, and examples only when they add contract information.
+- Do not add comments that merely repeat names or types.
+- Static types and documentation never replace runtime validation at trust boundaries.
+
 ## Critical Patterns
 
 ```typescript

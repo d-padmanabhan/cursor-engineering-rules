@@ -1,0 +1,78 @@
+{
+  "skill_name": "go-rust-systems",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Create a small Go package named client with an exported Client type, NewClient constructor, Fetch method, and Close method. The client is safe for concurrent use, Fetch respects context cancellation and returns documented errors, and callers must close it. Include the idiomatic public documentation contract.",
+      "expected_output": "Provide a Package client comment and doc comments for Client, NewClient, Client.Fetch, and Client.Close that start with the exported identifier. Document concurrency safety, cancellation and error behavior, ownership, and the close lifecycle without comments that merely repeat syntax.",
+      "files": [],
+      "checks": [
+        {
+          "id": "documents-package-and-exports",
+          "type": "contains_all",
+          "values": [
+            "// Package client",
+            "// Client",
+            "// NewClient",
+            "Fetch",
+            "Close"
+          ]
+        },
+        {
+          "id": "documents-semantic-contract",
+          "type": "contains_all",
+          "values": [
+            "concurrent",
+            "context",
+            "error",
+            "close"
+          ]
+        },
+        {
+          "id": "observes-go-skill",
+          "type": "loaded_skill",
+          "skill": "go-rust-systems",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Review a Go package where exported type Worker and exported function Start have no comments, while private helper normalize has the comment `// normalize normalizes input`. State the smallest documentation correction.",
+      "expected_output": "Add identifier-prefixed doc comments to Worker and Start, including caller-facing behavior, errors, concurrency, ownership, side effects, or lifecycle where relevant. Remove the redundant normalize comment and do not demand comments for obvious unexported helpers.",
+      "files": [],
+      "checks": [
+        {
+          "id": "requires-exported-comments",
+          "type": "contains_all",
+          "values": [
+            "Worker",
+            "Start",
+            "exported",
+            "identifier"
+          ]
+        },
+        {
+          "id": "rejects-redundant-private-comment",
+          "type": "contains_all",
+          "values": [
+            "remove",
+            "normalize",
+            "unexported"
+          ]
+        },
+        {
+          "id": "requires-useful-contract",
+          "type": "contains_any",
+          "values": [
+            "error",
+            "concurrency",
+            "ownership",
+            "side effect",
+            "lifecycle"
+          ]
+        }
+      ]
+    }
+  ]
+}

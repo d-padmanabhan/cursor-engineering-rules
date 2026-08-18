@@ -447,6 +447,13 @@ tlsConfig := &tls.Config{
 _, err := db.ExecContext(ctx, "INSERT INTO users (email) VALUES ($1)", email)
 ```
 
+### Exported API Documentation (MUST)
+
+- **MUST** document every exported package, type, function, method, constant, and variable.
+- **MUST** start each declaration comment with the exported identifier.
+- **MUST** document errors, concurrency safety, ownership, blocking, side effects, and resource lifecycle when they affect callers.
+- **MUST NOT** add comments that merely restate syntax or obvious unexported helpers.
+
 ### HTTP/API Hardening (MUST)
 
 When serving or calling network APIs (internal or external), apply these non-negotiable checks:

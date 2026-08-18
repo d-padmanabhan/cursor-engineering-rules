@@ -252,12 +252,17 @@ project/
 - **Package names**: Lowercase, single-word, concise (`bytes`, `ring`, not `bytesPackage` or `ringPackage`)
 - **Getters**: Don't use `Get` prefix (`Owner()`, not `GetOwner()`)
 
+Package comments belong immediately before the `package` clause and begin with `Package <name>`. Declaration comments explain the caller-facing contract, not only the declaration's name. Include error conditions, concurrency safety, ownership or borrowing, blocking behavior, side effects, and cleanup duties when relevant. Do not document obvious unexported helpers merely to increase comment coverage.
+
 ```go
-//  GOOD: Package name is concise
-package user  // Not userPackage or userManagement
+// Package user owns user identity models and lookup contracts.
+//
+// Client implementations must be safe for concurrent use.
+package user
 
 // FetchIdentity retrieves the current AWS caller identity using STS.
-// It returns an error if the request fails.
+// FetchIdentity returns an error when the request fails or ctx is canceled.
+// The caller retains ownership of client.
 func FetchIdentity(ctx context.Context, client *sts.Client) (*sts.GetCallerIdentityOutput, error) {
     // ...
 }
