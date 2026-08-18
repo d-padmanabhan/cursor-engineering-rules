@@ -54,6 +54,19 @@
           ]
         }
       ]
+    },
+    {
+      "id": 4,
+      "prompt": "Write a concise technical note contrasting fast startup with slower steady-state processing. Do not use Unicode code points U+2013 or U+2014.",
+      "expected_output": "Write clear prose using commas, colons, parentheses, semicolons, or ASCII hyphens instead of Unicode em dashes or en dashes.",
+      "files": [],
+      "checks": [
+        {
+          "id": "rejects-unicode-em-and-en-dashes",
+          "type": "not_regex",
+          "pattern": "\\u2013|\\u2014"
+        }
+      ]
     }
   ]
 }

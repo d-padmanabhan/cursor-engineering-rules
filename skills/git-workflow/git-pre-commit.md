@@ -42,6 +42,8 @@ Periodically update hook versions to get security fixes and improvements:
 pre-commit autoupdate
 ```
 
+Hook `rev` values must resolve to exact tags or SHAs. After `autoupdate`, review every hook change for runtime, file-scope, and mutation differences, then run the full suite. Follow the [dependency and toolchain currency workflow](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/core-engineering/references/dependency-and-toolchain-currency.md).
+
 > [!NOTE]
 > If a commit fails due to pre-commit hook changes (e.g., auto-formatting), stage the changes and retry. Some hooks modify files in place to fix issues automatically.
 

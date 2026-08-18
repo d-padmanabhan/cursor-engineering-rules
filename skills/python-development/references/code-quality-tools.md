@@ -41,11 +41,11 @@ ty check .
 # Run pylint on file/directory
 pylint src/main.py
 
-# Run with specific score threshold (fail if below 9.5)
-pylint --fail-under=9.5 src/
+# Run with repository score threshold
+pylint --fail-under=9.0 src/
 
 # Run on entire project
-pylint --fail-under=9.5 .
+pylint --fail-under=9.0 .
 
 # Generate report
 pylint --output-format=json src/ > pylint-report.json
@@ -65,7 +65,7 @@ black --check . && \
 isort --check-only . && \
 ruff check . && \
 mypy --strict . && \
-pylint --fail-under=9.5 . && \
+pylint --fail-under=9.0 . && \
 bandit -r . -ll
 ```
 
@@ -100,9 +100,6 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
 
-[tool.pylint.messages_control]
-disable = ["C0103", "C0111"]  # Disable specific checks if needed
-
 [tool.pylint.format]
 max-line-length = 120
 ```
@@ -115,11 +112,6 @@ Ruff's `I` rules enforce grouped, alphabetized imports. The formatter uses doubl
 [FORMAT]
 max-line-length=120
 
-[MESSAGES CONTROL]
-disable=
-    C0103,  # invalid-name (if using non-standard naming)
-    C0111,  # missing-docstring (if docstrings not required)
-
 [REPORTS]
 output-format=text
 score=yes
@@ -127,12 +119,7 @@ score=yes
 
 ## Pylint Score Targets
 
-**Score interpretation:**
-
-- **10.0** - Perfect (rare, may require disabling some checks)
-- **9.5-9.9** - Excellent (target for production code)
-- **9.0-9.4** - Good (acceptable, but aim higher)
-- **<9.0** - Needs improvement
+Use the repository-configured threshold, with 9.0 as the handbook floor when Pylint is configured. A numeric score does not override correctness, security, typing, test, or maintainability findings. Do not require 10/10 or suppress diagnostics to obtain it.
 
 **Common issues that lower score:**
 
@@ -155,6 +142,34 @@ pylint path/to/file.py
 # 4. Fix naming conventions
 # 5. Add type hints
 ```
+
+## Diagnostic Suppressions
+
+Never add `# pylint: disable`, `# noqa`, `# type: ignore`, coverage exclusions, or configuration-level ignores solely to improve a score or pass CI.
+
+Use this decision order:
+
+1. Fix the implementation.
+2. Correct the annotation, interface, stub, or tool configuration.
+3. Use `Protocol`, `TypeGuard`, or a precise `cast` when it truthfully represents runtime behavior.
+4. Suppress only a proven tool limitation or third-party defect.
+
+Any necessary suppression must:
+
+- name one symbolic diagnostic code, such as `# type: ignore[no-untyped-call]` or `# noqa: F401`;
+- apply to the smallest possible statement;
+- include nearby rationale that explains why a code fix is not correct;
+- have an owner, issue, expiry date, and removal trigger when temporary.
+
+Reject:
+
+- bare `# type: ignore` or bare `# noqa`;
+- `# pylint: disable=all`;
+- category-wide, file-wide, or project-wide disables added to hide findings;
+- generated score improvements caused only by reducing the enabled rule set;
+- coverage exclusions for ordinary untested behavior.
+
+Audit suppressions independently from the Pylint score. A 10/10 result with hidden findings is worse than a lower honest score with understood, scheduled remediation.
 
 ## Pre-commit Integration
 
@@ -193,7 +208,7 @@ repos:
         name: pylint
         entry: pylint
         language: system
-        args: [--fail-under=9.5]
+        args: [--fail-under=9.0]
         types: [python]
 ```
 
@@ -234,7 +249,7 @@ jobs:
 
       - name: Pylint
         run: |
-          pylint --fail-under=9.5 .
+          pylint --fail-under=9.0 .
 ```
 
 ## Security Scanning

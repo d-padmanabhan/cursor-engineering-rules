@@ -135,100 +135,30 @@ jobs:
   - a header comment at the top of the YAML
   - repo docs like `GHA-RULESET.md` or `README.md`
 
-- Pin actions to specific versions like `@v4`, `@v3` for stability
+- Pin every action to a verified Git ref. Never derive `vN` from a release such as `v10.0.1` and assume the moving `v10` tag exists.
+- Preserve repository policy: immutable SHA pins stay SHA-pinned; exact-tag or verified-major repositories retain that posture unless the task explicitly changes it.
+- Never use `@main`, `@master`, `@latest`, an unverified alias, or an invented tag.
 
-**For AI Agents Authoring Workflows:**
+**For AI Agents Authoring or Reviewing Workflows:**
 
-When initially creating GitHub Actions workflows, **for every action** you add, use `gh api` to fetch the latest release tag and extract the **major version** to pin:
-
-```bash
-# Get latest MAJOR version for any action (replace OWNER/REPO with the action's repository)
-gh api repos/OWNER/REPO/releases/latest --jq '.tag_name | split(".")[0]'
-# Returns: v4 (extracts major version from v4.2.2)
-
-# Use in workflow with the major version
-- uses: OWNER/REPO@v4
-```
-
-**Rationale:**
-- AI agents should use the most current stable **major** version when initially authoring workflows
-- Using major versions (e.g., `@v4`) allows automatic minor/patch updates while avoiding breaking changes
-- This applies to **all actions**, not just common ones
-- After initial creation, Dependabot will handle keeping actions updated automatically
-- This ensures workflows start with recent versions while maintaining reproducibility
-
-**Examples for common actions:**
-```bash
-# Checkout - get latest major version
-gh api repos/actions/checkout/releases/latest --jq '.tag_name | split(".")[0]'
-# Returns: v6 (as of Jan 2026)
-
-# Setup Node - get latest major version
-gh api repos/actions/setup-node/releases/latest --jq '.tag_name | split(".")[0]'
-# Returns: v4
-
-# GitHub Script - get latest major version
-gh api repos/actions/github-script/releases/latest --jq '.tag_name | split(".")[0]'
-# Returns: v7
-
-# AWS Configure Credentials - get latest major version
-gh api repos/aws-actions/configure-aws-credentials/releases/latest --jq '.tag_name | split(".")[0]'
-# Returns: v5 (as of Jan 2026)
-
-# Cache - get latest major version
-gh api repos/actions/cache/releases/latest --jq '.tag_name | split(".")[0]'
-# Returns: v4
-
-# Upload Artifact - get latest major version
-gh api repos/actions/upload-artifact/releases/latest --jq '.tag_name | split(".")[0]'
-# Returns: v4
-```
-
-- Use `@main` only for experiments
-
-**For AI Agents Editing or Reviewing Existing Workflows:**
-
-Before changing logic in any workflow file, **audit every `uses:` reference in that file** for staleness. The agent should not silently leave a stale pin behind in the same edit it is making for unrelated reasons.
-
-For each pinned major version `@vN` you encounter:
+For every action in a changed workflow, query the latest stable release tag and resolve it to a concrete commit:
 
 ```bash
-# Get the latest major version of the action
-gh api repos/<owner>/<repo>/releases/latest --jq '.tag_name | split(".")[0]'
+action="OWNER/REPO"
+latest_tag="$(gh api "repos/${action}/releases/latest" --jq '.tag_name')"
+latest_sha="$(gh api "repos/${action}/commits/${latest_tag}" --jq '.sha')"
+printf "tag=%s sha=%s\n" "${latest_tag}" "${latest_sha}"
 ```
 
-Then:
+Then choose a ref that actually exists:
 
-1. **Latest major > pinned major** -> bump in this PR. Use a separate commit with a clear message: `deps(actions): bump <owner>/<repo> v3 -> v4`. Read the action's CHANGELOG / release notes for the new major to confirm no breaking change affects this workflow.
-2. **Latest major == pinned major** -> leave it alone. Dependabot covers minor/patch.
-3. **Action is archived / repo 404 / no releases** -> flag it in the PR description and propose a maintained replacement. Do **not** silently downgrade or remove.
-4. **`@main` / `@master` / `@latest` / unpinned** -> always replace with the current major-version pin (a floating tag is a supply-chain risk).
-5. **SHA-pinned actions** (`@<40-char-sha>`) -> verify the SHA still matches a tagged release; if upgrading, replace with the SHA of the new release tag, not the major. Repos that pin by SHA do so deliberately - keep that posture.
-6. **Frozen pins** -> a `# FROZEN:` / `# do-not-bump` comment immediately above the `uses:` line, OR a CHANGELOG entry referring to the pin, signals the version is deliberate. Skip and note in the PR.
+1. **SHA-pinned repository:** use `OWNER/REPO@<40-character-commit-sha> # <release-tag>`.
+2. **Exact-tag repository:** use the verified release tag returned by the API.
+3. **Moving-major repository:** query `repos/OWNER/REPO/git/ref/tags/vN` first; use `@vN` only when that exact tag exists and repository policy permits moving tags.
+4. **Archived, missing, prerelease-only, or unverifiable action:** stop and report it; do not invent, downgrade, or replace the ref silently.
+5. **Frozen pin:** retain it and report the newer release.
 
-**Audit one workflow file in one shot:**
-
-```bash
-# Extract every uses: line, dedupe, and check each for newer major
-WORKFLOW=.github/workflows/ci.yml
-grep -oE 'uses:\s*[^@]+@v[0-9]+' "$WORKFLOW" \
-  | awk '{print $2}' \
-  | sort -u \
-  | while read ref; do
-      action="${ref%@*}"
-      pinned_major="${ref##*@}"
-      latest=$(gh api "repos/$action/releases/latest" --jq '.tag_name | split(".")[0]' 2>/dev/null)
-      if [[ -z "$latest" ]]; then
-        printf "%-50s pinned=%s  latest=ARCHIVED-OR-MISSING\n" "$action" "$pinned_major"
-      elif [[ "$latest" != "$pinned_major" ]]; then
-        printf "%-50s pinned=%s  latest=%s  *** BUMP ***\n" "$action" "$pinned_major" "$latest"
-      else
-        printf "%-50s pinned=%s  latest=%s  ok\n" "$action" "$pinned_major" "$latest"
-      fi
-    done
-```
-
-Pin upgrades that turn out to break should be reverted as a single commit, not left half-applied.
+Review release notes for breaking changes, run `actionlint`, execute repository checks, and keep upgrades independently revertible. Dependabot or Renovate should propose future updates.
 
 - Review [https://docs.github.com/en/actions](https://docs.github.com/en/actions) and adopt relevant best practices
 

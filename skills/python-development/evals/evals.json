@@ -289,6 +289,54 @@
           ]
         }
       ]
+    },
+    {
+      "id": 12,
+      "prompt": "A pull request raises Pylint from 8.7 to 10.0 by adding file-wide `# pylint: disable=all`, bare `# type: ignore`, bare `# noqa`, and coverage exclusions around untested branches. Review the change and define the suppression policy.",
+      "expected_output": "Reject the score-driven suppressions. Fix code, types, stubs, or configuration first. Allow only unavoidable, statement-scoped suppressions with one symbolic diagnostic code and nearby rationale; temporary cases need an owner, issue, expiry, and removal trigger. Treat 9.0 as a floor when configured, not a reason to game 10/10.",
+      "files": [],
+      "checks": [
+        {
+          "id": "rejects-score-gaming",
+          "type": "contains_all",
+          "values": [
+            "reject",
+            "score",
+            "disable=all",
+            "bare"
+          ]
+        },
+        {
+          "id": "requires-fix-first",
+          "type": "contains_any",
+          "values": [
+            "fix the code",
+            "fix code",
+            "correct the",
+            "stubs"
+          ]
+        },
+        {
+          "id": "bounds-valid-suppressions",
+          "type": "contains_all",
+          "values": [
+            "statement",
+            "symbolic",
+            "rationale",
+            "owner",
+            "expiry"
+          ]
+        },
+        {
+          "id": "rejects-perfect-score-objective",
+          "type": "contains_all",
+          "values": [
+            "9.0",
+            "10/10",
+            "floor"
+          ]
+        }
+      ]
     }
   ]
 }

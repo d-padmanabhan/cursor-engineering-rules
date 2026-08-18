@@ -191,42 +191,29 @@ jobs:
         run: printf 'Deploying %s\n' "$VERSION"
 ```
 
-## Action-version audit (when editing or reviewing an existing workflow)
+## Action-Version Audit
 
-Before changing logic in any `.github/workflows/*.yml`, audit every `uses:` reference for staleness. Stale pins are easier to bump in the same PR than in a follow-up.
+Before changing workflow logic, audit every `uses:` reference. Verify the exact release and ref; never derive `vN` from `vN.x.y` and assume the moving major tag exists.
 
 ```bash
-# Audit one workflow file
-WORKFLOW=.github/workflows/ci.yml
-grep -oE 'uses:\s*[^@]+@v[0-9]+' "$WORKFLOW" \
-  | awk '{print $2}' \
-  | sort -u \
-  | while read ref; do
-      action="${ref%@*}"
-      pinned_major="${ref##*@}"
-      latest=$(gh api "repos/$action/releases/latest" --jq '.tag_name | split(".")[0]' 2>/dev/null)
-      if [[ -z "$latest" ]]; then
-        printf "%-50s pinned=%s  latest=ARCHIVED-OR-MISSING\n" "$action" "$pinned_major"
-      elif [[ "$latest" != "$pinned_major" ]]; then
-        printf "%-50s pinned=%s  latest=%s  *** BUMP ***\n" "$action" "$pinned_major" "$latest"
-      else
-        printf "%-50s pinned=%s  latest=%s  ok\n" "$action" "$pinned_major" "$latest"
-      fi
-    done
+action="OWNER/REPO"
+latest_tag="$(gh api "repos/${action}/releases/latest" --jq '.tag_name')"
+latest_sha="$(gh api "repos/${action}/commits/${latest_tag}" --jq '.sha')"
+printf "tag=%s sha=%s\n" "${latest_tag}" "${latest_sha}"
 ```
 
 Decision matrix per finding:
 
 | Pin state | Action |
 |---|---|
-| Latest major > pinned major | Bump in this PR; separate commit `deps(actions): bump <owner>/<repo> vN -> vN+1`; check CHANGELOG for breaks |
-| Latest major == pinned major | Leave alone (Dependabot covers minor/patch) |
-| Repo archived / 404 / no releases | Flag + propose replacement; do not silently downgrade |
-| `@main` / `@master` / `@latest` / unpinned | Replace with current major pin |
-| SHA-pinned `@<40-char-sha>` | Verify SHA matches a tagged release; if bumping, replace with new release SHA (not major); repos that pin by SHA do so deliberately |
-| `# FROZEN:` / `# do-not-bump` comment | Skip; note in PR |
+| SHA-pinned `@<40-character-sha>` | Preserve SHA posture; use the verified release commit and add `# vN.x.y` |
+| Exact release tag | Use the verified latest stable tag after compatibility review |
+| Moving major tag | Verify `git/ref/tags/vN` exists before use |
+| `@main`, `@master`, `@latest`, unpinned, or invented alias | Replace with a verified ref |
+| Archived, missing, or prerelease-only | Stop and report; do not silently downgrade or replace |
+| Frozen pin | Retain and report the available update |
 
-For the rationale, the breaking-change protocol, and reasoning about supply-chain risk of `@main`, see `rules/160-github-actions.mdc`.
+Read release notes, preserve independently revertible upgrades, run `actionlint`, and let Dependabot or Renovate propose future updates. Follow the [GitHub Actions rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/160-github-actions.mdc) and [dependency currency workflow](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/core-engineering/references/dependency-and-toolchain-currency.md).
 
 ## Detailed References
 

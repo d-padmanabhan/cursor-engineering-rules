@@ -43,6 +43,9 @@ This rule owns universal engineering policy only. Use the [core engineering skil
 
 - Follow the applicable security rule and use least privilege, safe defaults, parameterized interpreters, and secret isolation.
 - Prefer the standard library or existing dependencies. A new dependency requires clear value, active maintenance, compatible licensing, and vulnerability review.
+- Use the latest supported stable software release compatible with the repository and deployment target. Never assume a release, tag, runtime, or tool alias exists: verify it from authoritative metadata.
+- Pin runtimes, tools, actions, and application dependencies reproducibly; update lockfiles; review breaking changes; and run compatibility, test, build, and security checks before adoption.
+- Do not select a prerelease or blindly upgrade an existing project merely because a newer version exists. Document exceptions with an owner, reason, compensating controls, and expiry date; expedite supported security fixes.
 - Do not weaken lint, type, test, build, or security settings merely to pass validation.
 
 ## Verification and Communication
@@ -51,5 +54,6 @@ This rule owns universal engineering policy only. Use the [core engineering skil
 - If a check cannot run, state the exact reason, closest substitute, and evidence used.
 - Inspect the final diff for scope, generated artifacts, secrets, and accidental unrelated changes.
 - Lead the final response with the outcome, changed areas, verification, and material limitations. Avoid filler, repeated summaries, and speculative next work.
+- Never author Unicode em dash (`U+2014`) or en dash (`U+2013`) characters in prose, documentation, comments, commit messages, or generated text. Use commas, colons, parentheses, semicolons, or ASCII hyphens instead. Preserve opaque external data only when exact bytes matter.
 
 Example domains must use `acme.com` and `ACME` or `Acme`, never generic placeholder domains.

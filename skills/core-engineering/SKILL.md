@@ -144,6 +144,10 @@ If legacy guidance is intentionally retained, label it as **legacy**, explain wh
 
 Adding a dependency is a long-term commitment. **Prefer stdlib or existing dependencies.**
 
+Use the latest supported stable release compatible with the repository and deployment target. Do not interpret "latest" as permission to select prereleases, invent aliases, ignore support matrices, or bundle an unrelated major migration. Verify the exact release/ref, preserve reproducible pins and lockfiles, review breaking and security changes, and time-box exceptions.
+
+Follow the [dependency and toolchain currency workflow](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/core-engineering/references/dependency-and-toolchain-currency.md).
+
 Vetting criteria for new dependencies:
 
 - [ ] **Justification:** Truly necessary? Solves complex problem?

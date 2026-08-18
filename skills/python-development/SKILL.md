@@ -64,6 +64,8 @@ Use `requires-python = ">=3.14"` in `pyproject.toml`, Python 3.14 in CI, Python 
 
 `requires-python` declares compatibility; it does not select one exact interpreter. For deterministic project execution, commit a `.python-version` created with an exact tested patch, for example `uv python pin 3.14.7`, and update that pin deliberately. For one-off execution, request the tested patch explicitly with `uv run --python 3.14.7 script.py`. Do not encode one patch version as an evergreen handbook constant.
 
+Select the latest supported stable Python patch available on the deployment target, then pin and test it. Use the [dependency and toolchain currency workflow](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/core-engineering/references/dependency-and-toolchain-currency.md) for uv lock updates, compatibility checks, and exceptions.
+
 Libraries published to PyPI or shipped to external customers MAY target a lower floor when there is a documented compatibility commitment. The acceptable lower floor is Python 3.11. The PR description must explain the audience, the 3.14 features being deferred, and the planned floor-bump date.
 
 Reject in review:
@@ -175,6 +177,21 @@ def process(items: List[str], config: Optional[Dict[str, int]] = None) -> Tuple[
 ```
 
 Annotate function parameters, return values, public attributes, empty collections, and local variables whose inferred type is unclear or intentionally wider than the initializer. Do not annotate every obvious local assignment; redundant annotations add noise without improving static analysis.
+
+## Diagnostic Suppression Policy
+
+Pylint, Ruff, and type-checker scores are quality signals, not objectives to game. Never add `# pylint: disable`, `# noqa`, `# type: ignore`, coverage exclusions, or configuration-level ignores solely to increase a score or make CI green.
+
+Fix the code, types, stubs, or narrowly incorrect configuration first. When a real tool limitation or third-party defect leaves no clearer solution:
+
+- scope the suppression to one statement or one symbolic diagnostic code;
+- prohibit bare `# type: ignore`, bare `# noqa`, `disable=all`, category-wide, file-wide, and project-wide suppression;
+- document the technical reason and why a code-level fix is unsafe or impossible;
+- link temporary suppressions to an owner, issue, expiry date, and removal trigger;
+- prefer `Protocol`, `TypeGuard`, `cast`, corrected stubs, or targeted tool configuration when those express the truth;
+- review existing suppressions as debt and remove them when the limitation is resolved.
+
+A 10/10 Pylint score obtained by hiding findings is a failure. Meet the repository floor with the intended checks enabled and no unjustified suppression.
 
 ## Imports, Strings, and Naming
 
@@ -375,6 +392,7 @@ Use Pydantic at structured trust boundaries when runtime validation, explicit co
 - [ ] Specific exception handling
 - [ ] `black` and `ruff` pass
 - [ ] `pylint` score ≥ 9.0
+- [ ] No unjustified or score-driven diagnostic suppressions
 
 ## Detailed References
 

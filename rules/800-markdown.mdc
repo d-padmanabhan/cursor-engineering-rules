@@ -25,6 +25,7 @@ This rule owns mandatory Markdown policy only. Use the [documentation standards 
 - Break lists, tables, front matter, code, and diagrams only as their syntax requires.
 - Use fenced code blocks with the correct language identifier and complete, safe examples.
 - Do not use comments, headings, or callouts as decoration or to repeat nearby prose.
+- Never author Unicode em dash (`U+2014`) or en dash (`U+2013`) characters. Use commas, colons, parentheses, semicolons, or ASCII hyphens instead. Preserve opaque external data only when exact bytes matter.
 
 ## Links and Navigation
 

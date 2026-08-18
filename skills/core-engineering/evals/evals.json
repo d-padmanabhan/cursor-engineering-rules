@@ -152,8 +152,8 @@
     },
     {
       "id": 3,
-      "prompt": "A repository still uses actions/checkout@v4 and actions/setup-python@v5. Using the attached official-release metadata, tell me the versions to use and provide the workflow snippet. This repository requires Python 3.14 and uv; do not use an older Python, pip, or requirements.txt. Treat model memory as potentially stale, cite all three supplied release sources, and state when the metadata was retrieved.",
-      "expected_output": "Use actions/checkout@v7, actions/setup-python@v7, and astral-sh/setup-uv@v10; configure Python 3.14 and uv without pip or requirements.txt; identify releases v7.0.1, v7.0.0, and v10.0.0 from the supplied official repository release pages; cite all links; and state the retrieval date.",
+      "prompt": "A SHA-pinned repository still uses old actions/checkout and actions/setup-python revisions. Using the attached official-release metadata, provide updated workflow refs. This repository requires Python 3.14 and uv; do not use an older Python, pip, or requirements.txt. Treat model memory as potentially stale, cite all three supplied release sources, state when the metadata was retrieved, and do not invent a moving major tag.",
+      "expected_output": "Use the supplied immutable release commit SHAs for actions/checkout v7.0.1, actions/setup-python v7.0.0, and astral-sh/setup-uv v10.0.1 with release comments. Configure Python 3.14 and uv without pip or requirements.txt, cite all official links, state the retrieval date, and explain that a release such as v10.0.1 does not prove a v10 tag exists.",
       "files": [
         "evals/fixtures/current-action-releases.json"
       ],
@@ -181,11 +181,11 @@
           "value": "github.com/actions/setup-python"
         },
         {
-          "id": "uses-current-action-majors",
+          "id": "uses-verified-action-shas",
           "type": "contains_all",
           "values": [
-            "actions/checkout@v7",
-            "actions/setup-python@v7"
+            "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+            "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97"
           ]
         },
         {
@@ -194,7 +194,7 @@
           "values": [
             "v7.0.1",
             "v7.0.0",
-            "v10.0.0"
+            "v10.0.1"
           ]
         },
         {
@@ -226,14 +226,24 @@
           "id": "configures-uv-in-ci",
           "type": "contains_all",
           "values": [
-            "astral-sh/setup-uv@v10",
+            "astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d",
             "uv sync"
           ]
+        },
+        {
+          "id": "rejects-invented-setup-uv-major",
+          "type": "not_contains",
+          "value": "astral-sh/setup-uv@v10"
         },
         {
           "id": "uses-least-privilege-workflow",
           "type": "regex",
           "pattern": "permissions\\s*:\\s*(?:\\{\\s*contents\\s*:\\s*read\\s*\\}|[\\s\\S]{0,80}contents\\s*:\\s*read)"
+        },
+        {
+          "id": "rejects-unicode-dashes",
+          "type": "not_regex",
+          "pattern": "\\u2013|\\u2014"
         }
       ]
     },
@@ -287,6 +297,59 @@
           "id": "does-not-draft-class-hierarchy",
           "type": "not_regex",
           "pattern": "class\\s+(?:Plugin|Abstract|Factory|Repository|Service)"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Review this maintenance proposal: use every package registry's `latest` alias, adopt Node Current instead of LTS, upgrade Python and Go to unreleased release candidates, remove lockfiles, and postpone compatibility tests. The team says exceptions can remain forever if upgrades are difficult. Provide the production-safe policy.",
+      "expected_output": "Reject blindly latest and prereleases. Select the newest supported stable versions compatible with the repository and deployment target, verify exact releases and refs, preserve runtime/toolchain pins and lockfiles, review breaking changes, run compatibility and security checks, use staged rollout and rollback, and require exception owners and expiry dates.",
+      "files": [],
+      "checks": [
+        {
+          "id": "selects-supported-stable",
+          "type": "contains_all",
+          "values": [
+            "supported",
+            "stable",
+            "compatible",
+            "verify"
+          ]
+        },
+        {
+          "id": "preserves-reproducibility",
+          "type": "contains_all",
+          "values": [
+            "pin",
+            "lockfile",
+            "breaking",
+            "test"
+          ]
+        },
+        {
+          "id": "requires-security-and-exception-lifecycle",
+          "type": "contains_all",
+          "values": [
+            "security",
+            "owner",
+            "expiry",
+            "rollback"
+          ]
+        },
+        {
+          "id": "rejects-prerelease-adoption",
+          "type": "contains_any",
+          "values": [
+            "reject",
+            "do not use",
+            "prerelease",
+            "release candidate"
+          ]
+        },
+        {
+          "id": "rejects-unicode-dashes",
+          "type": "not_regex",
+          "pattern": "\\u2013|\\u2014"
         }
       ]
     }

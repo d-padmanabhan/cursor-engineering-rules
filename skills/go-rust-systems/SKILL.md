@@ -103,6 +103,8 @@ For HTTP/API client code, always apply the hardening checks from
 - Keep `go.mod` module/toolchain pinned and run `go mod tidy` / `go mod verify`
   in CI
 
+Use the latest supported stable Go toolchain compatible with the deployment and module policy. Follow the [dependency and toolchain currency workflow](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/core-engineering/references/dependency-and-toolchain-currency.md) for release verification, module updates, `govulncheck`, and time-boxed exceptions.
+
 Use semgrep + pre-commit checks for these patterns because standard linting
 does not catch all of them reliably.
 

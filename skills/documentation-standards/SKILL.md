@@ -23,7 +23,7 @@ Mandatory Markdown gates are owned by the [Markdown rule](file:///Users/Devesh_P
 ## Hard Requirements (Writing)
 
 - **No AI slop** - remove filler, keep docs concrete and task-oriented
-- **No em dashes/en dashes** - use hyphens (`-`) instead
+- **No Unicode em dashes or en dashes** - never author `U+2014` or `U+2013`; use commas, colons, parentheses, semicolons, or ASCII hyphens instead
 - **Clickable navigation** - if readers may want to open a repo file, directory, section, ADR, rule, skill, script, workflow, or config, make it a Markdown link. Use backticks only when the path is a literal value, not a navigation target.
 - **Official terminology** - use each vendor's current official product and service names, capitalization, and branding. Verify uncertain names against current vendor documentation. For example, write **Amazon VPC**, not **AWS VPC**; write **AWS Lambda**, not **Amazon Lambda**. Do not apply one naming prefix mechanically across a provider's services.
 

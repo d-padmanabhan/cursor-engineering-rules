@@ -69,6 +69,8 @@ Node/Express/Fastify services need bounded request bodies, explicit CORS, securi
 
 Declare `packageManager` and Node engine policy in `package.json`; CI uses Corepack and the declared package manager.
 
+Production applications normally use the newest supported active LTS Node.js line accepted by the deployment target. Pin the exact package manager and tested CI runtime, commit one native lockfile, and test compiler upgrades. Follow the [dependency and toolchain currency workflow](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/core-engineering/references/dependency-and-toolchain-currency.md).
+
 ```json
 {
   "packageManager": "pnpm@10.0.0",
