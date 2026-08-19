@@ -7,7 +7,7 @@ priority: 130
 
 # Git Agent Gates
 
-This rule contains only mandatory policy. Use the [Git workflow skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/SKILL.md) for procedures, command sequences, examples, recovery, branch strategy, and commit formatting.
+This rule contains only mandatory policy. Use the Git workflow skill (`${HANDBOOK_ROOT}/skills/git-workflow/SKILL.md`) for procedures, command sequences, examples, recovery, branch strategy, and commit formatting.
 
 ## Preserve User Work
 
@@ -21,7 +21,7 @@ This rule contains only mandatory policy. Use the [Git workflow skill](file:///U
 - Do not stash user work merely to simplify the agent's workflow. Use a stash only when the operation genuinely requires a clean tree, explain its contents, and restore it promptly.
 - Do not delete branches, remove worktrees, or rewrite shared history without explicit authorization.
 
-The broader checkpoint, verification, remote-mutation, and audit policy is canonical in [020-agent-audit.mdc](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/020-agent-audit.mdc).
+The broader checkpoint, verification, remote-mutation, and audit policy is canonical in 020-agent-audit.mdc (`${HANDBOOK_ROOT}/rules/020-agent-audit.mdc`).
 
 ## Commit Authorization and Signing
 
@@ -44,7 +44,7 @@ Before executing `git commit`:
 3. Show the exact staged file list, including added, modified, renamed, and deleted files.
 4. Ask for explicit confirmation and wait for it.
 
-Commit messages use Conventional Commits, an imperative summary of at most 72 characters, and concise rationale-focused bullets when useful. Detailed formats and examples live in the [Git workflow reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/git-workflow.md).
+Commit messages use Conventional Commits, an imperative summary of at most 72 characters, and concise rationale-focused bullets when useful. Detailed formats and examples live in the Git workflow reference (`${HANDBOOK_ROOT}/skills/git-workflow/git-workflow.md`).
 
 Cryptographic commit signing is mandatory unless the repository documents an explicit exception:
 
@@ -70,8 +70,8 @@ Co-authored-by: Cursor <cursoragent@cursor.com>
 
 ## Canonical Procedures
 
-- [Git workflow skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/SKILL.md)
-- [Git fundamentals](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/git-fundamentals.md)
-- [Modern Git commands and worktrees](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/git-modern-commands.md)
-- [Reflog recovery](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/git-reflog.md)
-- [Pre-commit hooks](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/git-pre-commit.md)
+- Git workflow skill (`${HANDBOOK_ROOT}/skills/git-workflow/SKILL.md`)
+- Git fundamentals (`${HANDBOOK_ROOT}/skills/git-workflow/git-fundamentals.md`)
+- Modern Git commands and worktrees (`${HANDBOOK_ROOT}/skills/git-workflow/git-modern-commands.md`)
+- Reflog recovery (`${HANDBOOK_ROOT}/skills/git-workflow/git-reflog.md`)
+- Pre-commit hooks (`${HANDBOOK_ROOT}/skills/git-workflow/git-pre-commit.md`)

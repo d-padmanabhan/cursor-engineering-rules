@@ -1,5 +1,7 @@
 # Rust Patterns
 
+Public library APIs follow the Rust documentation contract (`${HANDBOOK_ROOT}/skills/go-rust-systems/references/rust-documentation.md`). Most snippets below use private items so the examples can focus on one language pattern without presenting an undocumented public API.
+
 ## Ownership & Borrowing
 
 ```rust
@@ -48,7 +50,7 @@ use anyhow::{Result, Context};
 
 // Define errors with thiserror (for libraries)
 #[derive(Error, Debug)]
-pub enum AppError {
+enum AppError {
     #[error("User not found: {0}")]
     NotFound(String),
     
@@ -150,16 +152,16 @@ let result: Vec<i32> = numbers
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct User {
-    pub id: uuid::Uuid,
-    pub name: String,
-    pub email: String,
+struct User {
+    id: uuid::Uuid,
+    name: String,
+    email: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub avatar_url: Option<String>,
+    avatar_url: Option<String>,
 }
 
 impl User {
-    pub fn new(name: String, email: String) -> Self {
+    fn new(name: String, email: String) -> Self {
         Self {
             id: uuid::Uuid::new_v4(),
             name,
@@ -171,7 +173,7 @@ impl User {
 
 // Enum with data
 #[derive(Debug)]
-pub enum Message {
+enum Message {
     Quit,
     Move { x: i32, y: i32 },
     Write(String),

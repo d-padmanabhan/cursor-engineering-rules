@@ -5,7 +5,8 @@ import unittest
 from pathlib import Path
 
 REPOSITORY_ROOT: Path = Path(__file__).resolve().parents[2]
-HANDBOOK_ROOT_URI: str = "file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/"
+HANDBOOK_ROOT_ASSIGNMENT: str = 'HANDBOOK_ROOT="${HOME}/.cursor/agent-engineering-handbook"'
+HANDBOOK_ROOT_REFERENCE: str = "${HANDBOOK_ROOT}/"
 RULE_LINE_BUDGETS: dict[str, int] = {
     "010-workflow.mdc": 100,
     "100-core.mdc": 180,
@@ -93,8 +94,23 @@ class RuleOwnershipTests(unittest.TestCase):
     def test_workflow_publishes_stable_handbook_root(self) -> None:
         workflow_rule: str = (REPOSITORY_ROOT / "rules" / "010-workflow.mdc").read_text(encoding="utf-8")
 
-        self.assertIn(HANDBOOK_ROOT_URI.removeprefix("file://").rstrip("/"), workflow_rule)
-        self.assertIn(HANDBOOK_ROOT_URI, workflow_rule)
+        self.assertIn(HANDBOOK_ROOT_ASSIGNMENT, workflow_rule)
+        self.assertIn(HANDBOOK_ROOT_REFERENCE, workflow_rule)
+
+    def test_handbook_has_no_user_specific_paths(self) -> None:
+        personal_root: str = "/Users/" + "Devesh_Padmanabhan"
+        excluded_directories: set[str] = {".git", ".venv", "__pycache__", "tmp"}
+
+        for file_path in REPOSITORY_ROOT.rglob("*"):
+            if not file_path.is_file() or excluded_directories.intersection(file_path.parts):
+                continue
+            try:
+                content = file_path.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                continue
+
+            with self.subTest(file=file_path.relative_to(REPOSITORY_ROOT)):
+                self.assertNotIn(personal_root, content)
 
     def test_routing_avoids_relative_markdown_links(self) -> None:
         relative_link_pattern = re.compile(r"\]\((?!https?://|file://|#|mailto:)[^)]+\)")

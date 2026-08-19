@@ -213,7 +213,7 @@ Decision matrix per finding:
 | Archived, missing, or prerelease-only | Stop and report; do not silently downgrade or replace |
 | Frozen pin | Retain and report the available update |
 
-Read release notes, preserve independently revertible upgrades, run `actionlint`, and let Dependabot or Renovate propose future updates. Follow the [GitHub Actions rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/160-github-actions.mdc) and [dependency currency workflow](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/core-engineering/references/dependency-and-toolchain-currency.md).
+Read release notes, preserve independently revertible upgrades, run `actionlint`, and let Dependabot or Renovate propose future updates. Follow the GitHub Actions rule (`${HANDBOOK_ROOT}/rules/160-github-actions.mdc`) and dependency currency workflow (`${HANDBOOK_ROOT}/skills/core-engineering/references/dependency-and-toolchain-currency.md`).
 
 ## Detailed References
 

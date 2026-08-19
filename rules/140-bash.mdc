@@ -12,7 +12,7 @@ globs:
 
 # Bash Engineering Gates
 
-This rule owns mandatory policy only. Use the [Bash skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/bash-shell-scripting/SKILL.md) for authoring patterns and the [automation skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/scripting-automation/SKILL.md) for retries, locks, signals, idempotency, and BATS.
+This rule owns mandatory policy only. Use the Bash skill (`${HANDBOOK_ROOT}/skills/bash-shell-scripting/SKILL.md`) for authoring patterns and the automation skill (`${HANDBOOK_ROOT}/skills/scripting-automation/SKILL.md`) for retries, locks, signals, idempotency, and BATS.
 
 ## Shell and Error Semantics
 

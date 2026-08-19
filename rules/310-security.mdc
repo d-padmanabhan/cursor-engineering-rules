@@ -7,7 +7,7 @@ priority: 310
 
 # Application Security Gates
 
-This rule owns universal secure-coding policy only. Use [security testing](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/security-testing/SKILL.md) for focused review and tests, [codebase security audit](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/codebase-security-audit/SKILL.md) for full-repository audits, and [Zero Trust](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/zero-trust/SKILL.md) for identity, trust-boundary, and agent architecture.
+This rule owns universal secure-coding policy only. Use security testing (`${HANDBOOK_ROOT}/skills/security-testing/SKILL.md`) for focused review and tests, codebase security audit (`${HANDBOOK_ROOT}/skills/codebase-security-audit/SKILL.md`) for full-repository audits, and Zero Trust (`${HANDBOOK_ROOT}/skills/zero-trust/SKILL.md`) for identity, trust-boundary, and agent architecture.
 
 ## Secrets and Sensitive Data
 

@@ -7,7 +7,7 @@ priority: 100
 
 # Core Engineering Gates
 
-This rule owns universal engineering policy only. Use the [core engineering skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/core-engineering/SKILL.md) and the relevant domain skill for procedures, examples, and language-specific guidance.
+This rule owns universal engineering policy only. Use the core engineering skill (`${HANDBOOK_ROOT}/skills/core-engineering/SKILL.md`) and the relevant domain skill for procedures, examples, and language-specific guidance.
 
 ## Solve the Actual Problem
 

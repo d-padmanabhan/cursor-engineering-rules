@@ -59,4 +59,4 @@ Avoid retry multiplication. Assign retries to one layer and account for load amp
 
 ## Async Clients
 
-The same ownership rules apply to async clients. Keep one `aiohttp.ClientSession` or `httpx.AsyncClient` for the operation/application lifetime, use an async context manager, set deadlines, and bound tasks. Follow the [async and concurrency reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/async-concurrency.md) for `TaskGroup`, cancellation, and concurrency limits.
+The same ownership rules apply to async clients. Keep one `aiohttp.ClientSession` or `httpx.AsyncClient` for the operation/application lifetime, use an async context manager, set deadlines, and bound tasks. Follow the async and concurrency reference (`${HANDBOOK_ROOT}/skills/python-development/references/async-concurrency.md`) for `TaskGroup`, cancellation, and concurrency limits.

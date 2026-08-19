@@ -16,7 +16,7 @@ globs:
 
 # JavaScript and TypeScript Engineering Gates
 
-This rule owns mandatory policy only. Use the [TypeScript and JavaScript skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/typescript-javascript/SKILL.md) for language patterns, configuration, testing, performance, and examples.
+This rule owns mandatory policy only. Use the TypeScript and JavaScript skill (`${HANDBOOK_ROOT}/skills/typescript-javascript/SKILL.md`) for language patterns, configuration, testing, performance, and examples.
 
 ## Shared Runtime and Supply-Chain Gates
 

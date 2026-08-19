@@ -73,6 +73,122 @@
           ]
         }
       ]
+    },
+    {
+      "id": 3,
+      "prompt": "Create a small Rust library crate named acme_client. Its public Client::read method borrows a reusable client, accepts a document ID and timeout, returns Result<Document, ClientError>, can be cancelled by dropping the future, and requires Client::close when finished. Include the idiomatic public documentation contract.",
+      "expected_output": "Provide crate-level //! documentation and /// documentation for the public API. Keep public types explicit, document ownership, cancellation, errors, and close lifecycle, include a useful compiling doctest and # Errors section, and avoid restating signature types.",
+      "files": [],
+      "checks": [
+        {
+          "id": "documents-rust-crate-and-public-api",
+          "type": "contains_all",
+          "values": [
+            "//!",
+            "///",
+            "pub",
+            "# Errors"
+          ]
+        },
+        {
+          "id": "documents-semantic-contract",
+          "type": "contains_all",
+          "values": [
+            "borrow",
+            "cancel",
+            "close",
+            "Result"
+          ]
+        },
+        {
+          "id": "includes-useful-doctest",
+          "type": "contains_all",
+          "values": [
+            "# Examples",
+            "```"
+          ]
+        },
+        {
+          "id": "observes-rust-skill",
+          "type": "loaded_skill",
+          "skill": "go-rust-systems",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Write a public unsafe Rust function read_u32 that reads one initialized u32 from a raw pointer. Document and implement the smallest complete safety contract.",
+      "expected_output": "The public unsafe function has a # Safety section defining pointer validity, alignment, initialization, and lifetime obligations. The unsafe block has a nearby // SAFETY: comment that ties the call-site invariant to those obligations.",
+      "files": [],
+      "checks": [
+        {
+          "id": "documents-public-unsafe-contract",
+          "type": "contains_all",
+          "values": [
+            "pub unsafe fn",
+            "# Safety",
+            "valid",
+            "aligned",
+            "initialized"
+          ]
+        },
+        {
+          "id": "justifies-local-unsafe-block",
+          "type": "contains_all",
+          "values": [
+            "// SAFETY:",
+            "unsafe {",
+            "lifetime"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Review a Rust library where docs repeat every argument and return type, a Result-returning public function omits error behavior, a public method can panic without a # Panics section, all examples use ```ignore, and private helpers have comments that restate their names. State the smallest correction and verification commands.",
+      "expected_output": "Remove redundant type prose and obvious private-helper comments. Add caller-relevant # Errors and # Panics sections. Replace ignored examples with compiling doctests, hidden setup, no_run, compile_fail, or text as appropriate. Verify with cargo test --doc, rustdoc warnings denied, and Clippy warnings denied.",
+      "files": [],
+      "checks": [
+        {
+          "id": "rejects-redundant-documentation",
+          "type": "contains_all",
+          "values": [
+            "remove",
+            "type",
+            "private",
+            "restate"
+          ]
+        },
+        {
+          "id": "requires-behavioral-contract",
+          "type": "contains_all",
+          "values": [
+            "# Errors",
+            "# Panics",
+            "doctest"
+          ]
+        },
+        {
+          "id": "rejects-ignored-doctests",
+          "type": "contains_any",
+          "values": [
+            "no_run",
+            "compile_fail",
+            "hidden setup",
+            "text"
+          ]
+        },
+        {
+          "id": "verifies-rust-documentation",
+          "type": "contains_all",
+          "values": [
+            "cargo test --doc",
+            "RUSTDOCFLAGS",
+            "cargo clippy"
+          ]
+        }
+      ]
     }
   ]
 }

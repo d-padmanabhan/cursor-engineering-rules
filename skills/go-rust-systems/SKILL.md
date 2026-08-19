@@ -91,7 +91,7 @@ Prefer **`switch`** for multi-way dispatch on one expression (and type switches)
 - Do not add comments to obvious unexported helpers or comments that merely restate a signature.
 - Keep comments accurate when behavior changes; stale documentation is a correctness defect.
 
-Follow the [Go idioms reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/go-rust-systems/references/go-idioms.md) for examples.
+Follow the Go idioms reference (`${HANDBOOK_ROOT}/skills/go-rust-systems/references/go-idioms.md`) for examples.
 
 ### Mandatory Hardening Add-On (Go)
 
@@ -114,7 +114,7 @@ For HTTP/API client code, always apply the hardening checks from
 - Keep `go.mod` module/toolchain pinned and run `go mod tidy` / `go mod verify`
   in CI
 
-Use the latest supported stable Go toolchain compatible with the deployment and module policy. Follow the [dependency and toolchain currency workflow](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/core-engineering/references/dependency-and-toolchain-currency.md) for release verification, module updates, `govulncheck`, and time-boxed exceptions.
+Use the latest supported stable Go toolchain compatible with the deployment and module policy. Follow the dependency and toolchain currency workflow (`${HANDBOOK_ROOT}/skills/core-engineering/references/dependency-and-toolchain-currency.md`) for release verification, module updates, `govulncheck`, and time-boxed exceptions.
 
 Use semgrep + pre-commit checks for these patterns because standard linting
 does not catch all of them reliably.
@@ -133,12 +133,26 @@ This keeps policy (rules), agent behavior (skill), and examples in sync.
 
 ## Rust Quick Reference
 
+### Rust Documentation and Public API Contract
+
+- Use `//!` for crate and module documentation and `///` for public items.
+- Document public library APIs. Do not document obvious private helpers or restate type information already visible in signatures.
+- Keep public parameters, return types, generic bounds, associated types, and lifetimes explicit where Rust syntax requires them. Let obvious local variables use inference.
+- Add `# Examples`, `# Errors`, and `# Panics` only when they improve the caller contract. Every public unsafe API must include `# Safety`.
+- Document ownership, borrowing, mutation, blocking, cancellation, side effects, thread safety, and resource lifecycle when callers need that information.
+- Put a nearby `// SAFETY:` comment before each unsafe block to state the invariant that makes the operation valid.
+- Prefer intra-doc links such as [`User`] over duplicated prose. Keep links and examples compiling and current.
+
+Follow the Rust documentation reference (`${HANDBOOK_ROOT}/skills/go-rust-systems/references/rust-documentation.md`) for crate front pages, doctests, safety contracts, lints, and CI verification.
+
 ### Essential Commands
 
 ```bash
 cargo new my-project          # Create new project
 cargo build --release         # Build optimized
 cargo test                    # Run tests
+cargo test --doc              # Run documentation tests
+cargo doc --no-deps           # Build crate documentation
 cargo clippy                  # Linting
 cargo fmt                     # Format code
 cargo audit                   # Security audit

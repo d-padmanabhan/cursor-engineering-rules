@@ -5,7 +5,7 @@ description: Advanced Bash automation patterns for production-grade scripts and 
 
 # Scripting & Automation
 
-Use the [Bash skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/bash-shell-scripting/SKILL.md) for baseline shell authoring. This skill owns automation-specific retries, locks, signals, idempotency, deployment workflows, and BATS patterns.
+Use the Bash skill (`${HANDBOOK_ROOT}/skills/bash-shell-scripting/SKILL.md`) for baseline shell authoring. This skill owns automation-specific retries, locks, signals, idempotency, deployment workflows, and BATS patterns.
 
 ## Guiding Principles
 
@@ -568,4 +568,4 @@ my_script() {
 
 ## Detailed References
 
-- **Bash authoring**: See the [Bash skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/bash-shell-scripting/SKILL.md)
+- **Bash authoring**: See the Bash skill (`${HANDBOOK_ROOT}/skills/bash-shell-scripting/SKILL.md`)

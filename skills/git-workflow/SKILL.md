@@ -5,7 +5,7 @@ description: Safe Git workflows for commits, branches, worktrees, recovery, sign
 
 # Git Workflow
 
-Use this skill for Git procedures. Mandatory authorization and preservation gates remain in [the Git rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/130-git.mdc) and [the agent audit rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/020-agent-audit.mdc).
+Use this skill for Git procedures. Mandatory authorization and preservation gates remain in the Git rule (`${HANDBOOK_ROOT}/rules/130-git.mdc`) and the agent audit rule (`${HANDBOOK_ROOT}/rules/020-agent-audit.mdc`).
 
 ## Non-Negotiable Workflow
 
@@ -50,7 +50,7 @@ Do not use `git switch -c` in a dirty worktree: compatible uncommitted changes c
 
 ### Prepare a commit
 
-Inspect status, staged and unstaged changes, and recent message style. Stage only the approved files. Use the format and review gate in [git-workflow.md](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/git-workflow.md).
+Inspect status, staged and unstaged changes, and recent message style. Stage only the approved files. Use the format and review gate in git-workflow.md (`${HANDBOOK_ROOT}/skills/git-workflow/git-workflow.md`).
 
 ### Push an existing branch
 
@@ -69,12 +69,12 @@ Use `git push -u origin HEAD` only for a new branch without an upstream. Never f
 
 ### Recover safely
 
-Inspect reflog and repository state before choosing a recovery operation. Prefer creating a recovery branch or restoring a specific object over destructive reset. See [git-reflog.md](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/git-reflog.md).
+Inspect reflog and repository state before choosing a recovery operation. Prefer creating a recovery branch or restoring a specific object over destructive reset. See git-reflog.md (`${HANDBOOK_ROOT}/skills/git-workflow/git-reflog.md`).
 
 ## References
 
-- [Git fundamentals](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/git-fundamentals.md) - refs, remotes, fetch/pull, and branch workflows
-- [Git workflow](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/git-workflow.md) - commits, signing, branches, PRs, and repository hygiene
-- [Modern Git commands](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/git-modern-commands.md) - `switch`, `restore`, moves, and worktrees
-- [Reflog](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/git-reflog.md) - recovery and history inspection
-- [Pre-commit](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/git-pre-commit.md) - hook setup and maintenance
+- Git fundamentals (`${HANDBOOK_ROOT}/skills/git-workflow/git-fundamentals.md`) - refs, remotes, fetch/pull, and branch workflows
+- Git workflow (`${HANDBOOK_ROOT}/skills/git-workflow/git-workflow.md`) - commits, signing, branches, PRs, and repository hygiene
+- Modern Git commands (`${HANDBOOK_ROOT}/skills/git-workflow/git-modern-commands.md`) - `switch`, `restore`, moves, and worktrees
+- Reflog (`${HANDBOOK_ROOT}/skills/git-workflow/git-reflog.md`) - recovery and history inspection
+- Pre-commit (`${HANDBOOK_ROOT}/skills/git-workflow/git-pre-commit.md`) - hook setup and maintenance

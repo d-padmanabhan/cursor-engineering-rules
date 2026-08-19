@@ -62,6 +62,17 @@ fn process_data(data: &[i32]) -> Result<i32, ProcessingError> {
 4. **Fearless Concurrency**: Leverage Rust's type system for safe concurrency
 5. **Idiomatic Rust**: Follow community conventions (rustfmt, clippy)
 
+## Public API Documentation (MUST)
+
+- Use `//!` for crate and module documentation and `///` for public items.
+- Document public library APIs without restating types already visible in signatures or documenting obvious private helpers.
+- Document caller-relevant errors, panics, ownership, borrowing, mutation, blocking, cancellation, side effects, thread safety, and resource lifecycle.
+- Use `# Examples`, `# Errors`, and `# Panics` when applicable. Every public unsafe API MUST include `# Safety`.
+- Every unsafe block MUST have a nearby `// SAFETY:` comment that states the invariant being upheld.
+- Keep intra-doc links and doctests compiling. Run `cargo test --doc`, build docs with warnings denied, and run Clippy with warnings denied in CI.
+
+Canonical workflow and examples: Rust documentation reference (`${HANDBOOK_ROOT}/skills/go-rust-systems/references/rust-documentation.md`).
+
 ---
 
 ## Project Structure
@@ -936,34 +947,31 @@ cargo audit
 
 ### Documentation
 ```rust
-/// Fetches a user by ID from the database.
-///
-/// # Arguments
-///
-/// * `id` - The unique identifier of the user
-///
-/// # Returns
-///
-/// * `Ok(User)` - The user if found
-/// * `Err(AppError::UserNotFound)` - If the user doesn't exist
+//! Client operations for retrieving users.
+
+/// Fetches a user from the database.
 ///
 /// # Examples
 ///
+/// ```no_run
+/// # use webapp::{get_user, UserId};
+/// # async fn example() -> Result<(), webapp::AppError> {
+/// let user = get_user(UserId::new()).await?;
+/// assert!(!user.name.is_empty());
+/// # Ok(())
+/// # }
 /// ```
-/// use webapp::*;
 ///
-/// #[tokio::main]
-/// async fn main() {
-///     let user = get_user(UserId::new()).await?;
-///     println!("User: {}", user.name);
-/// }
-/// ```
+/// # Errors
+///
+/// Returns [`AppError::UserNotFound`] when no user has the requested ID.
 pub async fn get_user(id: UserId) -> Result<User> {
     // Implementation
 }
 
-// Generate documentation
-// cargo doc --open
+// Verify with:
+// cargo test --doc
+// RUSTDOCFLAGS="-D warnings" cargo doc --no-deps
 ```
 
 ---

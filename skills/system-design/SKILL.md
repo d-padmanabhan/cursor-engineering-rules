@@ -56,7 +56,7 @@ Do not collapse all endpoints and workloads into one SLO.
 
 Show units and arithmetic for baseline, peak, and growth horizon. Estimate requests or events per second, concurrent work, storage, bandwidth, and dominant compute or I/O demand. Include headroom and identify the inputs most sensitive to uncertainty.
 
-Use the [design workflow and template](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/system-design/references/design-workflow.md) for estimation and document structure.
+Use the design workflow and template (`${HANDBOOK_ROOT}/skills/system-design/references/design-workflow.md`) for estimation and document structure.
 
 ### 4. Establish boundaries and contracts
 
@@ -83,7 +83,7 @@ Trace critical write and read paths. For every remote dependency, state:
 - cache correctness and invalidation;
 - partial failure and degraded mode.
 
-Use the [networking skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/networking-transport/SKILL.md) for transport choices and the [distributed transactions skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/distributed-transactions/SKILL.md) when one business operation spans consistency boundaries.
+Use the networking skill (`${HANDBOOK_ROOT}/skills/networking-transport/SKILL.md`) for transport choices, the service resilience skill (`${HANDBOOK_ROOT}/skills/service-resilience/SKILL.md`) for circuit breakers, bulkheads, retry policy, and degraded behavior, and the distributed transactions skill (`${HANDBOOK_ROOT}/skills/distributed-transactions/SKILL.md`) when one business operation spans consistency boundaries.
 
 ### 6. Design operations and recovery
 
@@ -96,7 +96,7 @@ Specify:
 - deployment, rollback, feature flag, and schema migration strategy;
 - runbooks, on-call and escalation ownership, operational expertise, cognitive load, and manual intervention.
 
-Use the [security testing skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/security-testing/SKILL.md), [Zero Trust skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/zero-trust/SKILL.md), and [observability rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/330-observability.mdc) for specialist review.
+Use the security testing skill (`${HANDBOOK_ROOT}/skills/security-testing/SKILL.md`), Zero Trust skill (`${HANDBOOK_ROOT}/skills/zero-trust/SKILL.md`), and observability rule (`${HANDBOOK_ROOT}/rules/330-observability.mdc`) for specialist review.
 
 ### 7. Compare alternatives
 
@@ -119,16 +119,18 @@ Define incremental slices, compatibility transitions, data migration, load and f
 
 Route depth instead of copying domain procedures:
 
-- Cloud architecture: [cloud platforms](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/cloud-platforms/SKILL.md)
-- APIs: [API design rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/320-api-design.mdc)
-- PostgreSQL: [database PostgreSQL](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/database-postgresql/SKILL.md)
-- Data platforms and pipelines: [data engineering](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/data-engineering/SKILL.md)
-- Event platforms and Kafka governance: [Kafka rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/483-kafka.mdc), [data engineering](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/data-engineering/SKILL.md), and [distributed transactions](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/distributed-transactions/SKILL.md)
-- Persistent AI memory and retrieval: [memory architecture](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/memory-architecture/SKILL.md)
-- Infrastructure implementation and topology automation: [infrastructure as code](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/infrastructure-iac/SKILL.md)
-- Containers: [containers orchestration](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/containers-orchestration/SKILL.md) and [Kubernetes containers](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/kubernetes-containers/SKILL.md)
-- Architecture visualization: [React Flow architecture diagrams](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/reactflow-architecture-diagrams/SKILL.md) or [documentation standards](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/documentation-standards/SKILL.md)
-- Stakeholder-weighted decisions: [multi-perspective review](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/multi-perspective-review/SKILL.md)
+- Cloud architecture: cloud platforms (`${HANDBOOK_ROOT}/skills/cloud-platforms/SKILL.md`)
+- APIs: API design rule (`${HANDBOOK_ROOT}/rules/320-api-design.mdc`)
+- Domain boundaries and models: Domain-Driven Design (`${HANDBOOK_ROOT}/skills/domain-driven-design/SKILL.md`)
+- Dependency failure, overload, and isolation: service resilience (`${HANDBOOK_ROOT}/skills/service-resilience/SKILL.md`)
+- PostgreSQL: database PostgreSQL (`${HANDBOOK_ROOT}/skills/database-postgresql/SKILL.md`)
+- Data platforms and pipelines: data engineering (`${HANDBOOK_ROOT}/skills/data-engineering/SKILL.md`)
+- Event platforms and Kafka governance: Kafka rule (`${HANDBOOK_ROOT}/rules/483-kafka.mdc`), data engineering (`${HANDBOOK_ROOT}/skills/data-engineering/SKILL.md`), and distributed transactions (`${HANDBOOK_ROOT}/skills/distributed-transactions/SKILL.md`)
+- Persistent AI memory and retrieval: memory architecture (`${HANDBOOK_ROOT}/skills/memory-architecture/SKILL.md`)
+- Infrastructure implementation and topology automation: infrastructure as code (`${HANDBOOK_ROOT}/skills/infrastructure-iac/SKILL.md`)
+- Containers: containers orchestration (`${HANDBOOK_ROOT}/skills/containers-orchestration/SKILL.md`) and Kubernetes containers (`${HANDBOOK_ROOT}/skills/kubernetes-containers/SKILL.md`)
+- Architecture visualization: React Flow architecture diagrams (`${HANDBOOK_ROOT}/skills/reactflow-architecture-diagrams/SKILL.md`) or documentation standards (`${HANDBOOK_ROOT}/skills/documentation-standards/SKILL.md`)
+- Stakeholder-weighted decisions: multi-perspective review (`${HANDBOOK_ROOT}/skills/multi-perspective-review/SKILL.md`)
 
 ## Review Mode
 
@@ -141,9 +143,9 @@ When reviewing an existing design:
 5. Rank findings as Critical, Recommended, or Optional.
 6. Propose the smallest correction and how to validate it.
 
-Use the [architecture review checklist](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/system-design/references/architecture-review-checklist.md).
+Use the architecture review checklist (`${HANDBOOK_ROOT}/skills/system-design/references/architecture-review-checklist.md`).
 
-For cellular designs, use the [cell-based architecture reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/system-design/references/cell-based-architecture.md). For consequential decisions, use the [decision and validation workflow](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/system-design/references/decision-and-validation-workflow.md).
+For cellular designs, use the cell-based architecture reference (`${HANDBOOK_ROOT}/skills/system-design/references/cell-based-architecture.md`). For consequential decisions, use the decision and validation workflow (`${HANDBOOK_ROOT}/skills/system-design/references/decision-and-validation-workflow.md`).
 
 ## Required Output
 

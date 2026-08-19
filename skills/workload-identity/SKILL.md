@@ -7,7 +7,7 @@ description: Workload identity playbook (SPIFFE/SPIRE, cloud IAM, OIDC federatio
 
 **Companion rule:** `318-workload-identity.mdc`. This skill turns the principles into end-to-end workflows.
 
-**Scope:** the *infrastructure* layer of identity. For application-layer agent-on-behalf-of-user delegation, use the [Okta skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/okta/SKILL.md) for Cross App Access (XAA) and ID-JAG, and the [Zero Trust skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/zero-trust/SKILL.md) for HITL gates and threat models.
+**Scope:** the *infrastructure* layer of identity. For application-layer agent-on-behalf-of-user delegation, use the Okta skill (`${HANDBOOK_ROOT}/skills/okta/SKILL.md`) for Cross App Access (XAA) and ID-JAG, and the Zero Trust skill (`${HANDBOOK_ROOT}/skills/zero-trust/SKILL.md`) for HITL gates and threat models.
 
 ---
 

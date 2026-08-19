@@ -502,6 +502,8 @@ Skills under `skills/` cover repeatable end-to-end workflows that pair with the 
 - **[skills/agent-workflow](skills/agent-workflow/)** - Plan/Implement/Review workflow + audit
 - **[skills/core-engineering](skills/core-engineering/)** - core engineering principles, code review
 - **[skills/system-design](skills/system-design/)** - evidence-backed production architecture, SLO and dependency budgets, overload, multi-tenancy, cellular architecture, reliability, cost, and migration
+- **[skills/domain-driven-design](skills/domain-driven-design/)** - strategic and tactical DDD, bounded contexts, context maps, aggregates, domain events, and anti-corruption layers
+- **[skills/service-resilience](skills/service-resilience/)** - deadlines, retries, circuit breakers, bulkheads, overload control, fallbacks, and recovery testing
 - **[skills/git-workflow](skills/git-workflow/)** - commits, branches, worktrees, signing, recovery, and remote synchronization
 - **[skills/python-development](skills/python-development/)** - Python 3.14+ patterns
 - **[skills/typescript-javascript](skills/typescript-javascript/)** - TS/JS patterns
@@ -568,6 +570,7 @@ The initial suites cover:
 - [Core engineering evals](skills/core-engineering/evals/evals.json)
 - [Cloudflare WAF author evals](skills/cloudflare-waf-author/evals/evals.json)
 - [Documentation standards evals](skills/documentation-standards/evals/evals.json)
+- [Domain-Driven Design evals](skills/domain-driven-design/evals/evals.json)
 - [Distributed transactions evals](skills/distributed-transactions/evals/evals.json)
 - [Git workflow evals](skills/git-workflow/evals/evals.json)
 - [Go and Rust systems evals](skills/go-rust-systems/evals/evals.json)
@@ -579,6 +582,7 @@ The initial suites cover:
 - [Python development evals](skills/python-development/evals/evals.json)
 - [Scripting automation evals](skills/scripting-automation/evals/evals.json)
 - [Security testing evals](skills/security-testing/evals/evals.json)
+- [Service resilience evals](skills/service-resilience/evals/evals.json)
 - [System design evals](skills/system-design/evals/evals.json)
 - [TypeScript and JavaScript evals](skills/typescript-javascript/evals/evals.json)
 - [Zero Trust evals](skills/zero-trust/evals/evals.json)

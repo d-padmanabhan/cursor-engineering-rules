@@ -5,7 +5,7 @@ description: Structured development workflow with Plan/Implement/Review phases, 
 
 # Agent Workflow
 
-Mandatory classification, approval, scope, implementation, and review gates are owned by the [workflow rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/010-workflow.mdc). This skill owns detailed procedures and templates.
+Mandatory classification, approval, scope, implementation, and review gates are owned by the workflow rule (`${HANDBOOK_ROOT}/rules/010-workflow.mdc`). This skill owns detailed procedures and templates.
 
 ## Golden Rules
 
@@ -96,7 +96,7 @@ AI: "Let me design a solution first. Key decisions needed:
 
 ## Independent Verification
 
-For security, IAM, production infrastructure, destructive migrations, sensitive data or financial logic, broad architecture, difficult rollback, or explicit assurance requirements, complete normal deterministic review first and then use the [independent verification skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/independent-verification/SKILL.md).
+For security, IAM, production infrastructure, destructive migrations, sensitive data or financial logic, broad architecture, difficult rollback, or explicit assurance requirements, complete normal deterministic review first and then use the independent verification skill (`${HANDBOOK_ROOT}/skills/independent-verification/SKILL.md`).
 
 The independent verifier reviews an immutable commit/diff hash in a fresh read-only session, reports findings without editing, and cannot replace required human approval.
 
@@ -110,6 +110,6 @@ The independent verifier reviews an immutable commit/diff hash in a fresh read-o
 
 ## Audit Requirements
 
-For audit requirements covering remote-mutation authorization, risk-based checkpoints, and proportional reports, see [audit requirements](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/agent-workflow/references/audit-requirements.md).
+For audit requirements covering remote-mutation authorization, risk-based checkpoints, and proportional reports, see audit requirements (`${HANDBOOK_ROOT}/skills/agent-workflow/references/audit-requirements.md`).
 
-For detailed context management and QA validation, see [context management](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/agent-workflow/references/context-management.md).
+For detailed context management and QA validation, see context management (`${HANDBOOK_ROOT}/skills/agent-workflow/references/context-management.md`).

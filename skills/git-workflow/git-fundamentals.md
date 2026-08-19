@@ -139,11 +139,11 @@ git worktree add -b feat/your-feature "../repo-feature" origin/main
 Choose a sibling path that does not already exist and perform all feature work there.
 
 > [!IMPORTANT]
-> `git switch -c` is prohibited for this path because Git can carry compatible uncommitted changes onto the new branch. The mandatory preservation gate is in the [Git rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/130-git.mdc#preserve-user-work).
+> `git switch -c` is prohibited for this path because Git can carry compatible uncommitted changes onto the new branch. The mandatory preservation gate is in the Git rule (`${HANDBOOK_ROOT}/rules/130-git.mdc#preserve-user-work`).
 
 ## Inspect remote state, then push
 
-Fetch and inspect the current branch before pushing to an existing remote branch. Do not blindly run `git pull --rebase`; it modifies local history and may be unsafe with a dirty tree, shared commits, or merge-based repository policy. The mandatory push gate is in [130-git.mdc](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/130-git.mdc#branches-history-and-remote-writes).
+Fetch and inspect the current branch before pushing to an existing remote branch. Do not blindly run `git pull --rebase`; it modifies local history and may be unsafe with a dirty tree, shared commits, or merge-based repository policy. The mandatory push gate is in 130-git.mdc (`${HANDBOOK_ROOT}/rules/130-git.mdc#branches-history-and-remote-writes`).
 
 ```bash
 git fetch origin --prune

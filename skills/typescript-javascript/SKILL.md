@@ -5,7 +5,7 @@ description: TypeScript and JavaScript development standards for modern web and 
 
 # TypeScript & JavaScript Development
 
-Mandatory gates are owned by the [JavaScript and TypeScript rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/225-javascript-typescript.mdc). This skill and its references own procedures and examples.
+Mandatory gates are owned by the JavaScript and TypeScript rule (`${HANDBOOK_ROOT}/rules/225-javascript-typescript.mdc`). This skill and its references own procedures and examples.
 
 ## Guiding Principles
 
@@ -69,7 +69,7 @@ Node/Express/Fastify services need bounded request bodies, explicit CORS, securi
 
 Declare `packageManager` and Node engine policy in `package.json`; CI uses Corepack and the declared package manager.
 
-Production applications normally use the newest supported active LTS Node.js line accepted by the deployment target. Pin the exact package manager and tested CI runtime, commit one native lockfile, and test compiler upgrades. Follow the [dependency and toolchain currency workflow](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/core-engineering/references/dependency-and-toolchain-currency.md).
+Production applications normally use the newest supported active LTS Node.js line accepted by the deployment target. Pin the exact package manager and tested CI runtime, commit one native lockfile, and test compiler upgrades. Follow the dependency and toolchain currency workflow (`${HANDBOOK_ROOT}/skills/core-engineering/references/dependency-and-toolchain-currency.md`).
 
 ```json
 {
@@ -239,5 +239,5 @@ results.forEach(result => {
 
 ## Detailed References
 
-- **TypeScript Patterns**: See [TypeScript patterns](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/typescript-javascript/references/typescript-patterns.md) for advanced types, generics, and mapped types
-- **JavaScript Patterns**: See [JavaScript patterns](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/typescript-javascript/references/javascript-patterns.md) for JSDoc, ESM, and performance
+- **TypeScript Patterns**: See TypeScript patterns (`${HANDBOOK_ROOT}/skills/typescript-javascript/references/typescript-patterns.md`) for advanced types, generics, and mapped types
+- **JavaScript Patterns**: See JavaScript patterns (`${HANDBOOK_ROOT}/skills/typescript-javascript/references/javascript-patterns.md`) for JSDoc, ESM, and performance

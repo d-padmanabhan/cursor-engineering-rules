@@ -16,7 +16,7 @@ globs:
 
 # Helm Engineering Gates
 
-This rule owns mandatory policy only. Use the [Kubernetes containers skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/kubernetes-containers/SKILL.md) and [Helm chart reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/kubernetes-containers/references/helm-charts.md) for chart structure, templating, testing, GitOps, and troubleshooting.
+This rule owns mandatory policy only. Use the Kubernetes containers skill (`${HANDBOOK_ROOT}/skills/kubernetes-containers/SKILL.md`) and Helm chart reference (`${HANDBOOK_ROOT}/skills/kubernetes-containers/references/helm-charts.md`) for chart structure, templating, testing, GitOps, and troubleshooting.
 
 ## Chart and Values Contract
 
@@ -32,7 +32,7 @@ This rule owns mandatory policy only. Use the [Kubernetes containers skill](file
 - Before any install or upgrade, run `helm lint` and render with the exact intended values using `helm template`.
 - Validate rendered manifests with repository policy checks and an admission-aware dry-run when available.
 - Inspect the release, namespace, cluster, chart version, values sources, rendered diff, hooks, CRDs, and deletion impact before mutation.
-- `helm install`, `helm upgrade`, `helm rollback`, `helm uninstall`, dependency publication, and registry publication are remote mutations requiring explicit authorization under the [agent audit rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/020-agent-audit.mdc).
+- `helm install`, `helm upgrade`, `helm rollback`, `helm uninstall`, dependency publication, and registry publication are remote mutations requiring explicit authorization under the agent audit rule (`${HANDBOOK_ROOT}/rules/020-agent-audit.mdc`).
 - Do not use `--force`, `--no-hooks`, `--disable-openapi-validation`, or broad cleanup flags as routine recovery.
 
 ## Verification and Recovery

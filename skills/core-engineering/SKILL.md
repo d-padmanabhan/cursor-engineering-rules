@@ -5,7 +5,7 @@ description: Core coding standards and best practices for code review and genera
 
 # Core Engineering Standards
 
-Mandatory universal gates are owned by the [core rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/100-core.mdc). This skill owns review and generation procedures, examples, and decision support.
+Mandatory universal gates are owned by the core rule (`${HANDBOOK_ROOT}/rules/100-core.mdc`). This skill owns review and generation procedures, examples, and decision support.
 
 ## Guiding Principles
 
@@ -71,7 +71,7 @@ Organize feedback by impact:
 
 **Evaluation Areas:** Security, Error Handling, Testing, Observability, Resource Management, Concurrency, Performance
 
-For detailed review patterns and formats, see [code review reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/core-engineering/references/code-review.md).
+For detailed review patterns and formats, see code review reference (`${HANDBOOK_ROOT}/skills/core-engineering/references/code-review.md`).
 
 ## Code Generation Essentials
 
@@ -85,9 +85,9 @@ For detailed review patterns and formats, see [code review reference](file:///Us
 
 **What NOT to Include:** Over-engineered abstractions, premature optimization, extensive test suites, complex frameworks when stdlib suffices
 
-For detailed generation patterns, see [code generation reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/core-engineering/references/code-generation.md).
+For detailed generation patterns, see code generation reference (`${HANDBOOK_ROOT}/skills/core-engineering/references/code-generation.md`).
 
-For end-to-end architecture, capacity planning, SLOs, service/data boundaries, failure design, and migration strategy, use the [system design skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/system-design/SKILL.md). This skill remains focused on code-level engineering.
+For end-to-end architecture, capacity planning, SLOs, service/data boundaries, failure design, and migration strategy, use the system design skill (`${HANDBOOK_ROOT}/skills/system-design/SKILL.md`). This skill remains focused on code-level engineering.
 
 ## AI-Assisted Coding
 
@@ -114,7 +114,7 @@ The agent (an LLM in Cursor / Claude / Codex / etc.) is a fast, persuasive, part
 1. **Read the diff before the summary.** Summaries embellish; the diff is the source of truth.
 2. **Verify every external reference.** Library version, API signature, CVE id, CHANGELOG line, citation. Half of fabrications are confident-sounding but wrong.
 3. **Ask for a counterexample.** If the agent claims X is always true and can't produce a case where it isn't, the claim is suspect.
-4. **Bound the autonomy.** Long-running agent tasks need HITL gates before destructive or irreversible steps. See [zero-trust skill / hitl-gates](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/zero-trust/references/hitl-gates.md).
+4. **Bound the autonomy.** Long-running agent tasks need HITL gates before destructive or irreversible steps. See zero-trust skill / hitl-gates (`${HANDBOOK_ROOT}/skills/zero-trust/references/hitl-gates.md`).
 5. **The "would a senior engineer have written this" test.** If the answer is no, edit before merging.
 
 ### Current vendor docs are mandatory
@@ -146,7 +146,7 @@ Adding a dependency is a long-term commitment. **Prefer stdlib or existing depen
 
 Use the latest supported stable release compatible with the repository and deployment target. Do not interpret "latest" as permission to select prereleases, invent aliases, ignore support matrices, or bundle an unrelated major migration. Verify the exact release/ref, preserve reproducible pins and lockfiles, review breaking and security changes, and time-box exceptions.
 
-Follow the [dependency and toolchain currency workflow](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/core-engineering/references/dependency-and-toolchain-currency.md).
+Follow the dependency and toolchain currency workflow (`${HANDBOOK_ROOT}/skills/core-engineering/references/dependency-and-toolchain-currency.md`).
 
 Vetting criteria for new dependencies:
 
@@ -291,7 +291,7 @@ Before delivering code or feedback:
 
 ## Git & Version Control
 
-Use the dedicated [Git workflow skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/SKILL.md) for commit standards, branches, worktrees, signing, recovery, and remote synchronization.
+Use the dedicated Git workflow skill (`${HANDBOOK_ROOT}/skills/git-workflow/SKILL.md`) for commit standards, branches, worktrees, signing, recovery, and remote synchronization.
 
 ## Quick Reference: Language Best Practices
 

@@ -1,0 +1,179 @@
+{
+  "skill_name": "service-resilience",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "A checkout request calls three services. The client, gateway, service mesh, and each service retry every exception three times with exponential backoff. There is no end-to-end deadline or idempotency key. Review the resilience design.",
+      "expected_output": "Identify multiplicative retry amplification and ambiguous duplicate mutations. Establish one end-to-end deadline, allocate attempt timeouts, assign bounded retries to one layer for classified transient failures, propagate cancellation, use stable idempotency keys, and reconcile unknown outcomes.",
+      "files": [],
+      "checks": [
+        {
+          "id": "finds-retry-amplification",
+          "type": "contains_all",
+          "values": [
+            "amplification",
+            "end-to-end deadline",
+            "one layer",
+            "transient"
+          ]
+        },
+        {
+          "id": "protects-mutations",
+          "type": "contains_all",
+          "values": [
+            "idempotency",
+            "stable",
+            "ambiguous",
+            "reconcile"
+          ]
+        },
+        {
+          "id": "observes-resilience-skill",
+          "type": "loaded_skill",
+          "skill": "service-resilience",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Design a circuit breaker for a payment provider. One tenant can send invalid cards, the provider has regional endpoints, low traffic occurs overnight, and recovery must not create a probe flood.",
+      "expected_output": "Scope the breaker by the meaningful provider region and operation rather than globally by tenant errors. Exclude validation and business declines, require minimum sample volume and a rolling failure or slow-call threshold, jitter open intervals, bound half-open probes, and define close evidence and metrics.",
+      "files": [],
+      "checks": [
+        {
+          "id": "defines-breaker-scope-and-failures",
+          "type": "contains_all",
+          "values": [
+            "scope",
+            "region",
+            "exclude",
+            "validation"
+          ]
+        },
+        {
+          "id": "defines-safe-state-policy",
+          "type": "contains_all",
+          "values": [
+            "minimum sample",
+            "rolling",
+            "half-open",
+            "probe",
+            "jitter"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "A multi-tenant report service has one unbounded queue and one worker pool. A single tenant submits a million jobs and blocks interactive reports for every other tenant. Propose the smallest bulkhead and overload correction.",
+      "expected_output": "Add per-tenant quotas or fair scheduling, separate interactive and batch capacity, bounded queues and concurrency, queue-age limits, admission rejection or shedding, cancellation, and metrics proving unaffected tenants retain useful throughput.",
+      "files": [],
+      "checks": [
+        {
+          "id": "adds-bulkhead-isolation",
+          "type": "contains_all",
+          "values": [
+            "tenant",
+            "interactive",
+            "batch",
+            "bounded"
+          ]
+        },
+        {
+          "id": "defines-overload-behavior",
+          "type": "contains_all",
+          "values": [
+            "queue age",
+            "admission",
+            "shed",
+            "throughput"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "When the authorization service is unavailable, an API falls back to a 24-hour cache of the user's previous admin permissions and returns ordinary success without indicating degraded mode. Review this fallback.",
+      "expected_output": "Reject the fallback because it can bypass revocation and violates fail-closed authorization. Do not present stale privileged authorization as current. Define an explicit unavailable response or a narrowly justified policy-safe mechanism with bounded freshness, audit, metrics, and user-visible behavior.",
+      "files": [],
+      "checks": [
+        {
+          "id": "rejects-unsafe-auth-fallback",
+          "type": "contains_all",
+          "values": [
+            "reject",
+            "revocation",
+            "fail closed",
+            "stale"
+          ]
+        },
+        {
+          "id": "requires-explicit-degraded-contract",
+          "type": "contains_any",
+          "values": [
+            "unavailable",
+            "user-visible",
+            "degraded"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "A global circuit breaker opens whenever any downstream request returns 400, 401, 403, 404, 409, 429, or 500. It is shared by every endpoint, region, and tenant. Correct the design.",
+      "expected_output": "Do not count caller validation, authentication, authorization, not-found, or business conflicts as dependency failures. Treat throttling as overload with bounded Retry-After handling. Scope breakers to meaningful operations and failure domains, retain timeouts and concurrency bounds, and measure transitions and rejected calls.",
+      "files": [],
+      "checks": [
+        {
+          "id": "classifies-errors-correctly",
+          "type": "contains_all",
+          "values": [
+            "validation",
+            "authentication",
+            "authorization",
+            "throttling"
+          ]
+        },
+        {
+          "id": "rejects-global-breaker",
+          "type": "contains_all",
+          "values": [
+            "scope",
+            "operation",
+            "failure domain",
+            "transition"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Create a production-safe resilience experiment for a dependency latency brownout. The team currently plans to add 10 seconds of latency to all production traffic and watch CPU.",
+      "expected_output": "Define a hypothesis, narrow fault scope, baseline, latency and user-outcome acceptance criteria, blast-radius and duration limits, abort conditions, evidence capture, and recovery expectations. Measure deadlines, timeouts, queue age, in-flight work, retries, shedding, breaker behavior, and user-visible success rather than CPU alone.",
+      "files": [],
+      "checks": [
+        {
+          "id": "bounds-failure-experiment",
+          "type": "contains_all",
+          "values": [
+            "hypothesis",
+            "blast radius",
+            "abort",
+            "recovery"
+          ]
+        },
+        {
+          "id": "measures-resilience-outcomes",
+          "type": "contains_all",
+          "values": [
+            "deadline",
+            "queue age",
+            "retry",
+            "user-visible"
+          ]
+        }
+      ]
+    }
+  ]
+}

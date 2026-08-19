@@ -61,4 +61,4 @@ For offset pagination over mutable data, inserts and deletes can cause duplicate
 
 Record page count, item count, latency, retries, rate-limit waits, and terminal cursor state without logging sensitive cursor contents. If resumability is required, checkpoint only after downstream effects are durable and idempotent.
 
-AWS APIs should use service paginators rather than hand-built token loops; see the [AWS and Boto3 reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/aws-boto3.md).
+AWS APIs should use service paginators rather than hand-built token loops; see the AWS and Boto3 reference (`${HANDBOOK_ROOT}/skills/python-development/references/aws-boto3.md`).

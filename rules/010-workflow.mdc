@@ -9,13 +9,13 @@ priority: 10
 
 ## Stable Handbook Root
 
-The handbook root on this machine is:
+Resolve the handbook root from the current user's home directory:
 
-```text
-/Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook
+```bash
+HANDBOOK_ROOT="${HOME}/.cursor/agent-engineering-handbook"
 ```
 
-Agents operating in any workspace MUST resolve handbook rules, skills, commands, references, hooks, and templates from this root, not from the active repository. Handbook-internal links use `file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/...`.
+Agents operating in any workspace MUST resolve handbook rules, skills, commands, references, hooks, and templates from this root, not from the active repository. Handbook-internal references use literal `${HANDBOOK_ROOT}/...` paths. Do not expand them into a user-specific absolute path in authored content.
 
 ## Classify Before Acting
 
@@ -23,7 +23,7 @@ Agents operating in any workspace MUST resolve handbook rules, skills, commands,
 - A trivial, obvious, low-risk local edit may proceed directly with proportionate verification.
 - Non-trivial work requires a brief plan and explicit user approval before implementation.
 - Complex, architectural, security-sensitive, destructive, or broad work requires a documented plan with scope, non-goals, risks, affected areas, and verification.
-- A remote mutation requires authorization under the [agent audit rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/020-agent-audit.mdc), regardless of task size.
+- A remote mutation requires authorization under the agent audit rule (`${HANDBOOK_ROOT}/rules/020-agent-audit.mdc`), regardless of task size.
 
 ## Plan Gate
 
@@ -64,6 +64,6 @@ Security, IAM, production infrastructure, destructive migrations, sensitive-data
 - Escalate stale, disputed, uncertain, or inconclusive verdicts to a human; models do not vote to break ties.
 - Store schema-valid evidence under `.agent/reports/verifications/<target-sha>/`.
 
-Use the [independent verification skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/independent-verification/SKILL.md) for the detailed protocol and artifact schema.
+Use the independent verification skill (`${HANDBOOK_ROOT}/skills/independent-verification/SKILL.md`) for the detailed protocol and artifact schema.
 
-Detailed complexity levels, QA workflows, context templates, and handoff procedures are canonical in the [agent workflow skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/agent-workflow/SKILL.md).
+Detailed complexity levels, QA workflows, context templates, and handoff procedures are canonical in the agent workflow skill (`${HANDBOOK_ROOT}/skills/agent-workflow/SKILL.md`).

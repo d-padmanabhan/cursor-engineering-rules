@@ -10,7 +10,7 @@ globs:
 
 # Markdown Documentation Gates
 
-This rule owns mandatory Markdown policy only. Use the [documentation standards skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/documentation-standards/SKILL.md) for document design, Mermaid syntax, templates, ADRs, and writing workflows.
+This rule owns mandatory Markdown policy only. Use the documentation standards skill (`${HANDBOOK_ROOT}/skills/documentation-standards/SKILL.md`) for document design, Mermaid syntax, templates, ADRs, and writing workflows.
 
 ## Structure and Proportionality
 
@@ -31,7 +31,7 @@ This rule owns mandatory Markdown policy only. Use the [documentation standards 
 
 - Navigational URLs and repository paths must be clickable Markdown links with descriptive text; do not wrap links intended for navigation in backticks.
 - Ordinary project documentation uses portable repository-relative links for same-repository navigation.
-- Handbook-internal cross-file links use `file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/...` so agents working in another repository resolve the correct source.
+- Handbook-internal cross-file links use `${HANDBOOK_ROOT}/...` so agents working in another repository resolve the correct source.
 - Literal URL or path values shown as configuration, syntax, logs, or examples may use inline code.
 - Verify changed links and anchors.
 

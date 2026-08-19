@@ -145,7 +145,7 @@ asciinema rec -q "<GIT_REPO_ROOT>/.agent/reports/recordings/session.cast"
 
 Only after the user explicitly authorizes commits:
 
-1. **Commit locally** with the agreed messages (respect [commit signing](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/130-git.mdc#commit-authorization-and-signing): do not bypass signing unless the user explicitly requested an unsigned commit and the reason is recorded)
+1. **Commit locally** with the agreed messages (respect commit signing (`${HANDBOOK_ROOT}/rules/130-git.mdc#commit-authorization-and-signing`): do not bypass signing unless the user explicitly requested an unsigned commit and the reason is recorded)
 2. **If an audit report is required or already exists, append:**
    - Commit SHAs and commit messages
    - Output from: `git log --date=iso-strict -n <N>` (where `<N>` covers the new commits)

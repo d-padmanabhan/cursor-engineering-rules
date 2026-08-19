@@ -12,7 +12,7 @@ globs:
 
 # Python Engineering Gates
 
-This rule owns mandatory policy only. Use the [Python development skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/SKILL.md) for language patterns, testing, packaging, performance, AWS Lambda, and Boto3 workflows.
+This rule owns mandatory policy only. Use the Python development skill (`${HANDBOOK_ROOT}/skills/python-development/SKILL.md`) for language patterns, testing, packaging, performance, AWS Lambda, and Boto3 workflows.
 
 ## Runtime and Compatibility
 

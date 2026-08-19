@@ -31,7 +31,7 @@ files:
 - Default is **at-least-once**. Design consumers to be idempotent.
 - If you truly need “exactly-once”, define what that means end-to-end (Kafka transactions alone may not be sufficient).
 
-For cross-service consistency, Transactional Outbox/Inbox, Saga orchestration/choreography, compensation, and dual-write remediation, use the [distributed transactions skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/distributed-transactions/SKILL.md).
+For cross-service consistency, Transactional Outbox/Inbox, Saga orchestration/choreography, compensation, and dual-write remediation, use the distributed transactions skill (`${HANDBOOK_ROOT}/skills/distributed-transactions/SKILL.md`).
 
 ### Consumer idempotency (default expectation)
 

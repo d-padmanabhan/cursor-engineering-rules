@@ -88,7 +88,7 @@ For OAuth, OIDC, SAML, SCIM, mTLS, token exchange, federation, Cross App Access,
 6. Analyze replay, substitution, confused deputy, downgrade, token theft, stale access, and key compromise.
 7. Identify audit events and correlation identifiers at each trust decision.
 
-For Okta-specific Cross App Access implementation, use the [Okta XAA reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/okta/references/cross-app-access.md).
+For Okta-specific Cross App Access implementation, use the Okta XAA reference (`${HANDBOOK_ROOT}/skills/okta/references/cross-app-access.md`).
 
 ## Layered security review
 

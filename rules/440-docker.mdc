@@ -8,7 +8,7 @@ globs: "**/Dockerfile,**/Dockerfile.*,**/Containerfile,**/Containerfile.*,**/.do
 
 # Docker and Container Gates
 
-This rule contains only mandatory policy. Use the [containers and orchestration skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/containers-orchestration/SKILL.md) and its [Docker reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/containers-orchestration/references/docker.md) for procedures, examples, Compose patterns, and troubleshooting.
+This rule contains only mandatory policy. Use the containers and orchestration skill (`${HANDBOOK_ROOT}/skills/containers-orchestration/SKILL.md`) and its Docker reference (`${HANDBOOK_ROOT}/skills/containers-orchestration/references/docker.md`) for procedures, examples, Compose patterns, and troubleshooting.
 
 ## Reproducible Inputs
 
@@ -42,6 +42,6 @@ This rule contains only mandatory policy. Use the [containers and orchestration 
 - Use the current Compose Specification; do not add the obsolete top-level `version` field.
 - Require explicit immutable production image values. Do not default a missing release version to `latest`.
 - Keep production credentials out of Compose environment values and committed `.env` files.
-- Treat `docker push`, registry promotion, image signing, and provenance publication as remote mutations requiring explicit authorization under [020-agent-audit.mdc](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/020-agent-audit.mdc).
+- Treat `docker push`, registry promotion, image signing, and provenance publication as remote mutations requiring explicit authorization under 020-agent-audit.mdc (`${HANDBOOK_ROOT}/rules/020-agent-audit.mdc`).
 - Use the organization's approved Sigstore/Cosign or Notation workflow. Do not introduce Docker Content Trust or Notary v1 into new workflows.
 - Enforce registry vulnerability policy before promotion or deployment.

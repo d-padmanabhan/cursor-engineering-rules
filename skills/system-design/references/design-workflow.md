@@ -56,7 +56,7 @@ Use measurable targets:
 
 For every critical journey, define the SLI numerator, denominator, scope, and exclusion policy. Allocate end-to-end latency, availability/error, retry, concurrency, and quota budgets across required stages. Treat composed availability as an estimate only and identify correlated dependencies.
 
-Use the [decision and validation workflow](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/system-design/references/decision-and-validation-workflow.md) for quality-attribute scenarios, budget arithmetic, fitness signals, and decision lifecycle.
+Use the decision and validation workflow (`${HANDBOOK_ROOT}/skills/system-design/references/decision-and-validation-workflow.md`) for quality-attribute scenarios, budget arithmetic, fitness signals, and decision lifecycle.
 
 ### Context and boundaries
 

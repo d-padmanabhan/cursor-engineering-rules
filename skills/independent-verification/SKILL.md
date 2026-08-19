@@ -7,7 +7,7 @@ description: Independent, read-only verification workflow for consequential AI-g
 
 Use this skill to obtain evidence-backed review from a verifier that did not implement the change. This is a risk-control workflow, not a simulated panel and not a substitute for accountable human approval.
 
-The mandatory trigger and release gate are owned by the [workflow rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/010-workflow.mdc). This skill owns the verification procedure and artifact contract.
+The mandatory trigger and release gate are owned by the workflow rule (`${HANDBOOK_ROOT}/rules/010-workflow.mdc`). This skill owns the verification procedure and artifact contract.
 
 ## Non-Negotiable Principles
 

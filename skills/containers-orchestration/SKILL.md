@@ -128,7 +128,7 @@ Optimize cache invalidation rather than minimizing the number of layers:
 - **Treat BuildKit cache mounts as performance-only.** Use them where supported, but require the build to succeed when the cache is empty or garbage-collected.
 - Verify a repeated BuildKit build reports unchanged dependency copy and installation steps as cached. If building is unavailable, report that limitation instead of claiming verification.
 
-Do not collapse stable dependency work and frequently changing application work merely to reduce the layer count. Detailed patterns are canonical in the [Docker reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/containers-orchestration/references/docker.md); current cache behavior is documented in [Docker's cache guidance](https://docs.docker.com/build/cache/optimize/).
+Do not collapse stable dependency work and frequently changing application work merely to reduce the layer count. Detailed patterns are canonical in the Docker reference (`${HANDBOOK_ROOT}/skills/containers-orchestration/references/docker.md`); current cache behavior is documented in [Docker's cache guidance](https://docs.docker.com/build/cache/optimize/).
 
 ### Order Instructions by Change Frequency
 
@@ -392,4 +392,4 @@ docker logs <container_id>
 
 ## Detailed References
 
-- **Docker Best Practices**: See [references/docker.md](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/containers-orchestration/references/docker.md) for comprehensive Docker patterns, multi-stage builds, security, Compose, CI/CD integration, and troubleshooting
+- **Docker Best Practices**: See references/docker.md (`${HANDBOOK_ROOT}/skills/containers-orchestration/references/docker.md`) for comprehensive Docker patterns, multi-stage builds, security, Compose, CI/CD integration, and troubleshooting

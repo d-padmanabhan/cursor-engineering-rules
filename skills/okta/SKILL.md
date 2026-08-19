@@ -240,7 +240,7 @@ Use Cross App Access (XAA) for an Okta-managed directional connection where a re
 
 **Deliverable:** managed-connection configuration, protocol flow, least-privilege scope map, negative tests, audit queries, and coordinated revocation runbook.
 
-Follow the [Cross App Access reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/okta/references/cross-app-access.md).
+Follow the Cross App Access reference (`${HANDBOOK_ROOT}/skills/okta/references/cross-app-access.md`).
 
 ---
 
@@ -283,7 +283,7 @@ SUGGESTION = cleanup / best-practice.
 - [references/policy-hardening.md](references/policy-hardening.md) - Sign-On / Authenticator / MFA policy tiers and defaults
 - [references/scim-rollout.md](references/scim-rollout.md) - SCIM inbound + outbound rollout patterns
 - [references/system-log-queries.md](references/system-log-queries.md) - Useful System Log queries for debugging and audit
-- [Cross App Access](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/okta/references/cross-app-access.md) - XAA and ID-JAG architecture, rollout, validation, and revocation
+- Cross App Access (`${HANDBOOK_ROOT}/skills/okta/references/cross-app-access.md`) - XAA and ID-JAG architecture, rollout, validation, and revocation
 
 ## Related
 

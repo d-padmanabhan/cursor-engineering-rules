@@ -5,7 +5,7 @@ description: Python development standards for code review and generation. Covers
 
 # Python Development
 
-Mandatory gates are owned by the [Python rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/200-python.mdc). This skill and its references own procedures and examples.
+Mandatory gates are owned by the Python rule (`${HANDBOOK_ROOT}/rules/200-python.mdc`). This skill and its references own procedures and examples.
 
 ## Guiding Principle
 
@@ -64,7 +64,7 @@ Use `requires-python = ">=3.14"` in `pyproject.toml`, Python 3.14 in CI, Python 
 
 `requires-python` declares compatibility; it does not select one exact interpreter. For deterministic project execution, commit a `.python-version` created with an exact tested patch, for example `uv python pin 3.14.7`, and update that pin deliberately. For one-off execution, request the tested patch explicitly with `uv run --python 3.14.7 script.py`. Do not encode one patch version as an evergreen handbook constant.
 
-Select the latest supported stable Python patch available on the deployment target, then pin and test it. Use the [dependency and toolchain currency workflow](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/core-engineering/references/dependency-and-toolchain-currency.md) for uv lock updates, compatibility checks, and exceptions.
+Select the latest supported stable Python patch available on the deployment target, then pin and test it. Use the dependency and toolchain currency workflow (`${HANDBOOK_ROOT}/skills/core-engineering/references/dependency-and-toolchain-currency.md`) for uv lock updates, compatibility checks, and exceptions.
 
 Libraries published to PyPI or shipped to external customers MAY target a lower floor when there is a documented compatibility commitment. The acceptable lower floor is Python 3.11. The PR description must explain the audience, the 3.14 features being deferred, and the planned floor-bump date.
 
@@ -376,7 +376,7 @@ uv run python main.py
 
 ## Pydantic Validation
 
-Use Pydantic at structured trust boundaries when runtime validation, explicit coercion, or schema generation adds value. Do not add it for already trusted internal data that a dataclass or typed domain object represents clearly. Follow the [Pydantic validation reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/pydantic-validation.md).
+Use Pydantic at structured trust boundaries when runtime validation, explicit coercion, or schema generation adds value. Do not add it for already trusted internal data that a dataclass or typed domain object represents clearly. Follow the Pydantic validation reference (`${HANDBOOK_ROOT}/skills/python-development/references/pydantic-validation.md`).
 
 ## Quick Checklist
 
@@ -396,21 +396,21 @@ Use Pydantic at structured trust boundaries when runtime validation, explicit co
 
 ## Detailed References
 
-- **Code Quality Tools**: See [code quality tools](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/code-quality-tools.md) for Black, Ruff, mypy, and Pylint configuration
-- **Package Management**: See [package management](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/package-management.md) for uv and dependency management
-- **Standard Library**: See [standard library](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/standard-library.md)
-- **Logging & Observability**: See [logging and observability](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/logging-observability.md)
-- **Security & Validation**: See [security and validation](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/security-validation.md)
-- **Error Handling**: See [error handling](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/error-handling.md)
-- **Performance Optimization**: See [performance optimization](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/performance-optimization.md)
-- **Troubleshooting & Debugging**: See [troubleshooting and debugging](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/troubleshooting-debugging.md)
-- **Design Patterns**: See [design patterns](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/design-patterns.md)
-- **CLI & User Experience**: See [CLI and user experience](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/cli-user-experience.md)
-- **Modern Python Features**: See [modern Python](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/modern-python.md)
-- **Async & Concurrency**: See [async and concurrency](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/async-concurrency.md)
-- **HTTP Clients**: See [HTTP client resilience](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/http-client-resilience.md)
-- **Pagination & Streaming**: See [pagination and streaming](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/pagination-streaming.md)
-- **Pydantic**: See [Pydantic validation](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/pydantic-validation.md)
-- **Testing Patterns**: See [testing patterns](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/testing-patterns.md)
-- **AWS Lambda**: See [AWS Lambda](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/aws-lambda.md)
-- **AWS and Boto3**: See [AWS and Boto3](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/aws-boto3.md)
+- **Code Quality Tools**: See code quality tools (`${HANDBOOK_ROOT}/skills/python-development/references/code-quality-tools.md`) for Black, Ruff, mypy, and Pylint configuration
+- **Package Management**: See package management (`${HANDBOOK_ROOT}/skills/python-development/references/package-management.md`) for uv and dependency management
+- **Standard Library**: See standard library (`${HANDBOOK_ROOT}/skills/python-development/references/standard-library.md`)
+- **Logging & Observability**: See logging and observability (`${HANDBOOK_ROOT}/skills/python-development/references/logging-observability.md`)
+- **Security & Validation**: See security and validation (`${HANDBOOK_ROOT}/skills/python-development/references/security-validation.md`)
+- **Error Handling**: See error handling (`${HANDBOOK_ROOT}/skills/python-development/references/error-handling.md`)
+- **Performance Optimization**: See performance optimization (`${HANDBOOK_ROOT}/skills/python-development/references/performance-optimization.md`)
+- **Troubleshooting & Debugging**: See troubleshooting and debugging (`${HANDBOOK_ROOT}/skills/python-development/references/troubleshooting-debugging.md`)
+- **Design Patterns**: See design patterns (`${HANDBOOK_ROOT}/skills/python-development/references/design-patterns.md`)
+- **CLI & User Experience**: See CLI and user experience (`${HANDBOOK_ROOT}/skills/python-development/references/cli-user-experience.md`)
+- **Modern Python Features**: See modern Python (`${HANDBOOK_ROOT}/skills/python-development/references/modern-python.md`)
+- **Async & Concurrency**: See async and concurrency (`${HANDBOOK_ROOT}/skills/python-development/references/async-concurrency.md`)
+- **HTTP Clients**: See HTTP client resilience (`${HANDBOOK_ROOT}/skills/python-development/references/http-client-resilience.md`)
+- **Pagination & Streaming**: See pagination and streaming (`${HANDBOOK_ROOT}/skills/python-development/references/pagination-streaming.md`)
+- **Pydantic**: See Pydantic validation (`${HANDBOOK_ROOT}/skills/python-development/references/pydantic-validation.md`)
+- **Testing Patterns**: See testing patterns (`${HANDBOOK_ROOT}/skills/python-development/references/testing-patterns.md`)
+- **AWS Lambda**: See AWS Lambda (`${HANDBOOK_ROOT}/skills/python-development/references/aws-lambda.md`)
+- **AWS and Boto3**: See AWS and Boto3 (`${HANDBOOK_ROOT}/skills/python-development/references/aws-boto3.md`)

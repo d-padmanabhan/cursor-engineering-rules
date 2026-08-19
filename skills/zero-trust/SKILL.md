@@ -169,7 +169,7 @@ Use after proposing a Zero Trust architecture and before treating the design as 
 
 **Deliverable:** adversarial architecture review with prioritized findings, simpler alternative, when-not-to-use criteria, control/test mapping, and unresolved risk owners.
 
-Follow the [adversarial architecture review reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/zero-trust/references/adversarial-architecture-review.md).
+Follow the adversarial architecture review reference (`${HANDBOOK_ROOT}/skills/zero-trust/references/adversarial-architecture-review.md`).
 
 ---
 
@@ -220,7 +220,7 @@ Each of these is in `316-zero-trust.mdc` with principle and fix.
 - [references/injection-threat-model.md](references/injection-threat-model.md) - Prompt injection threat model and defenses
 - [references/hitl-gates.md](references/hitl-gates.md) - HITL gate design, receipt format, verification
 - [references/threat-model-template.md](references/threat-model-template.md) - One-page Zero Trust threat model
-- [adversarial architecture review](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/zero-trust/references/adversarial-architecture-review.md) - Reality check, defensive abuse simulation, and design iteration
+- adversarial architecture review (`${HANDBOOK_ROOT}/skills/zero-trust/references/adversarial-architecture-review.md`) - Reality check, defensive abuse simulation, and design iteration
 
 ## Related
 

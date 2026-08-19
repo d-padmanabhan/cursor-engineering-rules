@@ -92,7 +92,7 @@ for line in read_large_file("large_data.txt"):
     process(line)
 ```
 
-For connection ownership, retries, `Retry-After`, idempotency, and request budgets, use the [HTTP client resilience reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/references/http-client-resilience.md).
+For connection ownership, retries, `Retry-After`, idempotency, and request budgets, use the HTTP client resilience reference (`${HANDBOOK_ROOT}/skills/python-development/references/http-client-resilience.md`).
 
 ## Performance Profiling
 

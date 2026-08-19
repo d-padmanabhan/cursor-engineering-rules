@@ -127,7 +127,7 @@ Constraints:
 
 ## Step 5: Draft a Conventional Commit message (HITL gate)
 
-Draft a commit message following the [Git workflow reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/git-workflow.md). The [Git rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/130-git.mdc#commit-authorization-and-signing) owns the mandatory approval and signing gate.
+Draft a commit message following the Git workflow reference (`${HANDBOOK_ROOT}/skills/git-workflow/git-workflow.md`). The Git rule (`${HANDBOOK_ROOT}/rules/130-git.mdc#commit-authorization-and-signing`) owns the mandatory approval and signing gate.
 
 - Conventional Commits (`feat`, `fix`, `docs`, `chore`, `refactor`, `ci`, `test`, `perf`)
 - First line ≤ 72 chars, imperative mood
@@ -144,7 +144,7 @@ And ask:
 `Should I proceed with this commit? (yes/no)`
 
 > [!IMPORTANT]
-> Do not add Cursor attribution trailers (see the [Git rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/130-git.mdc#commit-authorization-and-signing)).
+> Do not add Cursor attribution trailers (see the Git rule (`${HANDBOOK_ROOT}/rules/130-git.mdc#commit-authorization-and-signing`)).
 
 ---
 

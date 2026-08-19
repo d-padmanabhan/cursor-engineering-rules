@@ -36,16 +36,16 @@ Review both layers:
 - A skill may link to a mandatory rule, but must not become a second policy source.
 - Treat duplicated prose and bidirectional "canonical" claims as defects.
 - Use supported Cursor activation metadata: `globs` for file-scoped rules and precise `name`/`description` metadata for skills. Do not invent unsupported skill frontmatter such as `paths`.
-- Use absolute `file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/...` links for cross-file handbook references so agents do not resolve them against another active repository.
+- Use absolute `${HANDBOOK_ROOT}/...` links for cross-file handbook references so agents do not resolve them against another active repository.
 
 Prioritize skills with paired rules first:
 
-- [Python rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/200-python.mdc) ↔ [Python skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/python-development/SKILL.md)
-- [Go rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/210-go.mdc) ↔ [Go/Rust skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/go-rust-systems/SKILL.md)
-- [JavaScript and TypeScript rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/225-javascript-typescript.mdc) ↔ [TypeScript/JavaScript skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/typescript-javascript/SKILL.md)
-- [Bash rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/140-bash.mdc) ↔ [Bash skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/bash-shell-scripting/SKILL.md) and [scripting automation skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/scripting-automation/SKILL.md)
-- [Cloudflare rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/400-cloudflare.mdc) / [Cloudflare Workers rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/401-cloudflare-workers.mdc) / [Cloudflare WAF rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/405-cloudflare-waf-rules.mdc) ↔ Cloudflare skills
-- [Kubernetes rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/450-kubernetes.mdc) / [Helm rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/460-helm.mdc) ↔ [Kubernetes containers skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/kubernetes-containers/SKILL.md)
+- Python rule (`${HANDBOOK_ROOT}/rules/200-python.mdc`) ↔ Python skill (`${HANDBOOK_ROOT}/skills/python-development/SKILL.md`)
+- Go rule (`${HANDBOOK_ROOT}/rules/210-go.mdc`) ↔ Go/Rust skill (`${HANDBOOK_ROOT}/skills/go-rust-systems/SKILL.md`)
+- JavaScript and TypeScript rule (`${HANDBOOK_ROOT}/rules/225-javascript-typescript.mdc`) ↔ TypeScript/JavaScript skill (`${HANDBOOK_ROOT}/skills/typescript-javascript/SKILL.md`)
+- Bash rule (`${HANDBOOK_ROOT}/rules/140-bash.mdc`) ↔ Bash skill (`${HANDBOOK_ROOT}/skills/bash-shell-scripting/SKILL.md`) and scripting automation skill (`${HANDBOOK_ROOT}/skills/scripting-automation/SKILL.md`)
+- Cloudflare rule (`${HANDBOOK_ROOT}/rules/400-cloudflare.mdc`) / Cloudflare Workers rule (`${HANDBOOK_ROOT}/rules/401-cloudflare-workers.mdc`) / Cloudflare WAF rule (`${HANDBOOK_ROOT}/rules/405-cloudflare-waf-rules.mdc`) ↔ Cloudflare skills
+- Kubernetes rule (`${HANDBOOK_ROOT}/rules/450-kubernetes.mdc`) / Helm rule (`${HANDBOOK_ROOT}/rules/460-helm.mdc`) ↔ Kubernetes containers skill (`${HANDBOOK_ROOT}/skills/kubernetes-containers/SKILL.md`)
 
 ## Review Workflow
 
@@ -135,7 +135,7 @@ uv run python -m evals.skill_eval validate
 uv run python -m unittest discover -s evals/tests -v
 ```
 
-Run a model-backed with-skill versus baseline comparison when a change affects triggering, workflow order, required outputs, safety gates, or other behavior covered by the suite. Follow the [eval harness documentation](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/evals/README.md); do not put model credentials or paid runs in pull-request CI.
+Run a model-backed with-skill versus baseline comparison when a change affects triggering, workflow order, required outputs, safety gates, or other behavior covered by the suite. Follow the eval harness documentation (`${HANDBOOK_ROOT}/evals/README.md`); do not put model credentials or paid runs in pull-request CI.
 
 If broad pre-commit is too large or noisy, run targeted hooks and clearly report any skipped checks.
 

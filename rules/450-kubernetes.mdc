@@ -16,7 +16,7 @@ globs:
 
 # Kubernetes Engineering Gates
 
-This rule owns mandatory policy only. Use the [Kubernetes containers skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/kubernetes-containers/SKILL.md) for procedures, examples, troubleshooting, Helm, EKS, Podtrace, and Argo CD workflows.
+This rule owns mandatory policy only. Use the Kubernetes containers skill (`${HANDBOOK_ROOT}/skills/kubernetes-containers/SKILL.md`) for procedures, examples, troubleshooting, Helm, EKS, Podtrace, and Argo CD workflows.
 
 ## Workload Security
 
@@ -44,7 +44,7 @@ This rule owns mandatory policy only. Use the [Kubernetes containers skill](file
 
 ## Mutation and Verification
 
-- Cluster mutations require explicit authorization under the [agent audit rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/020-agent-audit.mdc).
+- Cluster mutations require explicit authorization under the agent audit rule (`${HANDBOOK_ROOT}/rules/020-agent-audit.mdc`).
 - Before mutation, identify the cluster, namespace, resource scope, immutable revision, expected diff, deletion set, and rollback path.
 - Validate manifests locally and use server-side dry-run or an equivalent admission-aware preview when available.
 - After mutation, use bounded waits and verify rollout, health, events, and expected ownership. Do not treat command exit alone as proof of success.
@@ -59,4 +59,4 @@ This rule owns mandatory policy only. Use the [Kubernetes containers skill](file
 - Automated sync must set `enabled` explicitly. Decide `prune`, `selfHeal`, and `allowEmpty` independently; default `allowEmpty` to `false`.
 - Prefer `FailOnSharedResource=true` and `PruneLast=true`; review hooks, waves, sync windows, ownership, deletion, and recovery before enabling automation.
 
-Detailed commands and decision records are canonical in the [Argo CD sync reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/kubernetes-containers/references/argocd-sync.md).
+Detailed commands and decision records are canonical in the Argo CD sync reference (`${HANDBOOK_ROOT}/skills/kubernetes-containers/references/argocd-sync.md`).

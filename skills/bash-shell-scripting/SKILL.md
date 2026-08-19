@@ -5,7 +5,7 @@ description: Bash scripting best practices for production-grade scripts, CLI too
 
 # Bash & Shell Scripting
 
-Mandatory gates are owned by the [Bash rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/140-bash.mdc). This skill owns procedures and examples.
+Mandatory gates are owned by the Bash rule (`${HANDBOOK_ROOT}/rules/140-bash.mdc`). This skill owns procedures and examples.
 
 ## Core Principles
 
@@ -339,8 +339,8 @@ parse_args() {
 
 ## Detailed References
 
-- **Shell Utilities**: See [shell utilities](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/bash-shell-scripting/references/shell-utilities.md) for curl, jq, lynx
-- **Makefile Patterns**: See [Makefile patterns](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/bash-shell-scripting/references/makefile-patterns.md)
-- **CLI Design**: See [CLI design](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/bash-shell-scripting/references/cli-design.md)
-- **Justfile Patterns**: See [Justfile patterns](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/bash-shell-scripting/references/justfile.md)
-- **Repo Sync (rsync)**: See [rsync repository synchronization](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/bash-shell-scripting/references/rsync-repo-sync.md)
+- **Shell Utilities**: See shell utilities (`${HANDBOOK_ROOT}/skills/bash-shell-scripting/references/shell-utilities.md`) for curl, jq, lynx
+- **Makefile Patterns**: See Makefile patterns (`${HANDBOOK_ROOT}/skills/bash-shell-scripting/references/makefile-patterns.md`)
+- **CLI Design**: See CLI design (`${HANDBOOK_ROOT}/skills/bash-shell-scripting/references/cli-design.md`)
+- **Justfile Patterns**: See Justfile patterns (`${HANDBOOK_ROOT}/skills/bash-shell-scripting/references/justfile.md`)
+- **Repo Sync (rsync)**: See rsync repository synchronization (`${HANDBOOK_ROOT}/skills/bash-shell-scripting/references/rsync-repo-sync.md`)

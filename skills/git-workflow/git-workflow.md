@@ -104,7 +104,7 @@ docs/upgrade-guide-3-8
 - Verify with `git log -1 --show-signature`; enable **Require signed commits** on protected branches when policy allows
 - **Agents:** never use `--no-gpg-sign` unless the user explicitly requests it and the reason is recorded; if signing fails, stop and fix config-do not silently create unsigned commits
 
-Mandatory signing and approval gates are in the [Git rule](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/130-git.mdc#commit-authorization-and-signing).
+Mandatory signing and approval gates are in the Git rule (`${HANDBOOK_ROOT}/rules/130-git.mdc#commit-authorization-and-signing`).
 
 ## Pull Request Standards
 
@@ -170,7 +170,7 @@ Every repo must contain:
 
 For comprehensive Git guidance, see:
 
-- [git-fundamentals.md](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/git-fundamentals.md) - Refs, three-tier model, fetch vs pull, feature branch workflow
-- [git-reflog.md](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/git-reflog.md) - Reflog patterns, recovery workflows, Git's safety net
-- [git-modern-commands.md](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/git-modern-commands.md) - Modern Git commands (switch, restore, mv), worktrees
-- [git-pre-commit.md](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/git-pre-commit.md) - Pre-commit hooks setup and configuration
+- git-fundamentals.md (`${HANDBOOK_ROOT}/skills/git-workflow/git-fundamentals.md`) - Refs, three-tier model, fetch vs pull, feature branch workflow
+- git-reflog.md (`${HANDBOOK_ROOT}/skills/git-workflow/git-reflog.md`) - Reflog patterns, recovery workflows, Git's safety net
+- git-modern-commands.md (`${HANDBOOK_ROOT}/skills/git-workflow/git-modern-commands.md`) - Modern Git commands (switch, restore, mv), worktrees
+- git-pre-commit.md (`${HANDBOOK_ROOT}/skills/git-workflow/git-pre-commit.md`) - Pre-commit hooks setup and configuration

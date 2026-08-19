@@ -51,7 +51,7 @@ Write the domain change and Outbox row in the same local transaction. A separate
 
 Consumers must make duplicate delivery harmless. Record processed message identity in the same local transaction as the business effect where possible. A transport-level dedupe window alone is insufficient for long-lived business guarantees.
 
-Use the [Outbox and Inbox reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/distributed-transactions/references/outbox-inbox.md) for schema, relay, CDC, polling, retention, and recovery details.
+Use the Outbox and Inbox reference (`${HANDBOOK_ROOT}/skills/distributed-transactions/references/outbox-inbox.md`) for schema, relay, CDC, polling, retention, and recovery details.
 
 ## Saga Orchestration and Choreography
 
@@ -72,7 +72,7 @@ Use the [Outbox and Inbox reference](file:///Users/Devesh_Padmanabhan/.cursor/ag
 
 Choreography is not “no orchestration”; the emergent event graph becomes the workflow and must still be observable, versioned, bounded, and testable.
 
-Use the [Saga reference](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/distributed-transactions/references/saga-orchestration-choreography.md) for state, compensation, isolation anomalies, timeouts, and recovery.
+Use the Saga reference (`${HANDBOOK_ROOT}/skills/distributed-transactions/references/saga-orchestration-choreography.md`) for state, compensation, isolation anomalies, timeouts, and recovery.
 
 ## Reliability Contract
 

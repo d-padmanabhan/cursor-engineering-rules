@@ -134,7 +134,7 @@ Generate a structured review report:
 ## Phase 5: Automated Fixes (Optional)
 
 > [!IMPORTANT]
-> **Before applying fixes:** Inspect the working-tree baseline and choose safeguards according to [020-agent-audit.mdc](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/020-agent-audit.mdc).
+> **Before applying fixes:** Inspect the working-tree baseline and choose safeguards according to 020-agent-audit.mdc (`${HANDBOOK_ROOT}/rules/020-agent-audit.mdc`).
 >
 > Targeted, reversible fixes do not require a stash or backup branch. Create an explicit checkpoint for repository-wide formatting, mass rewrites/deletes, history changes, or operations that put unrelated user work at risk.
 
@@ -161,7 +161,7 @@ Generate a structured review report:
 3. **Diff summary:** Show final `git diff main...HEAD --stat`
 4. **Ready for PR:** Confirm all Critical issues resolved
 
-**Generate an audit report when required by [020-agent-audit.mdc](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/020-agent-audit.mdc):**
+**Generate an audit report when required by 020-agent-audit.mdc (`${HANDBOOK_ROOT}/rules/020-agent-audit.mdc`):**
 
 - Ensure `GIT_REPO_ROOT` is set, create `<GIT_REPO_ROOT>/.agent/reports/` when needed, then write/append the report to `<GIT_REPO_ROOT>/.agent/reports/$(date +%F)-agent-report-<repo>-<branch>.md`
 - Include:
@@ -182,7 +182,7 @@ Generate a structured review report:
 - Refactor code not part of current changes
 - Add features not in the current scope
 - Change APIs or break existing functionality
-- **Commit or push** without explicit user authorization (see [020-agent-audit.mdc](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/rules/020-agent-audit.mdc))
+- **Commit or push** without explicit user authorization (see 020-agent-audit.mdc (`${HANDBOOK_ROOT}/rules/020-agent-audit.mdc`))
 - Perform any remote writes (git push, PR creation, etc.)
 
 ✅ **DO:**
@@ -236,5 +236,5 @@ If CodeRabbit is available and configured for the repository:
 - `010-workflow.mdc` Review Phase
 - `100-core.mdc` Code Review Mode standards
 - `020-agent-audit.mdc` Audit requirements
-- [`git-workflow`](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/git-workflow/SKILL.md) Commit procedures and standards
+- `git-workflow` (`${HANDBOOK_ROOT}/skills/git-workflow/SKILL.md`) Commit procedures and standards
 - `130-git.mdc` Mandatory Git safety gates

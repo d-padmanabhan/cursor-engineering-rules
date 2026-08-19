@@ -1,0 +1,145 @@
+{
+  "skill_name": "domain-driven-design",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "A company has one shared Customer model used by Sales, Billing, Support, and Identity. Teams disagree about whether status, owner, and address mean the same thing, but management wants one canonical model and database. Review the boundary design.",
+      "expected_output": "Reject one enterprise-wide model. Discover bounded contexts from language, invariants, data authority, ownership, and change patterns. Allow context-specific customer concepts, map relationships explicitly, and integrate through versioned contracts or anti-corruption layers rather than shared tables.",
+      "files": [],
+      "checks": [
+        {
+          "id": "identifies-context-bound-language",
+          "type": "contains_all",
+          "values": [
+            "bounded context",
+            "language",
+            "invariant",
+            "ownership"
+          ]
+        },
+        {
+          "id": "rejects-shared-canonical-model",
+          "type": "contains_all",
+          "values": [
+            "reject",
+            "context-specific",
+            "contract",
+            "shared"
+          ]
+        },
+        {
+          "id": "observes-ddd-skill",
+          "type": "loaded_skill",
+          "skill": "domain-driven-design",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "An Order aggregate loads the customer profile, all prior orders, payment instruments, inventory for every line, shipment history, and promotions so one transaction can guarantee the entire checkout workflow. Provide the smallest DDD correction.",
+      "expected_output": "Shrink the aggregate to the state needed for one immediate invariant, reference other aggregates by identity, keep one aggregate transaction local, and coordinate payment, inventory, and shipment through explicit idempotent workflows or domain events with defined consistency.",
+      "files": [],
+      "checks": [
+        {
+          "id": "shrinks-aggregate-boundary",
+          "type": "contains_all",
+          "values": [
+            "invariant",
+            "aggregate",
+            "identity",
+            "transaction"
+          ]
+        },
+        {
+          "id": "coordinates-cross-aggregate-work",
+          "type": "contains_any",
+          "values": [
+            "domain event",
+            "Saga",
+            "workflow"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "A new underwriting context integrates with a legacy vendor whose API exposes policy, customer, and risk concepts with conflicting meanings and frequent schema churn. Design the DDD integration boundary.",
+      "expected_output": "Use an anti-corruption layer owned by the underwriting context. Translate protocol, schema, identifiers, errors, and semantics into the local ubiquitous language, validate and observe failures, and prevent vendor types from entering the domain model.",
+      "files": [],
+      "checks": [
+        {
+          "id": "uses-anti-corruption-layer",
+          "type": "contains_all",
+          "values": [
+            "anti-corruption layer",
+            "translate",
+            "ubiquitous language",
+            "vendor"
+          ]
+        },
+        {
+          "id": "defines-translation-ownership",
+          "type": "contains_all",
+          "values": [
+            "schema",
+            "identifier",
+            "error",
+            "observe"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "A team proposes microservices, event sourcing, CQRS, repositories, aggregates, and domain events for a five-field internal CRUD screen with one owner and no complex business rules. Review the proposal.",
+      "expected_output": "Reject speculative DDD and distributed complexity. Use a simple module or CRUD application with validation. Introduce tactical or distributed patterns only when domain invariants, scale, independent ownership, audit history, or change evidence justifies them.",
+      "files": [],
+      "checks": [
+        {
+          "id": "rejects-ddd-overengineering",
+          "type": "contains_all",
+          "values": [
+            "reject",
+            "CRUD",
+            "simple",
+            "evidence"
+          ]
+        },
+        {
+          "id": "does-not-require-event-sourcing",
+          "type": "not_contains",
+          "value": "must use event sourcing"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Review a domain model where Order contains only getters and setters while OrderService calculates totals, applies cancellation policy, changes status, and publishes events. Reassign responsibilities without adding unnecessary abstractions.",
+      "expected_output": "Identify the anemic domain model. Move invariant-preserving state transitions and policies that belong to Order into intention-revealing aggregate behavior, keep fields encapsulated, and leave application orchestration, transactions, authorization, persistence, and publication mechanics outside.",
+      "files": [],
+      "checks": [
+        {
+          "id": "identifies-anemic-model",
+          "type": "contains_all",
+          "values": [
+            "anemic",
+            "invariant",
+            "Order",
+            "behavior"
+          ]
+        },
+        {
+          "id": "separates-application-orchestration",
+          "type": "contains_all",
+          "values": [
+            "application",
+            "transaction",
+            "persistence",
+            "publication"
+          ]
+        }
+      ]
+    }
+  ]
+}

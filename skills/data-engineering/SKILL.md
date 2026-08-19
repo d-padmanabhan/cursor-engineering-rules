@@ -13,7 +13,7 @@ Use this skill to:
 - Design new datasets, ingestion pipelines, and transformations
 - Plan backfills/replays safely
 - Apply platform-specific guidance for Databricks, Snowflake, Confluent Kafka, and Teradata
-- Route cross-service Outbox/Inbox and Saga consistency design to the [distributed transactions skill](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/distributed-transactions/SKILL.md)
+- Route cross-service Outbox/Inbox and Saga consistency design to the distributed transactions skill (`${HANDBOOK_ROOT}/skills/distributed-transactions/SKILL.md`)
 
 ## Core principles (defaults)
 
@@ -74,4 +74,4 @@ When relevant, apply these rules (in addition to `475-sql.mdc` and `480-data-eng
 - [references/snowflake.md](references/snowflake.md)
 - [references/kafka-confluent.md](references/kafka-confluent.md)
 - [references/teradata.md](references/teradata.md)
-- [Distributed transactions](file:///Users/Devesh_Padmanabhan/.cursor/agent-engineering-handbook/skills/distributed-transactions/SKILL.md)
+- Distributed transactions (`${HANDBOOK_ROOT}/skills/distributed-transactions/SKILL.md`)
