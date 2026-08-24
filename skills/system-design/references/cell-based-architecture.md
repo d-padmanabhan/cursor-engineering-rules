@@ -2,7 +2,7 @@
 
 Cell-based architecture limits failure impact by partitioning a workload into bounded, independently operated replicas. AWS calls these replicas **cells**; Azure commonly uses **deployment stamps**, **scale units**, or **cells**; Google SRE guidance describes related **vertical partitioning**. Use the provider's terminology when discussing a specific implementation.
 
-A cell boundary must isolate the failure modes it claims to contain. Multiple compute stacks sharing one authoritative database, synchronous control plane, deployment path, or hard quota are replicas-not independent cells.
+A cell boundary must isolate the failure modes it claims to contain. Multiple compute stacks sharing one authoritative database, synchronous control plane, deployment path, or hard quota are replicas, not independent cells.
 
 ## Decide Whether Cells Are Justified
 
@@ -46,7 +46,7 @@ The routing contract must define:
 - authorization for placement changes;
 - audit and rollback of mapping updates.
 
-Serving should continue for unaffected cells when the placement control plane is unavailable. Persist and use the last validated routing state-AWS describes this property as **static stability**. Fail conservatively rather than publish uncertain placement.
+Serving should continue for unaffected cells when the placement control plane is unavailable. Persist and use the last validated routing state; AWS describes this property as **static stability**. Fail conservatively rather than publish uncertain placement.
 
 DNS or direct cell endpoints can reduce a shared routing tier but complicate remapping and client freshness. A common ingress simplifies clients but becomes a critical shared surface that needs independent scaling, regional redundancy, and failure testing.
 

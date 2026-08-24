@@ -17,7 +17,7 @@ Your knowledge of web performance metrics, thresholds, and tooling APIs may be o
 
 ## FIRST: Verify MCP Tools Available
 
-**Run this before starting.** Try calling `navigate_page` or `performance_start_trace`. If unavailable, STOP-the chrome-devtools MCP server isn't configured.
+**Run this before starting.** Try calling `navigate_page` or `performance_start_trace`. If unavailable, stop: the chrome-devtools MCP server isn't configured.
 
 Ask the user to add this to their MCP config:
 
@@ -30,12 +30,12 @@ Ask the user to add this to their MCP config:
 
 ## Key Guidelines
 
-- **Be assertive**: Verify claims by checking network requests, DOM, or codebase-then state findings definitively.
+- **Be assertive**: Verify claims by checking network requests, DOM, or codebase, then state findings definitively.
 - **Verify before recommending**: Confirm something is unused before suggesting removal.
 - **Quantify impact**: Use estimated savings from insights. Don't prioritize changes with 0ms impact.
 - **Skip non-issues**: If render-blocking resources have 0ms estimated impact, note but don't recommend action.
 - **Be specific**: Say "compress hero.png (450KB) to WebP" not "optimize images".
-- **Prioritize ruthlessly**: A site with 200ms LCP and 0 CLS is already excellent-say so.
+- **Prioritize ruthlessly**: A site with 200ms LCP and 0 CLS is already excellent; say so.
 
 ## Quick Reference
 
@@ -129,7 +129,7 @@ list_network_requests(resourceTypes: ["Script", "Stylesheet", "Document", "Font"
 3. **Missing preloads**: Critical resources (fonts, hero images, key scripts) not preloaded
 4. **Caching issues**: Missing or weak `Cache-Control`, `ETag`, or `Last-Modified` headers
 5. **Large payloads**: Uncompressed or oversized JS/CSS bundles
-6. **Unused preconnects**: If flagged, verify by checking if ANY requests went to that origin. If zero requests, it's definitively unused-recommend removal. If requests exist but loaded late, the preconnect may still be valuable.
+6. **Unused preconnects**: If flagged, verify by checking if ANY requests went to that origin. If zero requests, it's definitively unused; recommend removal. If requests exist but loaded late, the preconnect may still be valuable.
 
 For detailed request info:
 
