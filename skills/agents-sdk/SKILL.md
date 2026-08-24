@@ -51,24 +51,24 @@ Cloudflare docs: <https://developers.cloudflare.com/agents/>
 
 The Agents SDK provides:
 
-- **Persistent state** — SQLite-backed, auto-synced to clients via `setState`
-- **Callable RPC** — `@callable()` methods invoked over WebSocket
-- **Scheduling** — One-time, recurring (`scheduleEvery`), and cron tasks
-- **Workflows** — Durable multi-step background processing via `AgentWorkflow`
-- **Durable execution** — `runFiber()` / `stash()` for work that survives DO eviction
-- **Queue** — Built-in FIFO queue with retries via `queue()`
-- **Retries** — `this.retry()` with exponential backoff and jitter
-- **MCP integration** — Connect to MCP servers or build your own with `McpAgent`
-- **Email handling** — Receive and reply to emails with secure routing
-- **Streaming chat** — `AIChatAgent` with resumable streams, message persistence, tools
-- **Server-driven messages** — `saveMessages`, `waitUntilStable` for proactive agent turns
-- **React hooks** — `useAgent`, `useAgentChat` for client apps
-- **Observability** — `diagnostics_channel` events for state, RPC, schedule, lifecycle
-- **Push notifications** — Web Push + VAPID delivery from agents
-- **Webhooks** — Receive and verify external webhooks
-- **Voice** (experimental) — STT/TTS via `@cloudflare/voice`
-- **Browser tools** (experimental) — CDP-powered browsing via `agents/browser`
-- **Think** (experimental) — Higher-level chat agent via `@cloudflare/think`
+- **Persistent state** - SQLite-backed, auto-synced to clients via `setState`
+- **Callable RPC** - `@callable()` methods invoked over WebSocket
+- **Scheduling** - One-time, recurring (`scheduleEvery`), and cron tasks
+- **Workflows** - Durable multi-step background processing via `AgentWorkflow`
+- **Durable execution** - `runFiber()` / `stash()` for work that survives DO eviction
+- **Queue** - Built-in FIFO queue with retries via `queue()`
+- **Retries** - `this.retry()` with exponential backoff and jitter
+- **MCP integration** - Connect to MCP servers or build your own with `McpAgent`
+- **Email handling** - Receive and reply to emails with secure routing
+- **Streaming chat** - `AIChatAgent` with resumable streams, message persistence, tools
+- **Server-driven messages** - `saveMessages`, `waitUntilStable` for proactive agent turns
+- **React hooks** - `useAgent`, `useAgentChat` for client apps
+- **Observability** - `diagnostics_channel` events for state, RPC, schedule, lifecycle
+- **Push notifications** - Web Push + VAPID delivery from agents
+- **Webhooks** - Receive and verify external webhooks
+- **Voice** (experimental) - STT/TTS via `@cloudflare/voice`
+- **Browser tools** (experimental) - CDP-powered browsing via `agents/browser`
+- **Think** (experimental) - Higher-level chat agent via `@cloudflare/think`
 
 ## FIRST: Verify Installation
 
@@ -103,7 +103,7 @@ npm install agents @cloudflare/ai-chat ai @ai-sdk/react
 **Gotchas:**
 
 - Do NOT enable `experimentalDecorators` in tsconfig (breaks `@callable`)
-- Never edit old migrations — always add new tags
+- Never edit old migrations - always add new tags
 - Each agent class needs its own DO binding + migration entry
 - Add `"ai": { "binding": "AI" }` for Workers AI
 
@@ -196,34 +196,34 @@ function App() {
 
 ### Core
 
-- **[references/state-scheduling.md](references/state-scheduling.md)** — State persistence, scheduling, SQL
-- **[references/callable.md](references/callable.md)** — RPC methods, streaming, timeouts
-- **[references/routing.md](references/routing.md)** — URL patterns, custom routing, `getAgentByName`
-- **[references/configuration.md](references/configuration.md)** — Wrangler config, bindings, Vite setup
+- **[references/state-scheduling.md](references/state-scheduling.md)** - State persistence, scheduling, SQL
+- **[references/callable.md](references/callable.md)** - RPC methods, streaming, timeouts
+- **[references/routing.md](references/routing.md)** - URL patterns, custom routing, `getAgentByName`
+- **[references/configuration.md](references/configuration.md)** - Wrangler config, bindings, Vite setup
 
 ### Chat & Streaming
 
-- **[references/streaming-chat.md](references/streaming-chat.md)** — AIChatAgent, resumable streams, tools
-- **[references/client-sdk.md](references/client-sdk.md)** — `useAgent`, `useAgentChat`, `AgentClient`
-- **[references/server-driven-messages.md](references/server-driven-messages.md)** — Trigger patterns, `saveMessages`
-- **[references/human-in-the-loop.md](references/human-in-the-loop.md)** — Approval flows, `needsApproval`
+- **[references/streaming-chat.md](references/streaming-chat.md)** - AIChatAgent, resumable streams, tools
+- **[references/client-sdk.md](references/client-sdk.md)** - `useAgent`, `useAgentChat`, `AgentClient`
+- **[references/server-driven-messages.md](references/server-driven-messages.md)** - Trigger patterns, `saveMessages`
+- **[references/human-in-the-loop.md](references/human-in-the-loop.md)** - Approval flows, `needsApproval`
 
 ### Background Processing
 
-- **[references/workflows.md](references/workflows.md)** — Durable Workflows integration
-- **[references/durable-execution.md](references/durable-execution.md)** — `runFiber`, `stash`, surviving eviction
-- **[references/queue-retries.md](references/queue-retries.md)** — Built-in queue, retry with backoff
+- **[references/workflows.md](references/workflows.md)** - Durable Workflows integration
+- **[references/durable-execution.md](references/durable-execution.md)** - `runFiber`, `stash`, surviving eviction
+- **[references/queue-retries.md](references/queue-retries.md)** - Built-in queue, retry with backoff
 
 ### Integrations
 
-- **[references/mcp.md](references/mcp.md)** — MCP client and server, transports, securing
-- **[references/email.md](references/email.md)** — Email routing and handling
-- **[references/webhooks-push.md](references/webhooks-push.md)** — Webhooks, push notifications
-- **[references/observability.md](references/observability.md)** — Diagnostics-channel events
+- **[references/mcp.md](references/mcp.md)** - MCP client and server, transports, securing
+- **[references/email.md](references/email.md)** - Email routing and handling
+- **[references/webhooks-push.md](references/webhooks-push.md)** - Webhooks, push notifications
+- **[references/observability.md](references/observability.md)** - Diagnostics-channel events
 
 ### Experimental
 
-- **[references/think.md](references/think.md)** — `@cloudflare/think` higher-level chat agent
-- **[references/voice.md](references/voice.md)** — `@cloudflare/voice` STT/TTS
-- **[references/codemode.md](references/codemode.md)** — Code Mode for tool orchestration
-- **[references/browse-the-web.md](references/browse-the-web.md)** — CDP browser tools
+- **[references/think.md](references/think.md)** - `@cloudflare/think` higher-level chat agent
+- **[references/voice.md](references/voice.md)** - `@cloudflare/voice` STT/TTS
+- **[references/codemode.md](references/codemode.md)** - Code Mode for tool orchestration
+- **[references/browse-the-web.md](references/browse-the-web.md)** - CDP browser tools

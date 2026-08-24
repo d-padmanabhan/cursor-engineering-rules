@@ -13,10 +13,10 @@
 3. Are you passing the right attributes in the evaluation context?
 
 ```typescript
-// ❌ BAD — no context, rules can't match
+// ❌ BAD - no context, rules can't match
 const val = await env.FLAGS.getBooleanValue("my-flag", false);
 
-// ✅ GOOD — pass context attributes that rules reference
+// ✅ GOOD - pass context attributes that rules reference
 const val = await env.FLAGS.getBooleanValue("my-flag", false, {
   userId: "user-42",
   plan: "enterprise",
@@ -30,7 +30,7 @@ const val = await env.FLAGS.getBooleanValue("my-flag", false, {
 **Solution:** Use the method matching the flag's variation type.
 
 ```typescript
-// ❌ BAD — flag "checkout-flow" has string variations
+// ❌ BAD - flag "checkout-flow" has string variations
 const val = await env.FLAGS.getBooleanValue("checkout-flow", false);
 
 // ✅ GOOD
@@ -50,10 +50,10 @@ const val = await env.FLAGS.getStringValue("checkout-flow", "original");
 **Solution:** Always pass a stable identifier:
 
 ```typescript
-// ❌ BAD — no targetingKey, rollout is random per request
+// ❌ BAD - no targetingKey, rollout is random per request
 const val = await env.FLAGS.getBooleanValue("gradual-rollout", false);
 
-// ✅ GOOD — stable userId for consistent bucketing
+// ✅ GOOD - stable userId for consistent bucketing
 const val = await env.FLAGS.getBooleanValue("gradual-rollout", false, {
   userId: sessionUserId,
 });
@@ -66,10 +66,10 @@ const val = await env.FLAGS.getBooleanValue("gradual-rollout", false, {
 **Solution:** Always read-modify-write:
 
 ```bash
-# ❌ BAD — overwrites the entire flag, losing rules/variations
+# ❌ BAD - overwrites the entire flag, losing rules/variations
 curl -X PUT -d '{"enabled": true}' ...
 
-# ✅ GOOD — GET first, modify, PUT back
+# ✅ GOOD - GET first, modify, PUT back
 FLAG=$(curl -s -H "Authorization: Bearer $TOKEN" "$URL/flags/my-flag" | jq '.data')
 UPDATED=$(echo "$FLAG" | jq '.enabled = true')
 echo "$UPDATED" | curl -s -X PUT -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d @- "$URL/flags/my-flag"
@@ -94,7 +94,7 @@ echo "$UPDATED" | curl -s -X PUT -H "Authorization: Bearer $TOKEN" -H "Content-T
 | Limit | Value | Notes |
 |-------|-------|-------|
 | Flag key length | 1-64 chars | Alphanumeric, hyphens, underscores only |
-| Flag key pattern | `/^[a-zA-Z0-9_-]+$/` | — |
+| Flag key pattern | `/^[a-zA-Z0-9_-]+$/` | - |
 | Variation value size | 10KB max | Per variation, serialized |
 | Variation name length | 64 chars max | Alphanumeric, hyphens, underscores |
 | Description length | 512 chars max | Nullable |
@@ -111,7 +111,7 @@ echo "$UPDATED" | curl -s -X PUT -H "Authorization: Bearer $TOKEN" -H "Content-T
 
 ### Evaluating Flags in a Tight Loop
 
-Flag evaluation via the binding is fast but not free. Avoid evaluating the same flag repeatedly in a loop — evaluate once and reuse the result.
+Flag evaluation via the binding is fast but not free. Avoid evaluating the same flag repeatedly in a loop - evaluate once and reuse the result.
 
 ```typescript
 // ❌ BAD
@@ -157,4 +157,4 @@ Flag changes propagate globally within seconds. During the brief propagation win
 
 - No Worker redeployment needed for flag changes.
 - If the dashboard is temporarily unavailable, evaluation continues using the last propagated configuration.
-- Flag changes made via the REST API and dashboard are equivalent — both trigger propagation.
+- Flag changes made via the REST API and dashboard are equivalent - both trigger propagation.

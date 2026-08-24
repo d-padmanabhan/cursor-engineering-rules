@@ -152,7 +152,7 @@ query CacheStatusBreakdown($zoneTag: string!, $start: Time!, $end: Time!) {
 }
 ```
 
-For cache hit ratio over time, use aliases to query the same dataset twice — once with `cacheStatus: "hit"` filter and once without — then compute the ratio client-side.
+For cache hit ratio over time, use aliases to query the same dataset twice - once with `cacheStatus: "hit"` filter and once without - then compute the ratio client-side.
 
 ## Multi-Dataset Queries
 
@@ -198,7 +198,7 @@ aiGatewayRequestsAdaptiveGroups(
 }
 ```
 
-Both are account-scoped — nest under `accounts(filter: { accountTag: $accountTag })`.
+Both are account-scoped - nest under `accounts(filter: { accountTag: $accountTag })`.
 
 ## Best Practices
 

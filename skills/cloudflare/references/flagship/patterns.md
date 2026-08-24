@@ -96,7 +96,7 @@ export default {
 
 ### Migration from Another Provider
 
-Only the provider initialization changes — evaluation call sites stay the same:
+Only the provider initialization changes - evaluation call sites stay the same:
 
 ```typescript
 // ❌ Before (LaunchDarkly)
@@ -417,7 +417,7 @@ Gradually roll out to 10% of users:
 
 ## Safe Deletion Workflow
 
-1. **Disable** the flag first (`enabled: false`) — confirms nothing depends on it being active
+1. **Disable** the flag first (`enabled: false`) - confirms nothing depends on it being active
 2. **Monitor** for unexpected behavior
 3. **Remove** flag evaluation code from your application
 4. **Deploy** the code change

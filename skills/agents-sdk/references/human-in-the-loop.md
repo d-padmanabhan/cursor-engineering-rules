@@ -62,6 +62,6 @@ addToolOutput(toolCallId, "output-error", "User rejected this action");
 
 ## Important
 
-- `waitForApproval` may return `undefined` on timeout — handle it
-- `addToolOutput` with `output-error` does NOT auto-continue the LLM — you may need `sendMessage` after
+- `waitForApproval` may return `undefined` on timeout - handle it
+- `addToolOutput` with `output-error` does NOT auto-continue the LLM - you may need `sendMessage` after
 - For OpenAI Agents SDK, use `needsApproval` on the tool definition (same pattern)

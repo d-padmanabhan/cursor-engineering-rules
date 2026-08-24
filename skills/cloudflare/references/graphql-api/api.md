@@ -17,11 +17,11 @@ The schema has a single entry point: `Query.viewer`. Mutations are not supported
 
 ## Aggregation Fields
 
-Aggregated dataset nodes (`*Groups`) return these field categories. Not every node has all — use introspection to check.
+Aggregated dataset nodes (`*Groups`) return these field categories. Not every node has all - use introspection to check.
 
 ### count
 
-Total events in the group. Available on `*Groups` nodes but **not** on raw `*Adaptive` nodes (e.g., `workersInvocationsAdaptive` — use `sum { requests }` instead).
+Total events in the group. Available on `*Groups` nodes but **not** on raw `*Adaptive` nodes (e.g., `workersInvocationsAdaptive` - use `sum { requests }` instead).
 
 ### sum
 

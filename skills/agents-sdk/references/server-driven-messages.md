@@ -2,9 +2,9 @@
 
 Fetch <https://developers.cloudflare.com/agents/api-reference/trigger-patterns/> for complete documentation.
 
-Patterns for server-initiated LLM turns in `AIChatAgent` — from schedules, webhooks, email, or other agents.
+Patterns for server-initiated LLM turns in `AIChatAgent` - from schedules, webhooks, email, or other agents.
 
-## `saveMessages` — Trigger an LLM Turn
+## `saveMessages` - Trigger an LLM Turn
 
 ```typescript
 await this.saveMessages((existingMessages) => [
@@ -15,7 +15,7 @@ await this.saveMessages((existingMessages) => [
 
 `saveMessages` persists the messages AND triggers `onChatMessage`.
 
-## `persistMessages` — Save Without Triggering
+## `persistMessages` - Save Without Triggering
 
 ```typescript
 await this.persistMessages([
@@ -59,5 +59,5 @@ async onChatResponse(result: ChatResponseResult) {
 const { isStreaming, isServerStreaming } = useAgentChat({ agent });
 ```
 
-- `isStreaming` — true during any streaming (user-initiated or server-initiated)
-- `isServerStreaming` — true only during server-initiated streams
+- `isStreaming` - true during any streaming (user-initiated or server-initiated)
+- `isServerStreaming` - true only during server-initiated streams

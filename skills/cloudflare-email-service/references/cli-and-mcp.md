@@ -48,7 +48,7 @@ Add `"remote": true` to send real emails during `wrangler dev`:
 npx wrangler dev
 ```
 
-Emails are actually sent — use test addresses you control. Remove `"remote": true` before deploying.
+Emails are actually sent - use test addresses you control. Remove `"remote": true` before deploying.
 
 ## Cloudflare MCP Server
 
@@ -57,7 +57,7 @@ If you have the [Cloudflare MCP server](https://github.com/cloudflare/mcp) (`htt
 Use `search` to find email sending endpoints:
 
 ```javascript
-// search tool — find all email sending API endpoints
+// search tool - find all email sending API endpoints
 async () => {
   const results = [];
   for (const [path, methods] of Object.entries(spec.paths)) {
@@ -71,10 +71,10 @@ async () => {
 }
 ```
 
-Then use `execute` to call them — for example, checking sending limits or sending an email:
+Then use `execute` to call them - for example, checking sending limits or sending an email:
 
 ```javascript
-// execute tool — check sending quota
+// execute tool - check sending quota
 async () => {
   return cloudflare.request({
     method: "GET",
@@ -82,7 +82,7 @@ async () => {
   });
 }
 
-// execute tool — send an email
+// execute tool - send an email
 async () => {
   return cloudflare.request({
     method: "POST",
@@ -98,7 +98,7 @@ async () => {
 }
 ```
 
-GraphQL analytics queries also work through `execute` — see [deliverability.md](deliverability.md#graphql-analytics-api) for query examples. Note that email analytics are **zone-level** datasets (`emailSendingAdaptiveGroups`, `emailSendingAdaptive`) queried under `viewer > zones`, and require the **Analytics Read** token permission.
+GraphQL analytics queries also work through `execute` - see [deliverability.md](deliverability.md#graphql-analytics-api) for query examples. Note that email analytics are **zone-level** datasets (`emailSendingAdaptiveGroups`, `emailSendingAdaptive`) queried under `viewer > zones`, and require the **Analytics Read** token permission.
 
 ## Sending from CLI / Agents
 

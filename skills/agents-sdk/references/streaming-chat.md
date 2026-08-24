@@ -25,7 +25,7 @@ export class Chat extends AIChatAgent<Env> {
 }
 ```
 
-**Important:** Always pass `abortSignal` and `onFinish` — they enable proper cleanup and message persistence.
+**Important:** Always pass `abortSignal` and `onFinish` - they enable proper cleanup and message persistence.
 
 ## With Tools
 

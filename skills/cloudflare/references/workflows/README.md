@@ -54,7 +54,7 @@ export class MyWorkflow extends WorkflowEntrypoint<Env, Params> {
 
 ## Retrieval
 
-These reference files cover API shapes, code patterns, and debugging — things that are stable. For **limits, pricing, and other values that change**, always fetch the latest from the official docs:
+These reference files cover API shapes, code patterns, and debugging - things that are stable. For **limits, pricing, and other values that change**, always fetch the latest from the official docs:
 
 - **Limits:** <https://developers.cloudflare.com/workflows/reference/limits/>
 - **Pricing:** <https://developers.cloudflare.com/workflows/reference/pricing/>

@@ -6,7 +6,7 @@ For full API details, see the [Email Routing docs](https://developers.cloudflare
 
 ## Email Handler
 
-Export an `email()` function from your Worker. No special wrangler binding needed — a routing rule connects incoming addresses to your Worker.
+Export an `email()` function from your Worker. No special wrangler binding needed - a routing rule connects incoming addresses to your Worker.
 
 ```typescript
 export default {
@@ -23,13 +23,13 @@ Set up routing rules in **Dashboard** > **Compute & AI** > **Email Service** > *
 
 The `message` parameter is a `ForwardableEmailMessage`. Run `npx wrangler types` to get the full type definition. Key properties and methods:
 
-- `message.from` / `message.to` — envelope addresses (SMTP MAIL FROM / RCPT TO). `message.from` is trustworthy; header addresses can be spoofed.
-- `message.headers` — `Headers` object (use `.get("subject")`, `.get("message-id")`, etc.)
-- `message.raw` — `ReadableStream<Uint8Array>` of raw MIME content. **Single use** — buffer before accessing.
-- `message.rawSize` — size in bytes
-- `message.setReject(reason)` — reject with a permanent SMTP error
-- `message.forward(rcptTo, headers?)` — forward to a verified destination
-- `message.reply(emailMessage)` — reply with an `EmailMessage` object
+- `message.from` / `message.to` - envelope addresses (SMTP MAIL FROM / RCPT TO). `message.from` is trustworthy; header addresses can be spoofed.
+- `message.headers` - `Headers` object (use `.get("subject")`, `.get("message-id")`, etc.)
+- `message.raw` - `ReadableStream<Uint8Array>` of raw MIME content. **Single use** - buffer before accessing.
+- `message.rawSize` - size in bytes
+- `message.setReject(reason)` - reject with a permanent SMTP error
+- `message.forward(rcptTo, headers?)` - forward to a verified destination
+- `message.reply(emailMessage)` - reply with an `EmailMessage` object
 
 ## Core Operations
 
@@ -54,7 +54,7 @@ message.setReject("Your message was blocked");
 
 ### Reply
 
-Using `env.EMAIL.send()` (recommended — no extra dependencies):
+Using `env.EMAIL.send()` (recommended - no extra dependencies):
 
 ```typescript
 async email(message, env, ctx) {
@@ -108,7 +108,7 @@ async email(message, env, ctx) {
 
 ## Store and Reply Later (Human-in-the-Loop)
 
-A common pattern is to store incoming emails in a Durable Object (SQLite) so a human or AI agent can review and reply later — rather than replying immediately in the `email()` handler. This enables support inboxes, approval workflows, and AI-drafted replies.
+A common pattern is to store incoming emails in a Durable Object (SQLite) so a human or AI agent can review and reply later - rather than replying immediately in the `email()` handler. This enables support inboxes, approval workflows, and AI-drafted replies.
 
 ### Architecture
 
@@ -162,7 +162,7 @@ export default {
 When a user (or agent) decides to reply, build proper threading headers and send via the `send_email` binding:
 
 ```typescript
-// In an HTTP handler or agent tool — not in the email() handler
+// In an HTTP handler or agent tool - not in the email() handler
 async function replyToStoredEmail(env: Env, original: StoredEmail, replyBody: string) {
   // Build threading headers (In-Reply-To + References per RFC 2822)
   const headers: Record<string, string> = {};
@@ -186,7 +186,7 @@ async function replyToStoredEmail(env: Env, original: StoredEmail, replyBody: st
 
 - **Buffer `message.raw` once**, parse with `postal-mime`, then store structured fields. Don't store the raw stream.
 - **Extract `Message-ID`, `In-Reply-To`, and `References`** headers during ingest for threading. Fall back to subject-based matching for emails without threading headers.
-- **Use Durable Object SQLite** for per-mailbox storage — each mailbox gets its own DO instance keyed by email address, providing natural isolation.
+- **Use Durable Object SQLite** for per-mailbox storage - each mailbox gets its own DO instance keyed by email address, providing natural isolation.
 - **Store attachments separately** in R2 (binary blobs), with metadata in SQLite.
 - **Defer heavy work** (AI drafting, notifications) via `ctx.waitUntil()` so the `email()` handler returns quickly.
 - **Never auto-send from the `email()` handler** in a human-in-the-loop flow. Store a draft, let the user review, then send via a separate action.

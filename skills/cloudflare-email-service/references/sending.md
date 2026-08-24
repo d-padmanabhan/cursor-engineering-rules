@@ -1,4 +1,4 @@
-# Sending Emails — Workers Binding & Agents SDK
+# Sending Emails - Workers Binding & Agents SDK
 
 Send emails from Cloudflare Workers using the native binding, or from AI agents using the Agents SDK. If your app is NOT on Workers, use the [REST API](rest-api.md) instead.
 
@@ -21,7 +21,7 @@ For local development, add `"remote": true` so email sends are proxied to the re
 { "send_email": [{ "name": "EMAIL", "remote": true }] }
 ```
 
-Run `npx wrangler types` to auto-generate the `Env` interface with your `EMAIL` binding. This produces a `worker-configuration.d.ts` with the real `SendEmail`, `EmailAttachment`, `EmailAddress`, and related types from the workerd runtime. Always use these generated types — do not define them manually.
+Run `npx wrangler types` to auto-generate the `Env` interface with your `EMAIL` binding. This produces a `worker-configuration.d.ts` with the real `SendEmail`, `EmailAttachment`, `EmailAddress`, and related types from the workerd runtime. Always use these generated types - do not define them manually.
 
 **Note:** Workers binding uses `email` in the from object (`EmailAddress` type). REST API uses `address`. See [rest-api.md](rest-api.md).
 
@@ -61,11 +61,11 @@ const response = await env.EMAIL.send({
 
 **Important:** The Workers binding and REST API handle attachment content differently:
 
-- **Workers binding:** `content` accepts `string | ArrayBuffer | ArrayBufferView`. Strings are treated as **raw content** (not base64). For text files, pass the raw string. For binary files (images, PDFs), pass an `ArrayBuffer`. Note: `ArrayBuffer` does not work with `"remote": true` in local dev — deploy to test binary attachments.
+- **Workers binding:** `content` accepts `string | ArrayBuffer | ArrayBufferView`. Strings are treated as **raw content** (not base64). For text files, pass the raw string. For binary files (images, PDFs), pass an `ArrayBuffer`. Note: `ArrayBuffer` does not work with `"remote": true` in local dev - deploy to test binary attachments.
 - **REST API:** `content` is always a **base64-encoded string**. See [rest-api.md](rest-api.md).
 
 ```typescript
-// Text file attachment — pass raw string content
+// Text file attachment - pass raw string content
 const response = await env.EMAIL.send({
   to: "customer@example.com",
   from: "invoices@yourdomain.com",
@@ -80,7 +80,7 @@ const response = await env.EMAIL.send({
   }],
 });
 
-// Binary file attachment — use ArrayBuffer
+// Binary file attachment - use ArrayBuffer
 const pdfBytes = await fetchPdfFromSomewhere(); // Returns ArrayBuffer
 const response = await env.EMAIL.send({
   to: "customer@example.com",
@@ -96,7 +96,7 @@ const response = await env.EMAIL.send({
   }],
 });
 
-// Inline image — reference in HTML with cid:<contentId>
+// Inline image - reference in HTML with cid:<contentId>
 const imageBytes = await fetchImageFromSomewhere(); // Returns ArrayBuffer
 const response = await env.EMAIL.send({
   to: "user@example.com",
@@ -213,7 +213,7 @@ try {
 }
 ```
 
-These error codes are for the **Workers binding** (thrown as Error objects with `.code` and `.message`). The **REST API** returns standard Cloudflare API numeric error codes instead — see [rest-api.md](rest-api.md).
+These error codes are for the **Workers binding** (thrown as Error objects with `.code` and `.message`). The **REST API** returns standard Cloudflare API numeric error codes instead - see [rest-api.md](rest-api.md).
 
 | Error Code | What It Means | What to Do |
 |------------|---------------|------------|
@@ -237,7 +237,7 @@ These error codes are for the **Workers binding** (thrown as Error objects with 
 | `E_HEADERS_TOO_LARGE` | Total headers exceed 16 KB | Reduce number or size of custom headers |
 | `E_HEADERS_TOO_MANY` | More than 20 non-X headers | Reduce to 20 or fewer whitelisted headers |
 
-For `E_RATE_LIMIT_EXCEEDED` and `E_DELIVERY_FAILED`, retry with exponential backoff. For validation errors (`E_VALIDATION_ERROR`, `E_FIELD_MISSING`, `E_SENDER_NOT_VERIFIED`), fix the request — retrying won't help.
+For `E_RATE_LIMIT_EXCEEDED` and `E_DELIVERY_FAILED`, retry with exponential backoff. For validation errors (`E_VALIDATION_ERROR`, `E_FIELD_MISSING`, `E_SENDER_NOT_VERIFIED`), fix the request - retrying won't help.
 
 ## Restricted Bindings
 

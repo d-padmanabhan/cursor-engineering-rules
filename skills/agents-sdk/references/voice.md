@@ -2,7 +2,7 @@
 
 Fetch <https://developers.cloudflare.com/agents/api-reference/voice/> for complete documentation.
 
-`@cloudflare/voice` — real-time speech-to-text and text-to-speech for agents. Audio streams over WebSocket.
+`@cloudflare/voice` - real-time speech-to-text and text-to-speech for agents. Audio streams over WebSocket.
 
 ```bash
 npm install @cloudflare/voice
@@ -65,4 +65,4 @@ function VoiceUI() {
 
 ## STT/TTS Providers
 
-Workers AI (default), Deepgram, ElevenLabs — install the provider package and swap the `transcriber`/`tts` properties.
+Workers AI (default), Deepgram, ElevenLabs - install the provider package and swap the `transcriber`/`tts` properties.
