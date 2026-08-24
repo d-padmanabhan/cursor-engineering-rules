@@ -6,22 +6,22 @@ Feature flag service for controlling feature visibility without redeploying code
 
 | Need | Use Flagship? | Alternative |
 |------|--------------|-------------|
-| Feature toggles (on/off) | Yes | — |
-| Gradual rollouts (percentage-based) | Yes | — |
-| A/B testing with attribute targeting | Yes | — |
-| Multi-variant configuration delivery | Yes | — |
+| Feature toggles (on/off) | Yes | - |
+| Gradual rollouts (percentage-based) | Yes | - |
+| A/B testing with attribute targeting | Yes | - |
+| Multi-variant configuration delivery | Yes | - |
 | Environment-specific config (dev/staging/prod) | Consider | Wrangler environments, secrets |
 | Static config that never changes | No | `wrangler.jsonc` vars |
 | Per-request rate limiting | No | Rate Limiting rules |
 
 ## Key Concepts
 
-- **Apps** — Top-level organizational unit. Maps to a project or service. Each account can have multiple apps.
-- **Flags** — Named feature toggles with a key, variations, targeting rules, and enabled/disabled state.
-- **Variations** — Possible values a flag returns. Types: boolean, string, number, JSON object. All variations on a flag must share the same type.
-- **Targeting rules** — Sequential, priority-ordered conditions that determine which variation to serve. First match wins; no match returns the default.
-- **Evaluation context** — Key-value attributes (`userId`, `country`, `plan`, etc.) passed at evaluation time for rule matching and rollout bucketing.
-- **Percentage rollouts** — Gradually release to a fraction of users. Consistent hashing on a configurable attribute ensures sticky bucketing.
+- **Apps** - Top-level organizational unit. Maps to a project or service. Each account can have multiple apps.
+- **Flags** - Named feature toggles with a key, variations, targeting rules, and enabled/disabled state.
+- **Variations** - Possible values a flag returns. Types: boolean, string, number, JSON object. All variations on a flag must share the same type.
+- **Targeting rules** - Sequential, priority-ordered conditions that determine which variation to serve. First match wins; no match returns the default.
+- **Evaluation context** - Key-value attributes (`userId`, `country`, `plan`, etc.) passed at evaluation time for rule matching and rollout bucketing.
+- **Percentage rollouts** - Gradually release to a fraction of users. Consistent hashing on a configurable attribute ensures sticky bucketing.
 
 ## Two Evaluation Paths
 
@@ -44,13 +44,13 @@ Feature flag service for controlling feature visibility without redeploying code
 
 ## In This Reference
 
-- **[api.md](./api.md)** — REST API endpoints, binding methods, OpenFeature SDK, schemas
-- **[configuration.md](./configuration.md)** — Wrangler binding setup, SDK installation, TypeScript types
-- **[patterns.md](./patterns.md)** — Flag CRUD via API, targeting rules, rollouts, OpenFeature usage
-- **[gotchas.md](./gotchas.md)** — Common errors, limits, anti-patterns, troubleshooting
+- **[api.md](./api.md)** - REST API endpoints, binding methods, OpenFeature SDK, schemas
+- **[configuration.md](./configuration.md)** - Wrangler binding setup, SDK installation, TypeScript types
+- **[patterns.md](./patterns.md)** - Flag CRUD via API, targeting rules, rollouts, OpenFeature usage
+- **[gotchas.md](./gotchas.md)** - Common errors, limits, anti-patterns, troubleshooting
 
 ## See Also
 
-- **[../workers/](../workers/)** — Workers runtime (Flagship runs inside Workers)
-- **[../kv/](../kv/)** — KV storage (Flagship uses KV infrastructure for flag delivery)
-- **[../wrangler/](../wrangler/)** — Wrangler CLI for deployment and config
+- **[../workers/](../workers/)** - Workers runtime (Flagship runs inside Workers)
+- **[../kv/](../kv/)** - KV storage (Flagship uses KV infrastructure for flag delivery)
+- **[../wrangler/](../wrangler/)** - Wrangler CLI for deployment and config

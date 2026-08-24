@@ -33,8 +33,8 @@ Fetch <https://developers.cloudflare.com/agents/api-reference/configuration/> fo
 
 - Every agent class needs a DO binding AND a `new_sqlite_classes` migration entry
 - `nodejs_compat` is required
-- Never edit old migrations — add a new tag (e.g. `v2`) for new classes
-- Do NOT enable `experimentalDecorators` in tsconfig — it breaks `@callable`
+- Never edit old migrations - add a new tag (e.g. `v2`) for new classes
+- Do NOT enable `experimentalDecorators` in tsconfig - it breaks `@callable`
 - For Workers AI locally, set `"ai": { "binding": "AI", "remote": true }` in `.dev.vars` or config
 - Use `wrangler secret put` for secrets, never hardcode them
 

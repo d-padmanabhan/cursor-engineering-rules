@@ -119,7 +119,7 @@ await OpenFeature.setProviderAndWait(
 await OpenFeature.setContext({ targetingKey: "user-42", plan: "enterprise" });
 const client = OpenFeature.getClient();
 
-// Synchronous — no await needed
+// Synchronous - no await needed
 const showBanner = client.getBooleanValue("promo-banner", false);
 ```
 

@@ -74,6 +74,6 @@ export class MyAgent extends Agent<Env, State> {
 
 ## Important
 
-- `shouldRetry` only works on `this.retry()` — not on schedule/queue (callbacks aren't serializable)
-- Queue retries block head-of-line; long delays keep the DO awake — use `schedule` for long waits instead
-- No dead-letter queue — failed items are removed after retries exhausted
+- `shouldRetry` only works on `this.retry()` - not on schedule/queue (callbacks aren't serializable)
+- Queue retries block head-of-line; long delays keep the DO awake - use `schedule` for long waits instead
+- No dead-letter queue - failed items are removed after retries exhausted

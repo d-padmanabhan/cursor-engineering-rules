@@ -1,15 +1,15 @@
 ---
 name: cloudflare-email-service
-description: Send and receive transactional emails with Cloudflare Email Service (Email Sending + Email Routing). Use when building email sending (Workers binding or REST API), email routing, Agents SDK email handling, or integrating email into any app — Workers, Node.js, Python, Go, etc. Also use for email deliverability, SPF/DKIM/DMARC, wrangler email setup, MCP email tools, or when a coding agent needs to send emails. Even for simple requests like "add email to my Worker" — this skill has critical config details.
+description: Send and receive transactional emails with Cloudflare Email Service (Email Sending + Email Routing). Use when building email sending (Workers binding or REST API), email routing, Agents SDK email handling, or integrating email into any app - Workers, Node.js, Python, Go, etc. Also use for email deliverability, SPF/DKIM/DMARC, wrangler email setup, MCP email tools, or when a coding agent needs to send emails. Even for simple requests like "add email to my Worker" - this skill has critical config details.
 ---
 
 # Cloudflare Email Service
 
 Your knowledge of the Cloudflare Email Service, Email Routing or Email Sending may be outdated. **Prefer retrieval over pre-training** for any Cloudflare Email Service task.
 
-Cloudflare Email Service lets you send transactional emails and route incoming emails, all within the Cloudflare platform. Your knowledge of this product may be outdated — it launched in 2025 and is evolving rapidly. **Prefer retrieval over pre-training** for any Email Service task.
+Cloudflare Email Service lets you send transactional emails and route incoming emails, all within the Cloudflare platform. Your knowledge of this product may be outdated - it launched in 2025 and is evolving rapidly. **Prefer retrieval over pre-training** for any Email Service task.
 
-**If there is any discrepancy between this skill and the sources below, always trust the original source.** The Cloudflare docs, REST API spec, `@cloudflare/workers-types`, and Agents SDK repo are the source of truth. This skill is a convenience guide — it may lag behind the latest changes. When in doubt, retrieve from the sources below and use what they say.
+**If there is any discrepancy between this skill and the sources below, always trust the original source.** The Cloudflare docs, REST API spec, `@cloudflare/workers-types`, and Agents SDK repo are the source of truth. This skill is a convenience guide - it may lag behind the latest changes. When in doubt, retrieve from the sources below and use what they say.
 
 ## Retrieval Sources
 
@@ -42,7 +42,7 @@ Start here. Find your situation, then follow the link for full details.
 | **Set up Email Sending or Email Routing** | `wrangler email sending enable` / `wrangler email routing enable`, or Dashboard | [cli-and-mcp.md](references/cli-and-mcp.md) |
 | **Improve deliverability, avoid spam folders** | Authentication, content, compliance | [deliverability.md](references/deliverability.md) |
 
-## Quick Start — Workers Binding
+## Quick Start - Workers Binding
 
 Add the binding to `wrangler.jsonc`, then call `env.EMAIL.send()`. The `from` domain must be onboarded via `npx wrangler email sending enable yourdomain.com`.
 
@@ -61,11 +61,11 @@ const response = await env.EMAIL.send({
 });
 ```
 
-The binding is recommended for Workers — no API keys needed. If a user specifically requests the REST API from within a Worker (e.g., they already have an API token workflow), that works too — see [rest-api.md](references/rest-api.md).
+The binding is recommended for Workers - no API keys needed. If a user specifically requests the REST API from within a Worker (e.g., they already have an API token workflow), that works too - see [rest-api.md](references/rest-api.md).
 
 See [sending.md](references/sending.md) for the full API, batch sends, attachments, custom headers, restricted bindings, and Agents SDK integration.
 
-## Quick Start — REST API
+## Quick Start - REST API
 
 For apps outside Workers, or within Workers if the user explicitly requests it. Key differences from the Workers binding:
 
@@ -82,7 +82,7 @@ See [rest-api.md](references/rest-api.md) for curl examples, response format, an
 |---------|---------------|-----|
 | Forgetting `send_email` binding in wrangler config | Email Service uses a binding, not an API key | Add `"send_email": [{ "name": "EMAIL" }]` to wrangler.jsonc |
 | Sending from an unverified domain | Domain must be onboarded onto Email Sending before first send | Run `wrangler email sending enable yourdomain.com` or onboard in Dashboard |
-| Reading `message.raw` twice in email handler | The raw stream is single-use — second read returns empty | Buffer first: `const raw = await new Response(message.raw).arrayBuffer()` |
+| Reading `message.raw` twice in email handler | The raw stream is single-use - second read returns empty | Buffer first: `const raw = await new Response(message.raw).arrayBuffer()` |
 | Missing `text` field (HTML only) | Some email clients only show plain text; also helps spam scores | Always include both `html` and `text` versions |
 | Using email for marketing/bulk sends | Email Service is for transactional email only | Use a dedicated marketing email platform for newsletters and campaigns |
 | Forwarding to unverified destinations | `message.forward()` only works with verified addresses | Run `wrangler email routing addresses create user@gmail.com` or add in Dashboard |
@@ -96,8 +96,8 @@ See [rest-api.md](references/rest-api.md) for curl examples, response format, an
 
 Read the reference that matches your situation. You don't need all of them.
 
-- **[references/sending.md](references/sending.md)** — Workers binding API, attachments, Agents SDK email. For Workers or Agents SDK.
-- **[references/rest-api.md](references/rest-api.md)** — REST endpoint, curl examples, error handling. For apps NOT on Workers.
-- **[references/routing.md](references/routing.md)** — Inbound `email()` handler, forwarding, replying, parsing. For receiving emails.
-- **[references/cli-and-mcp.md](references/cli-and-mcp.md)** — Domain setup, wrangler commands, MCP tools. For first-time setup.
-- **[references/deliverability.md](references/deliverability.md)** — SPF/DKIM/DMARC, bounces, suppressions, best practices.
+- **[references/sending.md](references/sending.md)** - Workers binding API, attachments, Agents SDK email. For Workers or Agents SDK.
+- **[references/rest-api.md](references/rest-api.md)** - REST endpoint, curl examples, error handling. For apps NOT on Workers.
+- **[references/routing.md](references/routing.md)** - Inbound `email()` handler, forwarding, replying, parsing. For receiving emails.
+- **[references/cli-and-mcp.md](references/cli-and-mcp.md)** - Domain setup, wrangler commands, MCP tools. For first-time setup.
+- **[references/deliverability.md](references/deliverability.md)** - SPF/DKIM/DMARC, bounces, suppressions, best practices.

@@ -75,7 +75,7 @@ Key areas to check: CPU time per step, max steps per workflow, concurrent instan
 
 - `step.sleep()` and `step.waitForEvent()` don't count toward the max steps limit
 - Instances in `waiting` state (sleeping, waiting for event, waiting for retry) don't count toward the concurrent instance limit
-- CPU time is active processing only — network I/O, DB queries, and sleeps are wall-clock time, not CPU time
+- CPU time is active processing only - network I/O, DB queries, and sleeps are wall-clock time, not CPU time
 - `waitForEvent` type and workflow/instance names follow pattern `^[a-zA-Z0-9_][a-zA-Z0-9-_]*$`
 
 ## References

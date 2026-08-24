@@ -55,7 +55,7 @@ Recommended order for browser clients:
 3. **5349/tls** (corporate firewalls, most reliable)
 4. **443/tls** (alternate TLS port, firewall-friendly)
 
-**Avoid port 53**—blocked by Chrome and Firefox.
+**Avoid port 53**-blocked by Chrome and Firefox.
 
 ```typescript
 function filterICEServersForBrowser(urls: string[]): string[] {

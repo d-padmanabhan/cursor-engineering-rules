@@ -2,7 +2,7 @@
 
 Fetch <https://developers.cloudflare.com/agents/api-reference/think/> for complete documentation.
 
-`@cloudflare/think` — a higher-level chat agent class that handles the `streamText` loop, tool execution, and message persistence for you. You provide `getModel()` and `getSystemPrompt()`; Think handles the rest.
+`@cloudflare/think` - a higher-level chat agent class that handles the `streamText` loop, tool execution, and message persistence for you. You provide `getModel()` and `getSystemPrompt()`; Think handles the rest.
 
 ```bash
 npm install @cloudflare/think

@@ -60,8 +60,8 @@ Issue resolves automatically after 48h. Contact Cloudflare Support if persists.
 
 Cloudflare verifies bots via:
 
-1. **Reverse DNS (IP validation):** Traditional method—bot IP resolves to expected domain
-2. **Web Bot Auth:** Modern cryptographic verification—faster propagation
+1. **Reverse DNS (IP validation):** Traditional method-bot IP resolves to expected domain
+2. **Web Bot Auth:** Modern cryptographic verification-faster propagation
 
 When `verifiedBot=true`, bot passed at least one method.
 
@@ -71,13 +71,13 @@ When `verifiedBot=true`, bot passed at least one method.
 
 | Engine | Score | Timing | Plan | Notes |
 |--------|-------|--------|------|-------|
-| Heuristics | Always 1 | Immediate | All | Known fingerprints—overrides ML |
+| Heuristics | Always 1 | Immediate | All | Known fingerprints-overrides ML |
 | ML | 1-99 | Immediate | All | Majority of detections |
 | Anomaly Detection | Influences | After baseline | Enterprise | Optional, baseline analysis |
 | JavaScript Detections | Pass/fail | After JS | Pro+ | Headless browser detection |
 | Cloudflare Service | N/A | N/A | Enterprise | Zero Trust internal source |
 
-**Priority:** Heuristics > ML—if heuristic matches, score=1 regardless of ML.
+**Priority:** Heuristics > ML-if heuristic matches, score=1 regardless of ML.
 
 ## Limits
 

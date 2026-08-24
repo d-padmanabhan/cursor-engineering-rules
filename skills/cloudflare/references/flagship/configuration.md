@@ -91,7 +91,7 @@ npm i @cloudflare/flagship @openfeature/web-sdk
 
 ## SDK Provider Setup
 
-### Server Provider — With Binding (Workers)
+### Server Provider - With Binding (Workers)
 
 Recommended approach inside Workers. No HTTP overhead, auth handled automatically.
 
@@ -110,7 +110,7 @@ export default {
 };
 ```
 
-### Server Provider — With App ID (Node.js)
+### Server Provider - With App ID (Node.js)
 
 For non-Worker runtimes. Requires an API token with Flagship read permissions.
 
@@ -195,7 +195,7 @@ App IDs are shown in the Cloudflare dashboard under **Compute > Flagship**.
 
 ## Local Development
 
-Flagship bindings work in local dev with `wrangler dev`. Flag evaluation uses the live Flagship configuration — there is no local flag store. Ensure the `app_id` in your Wrangler config points to a valid app.
+Flagship bindings work in local dev with `wrangler dev`. Flag evaluation uses the live Flagship configuration - there is no local flag store. Ensure the `app_id` in your Wrangler config points to a valid app.
 
 ```bash
 npx wrangler dev

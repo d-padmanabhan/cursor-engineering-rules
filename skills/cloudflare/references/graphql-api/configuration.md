@@ -78,11 +78,11 @@ def query_graphql(query: str, variables: dict = None) -> dict:
 
 ### From a Cloudflare Worker
 
-Store the API token as a secret (`CF_API_TOKEN`). Use standard `fetch` to POST to `https://api.cloudflare.com/client/v4/graphql` with the same JSON body format as above. Always check `response.errors` — GraphQL returns 200 even on query failures.
+Store the API token as a secret (`CF_API_TOKEN`). Use standard `fetch` to POST to `https://api.cloudflare.com/client/v4/graphql` with the same JSON body format as above. Always check `response.errors` - GraphQL returns 200 even on query failures.
 
 ## GraphQL API Explorer
 
-Interactive explorer at [graphql.cloudflare.com](https://graphql.cloudflare.com/) — provides schema docs, autocomplete, variable panel, and shareable queries. Authenticates via your Cloudflare dashboard session.
+Interactive explorer at [graphql.cloudflare.com](https://graphql.cloudflare.com/) - provides schema docs, autocomplete, variable panel, and shareable queries. Authenticates via your Cloudflare dashboard session.
 
 ## Schema Introspection
 

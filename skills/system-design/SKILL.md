@@ -19,7 +19,7 @@ This is not an interview-diagram generator. Every component and complexity must 
 - Keep data ownership explicit. Shared databases and synchronous call chains create coupling even when diagrams show separate services.
 - Map correlated failure domains and hidden shared dependencies; replicated components are not isolated when they share a control plane, data store, quota, identity service, or deployment path.
 - State consistency and durability guarantees at each boundary.
-- Design degraded behavior, recovery, and migration—not only the healthy steady state.
+- Design degraded behavior, recovery, and migration-not only the healthy steady state.
 - Treat security, privacy, operability, and cost as design inputs, not review-stage additions.
 - Verify current vendor limits, guarantees, defaults, and pricing against official sources before relying on them.
 

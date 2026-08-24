@@ -1,6 +1,6 @@
-# Sending Emails — REST API
+# Sending Emails - REST API
 
-Send emails via HTTP requests from any application. If your app runs on Cloudflare Workers, use the [Workers binding](sending.md) instead — simpler and more performant.
+Send emails via HTTP requests from any application. If your app runs on Cloudflare Workers, use the [Workers binding](sending.md) instead - simpler and more performant.
 
 For the full OpenAPI specification, refer to the [Email Sending API reference](https://developers.cloudflare.com/api/resources/email_sending/methods/send).
 
@@ -25,7 +25,7 @@ Authorization: Bearer <API_TOKEN>
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `to` | string or string[] | Yes | Recipient(s), max 50 combined with cc/bcc |
-| `from` | string or `{address, name}` | Yes | Sender — **uses `address` not `email`** for object form |
+| `from` | string or `{address, name}` | Yes | Sender - **uses `address` not `email`** for object form |
 | `subject` | string | Yes | Email subject line |
 | `html` | string | No* | HTML body |
 | `text` | string | No* | Plain text body |
@@ -177,9 +177,9 @@ Error (numeric codes, not `E_*` string codes like Workers):
 | Status | Meaning | Retry? |
 |--------|---------|--------|
 | 200 | Success | N/A |
-| 400 | Validation error | No — fix the request |
-| 401 | Invalid API token | No — check your token |
-| 429 | Rate limited | Yes — exponential backoff |
-| 500 | Server error | Yes — exponential backoff |
+| 400 | Validation error | No - fix the request |
+| 401 | Invalid API token | No - check your token |
+| 429 | Rate limited | Yes - exponential backoff |
+| 500 | Server error | Yes - exponential backoff |
 
 Only retry on 429 and 500. Validation errors (400) won't succeed on retry.

@@ -1,6 +1,6 @@
 # Pagination and Streaming
 
-Treat pagination as a protocol with termination, ordering, retry, and resource limits—not as a loop that appends until a field is empty.
+Treat pagination as a protocol with termination, ordering, retry, and resource limits-not as a loop that appends until a field is empty.
 
 ## Contract
 

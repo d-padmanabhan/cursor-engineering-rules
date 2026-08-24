@@ -70,6 +70,6 @@ useAgent({
 
 ## Common Mistakes
 
-- Class name `MyAgent` becomes kebab `my-agent` in URLs — match exactly
+- Class name `MyAgent` becomes kebab `my-agent` in URLs - match exactly
 - "Namespace not found" error = the `class_name` in wrangler doesn't match your exported class
-- If `sendIdentityOnConnect: false`, the `ready` promise on the client may never resolve — use state sync instead
+- If `sendIdentityOnConnect: false`, the `ready` promise on the client may never resolve - use state sync instead

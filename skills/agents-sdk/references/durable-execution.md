@@ -44,8 +44,8 @@ export class MyAgent extends Agent<Env, State> {
 
 ## Important
 
-- `stash` replaces the entire checkpoint — not a merge
-- The lambda is NOT restored on recovery — only the stash data is. You must re-derive what to do in `onFiberRecovered`
-- No auto-retry on throw — handle errors yourself
+- `stash` replaces the entire checkpoint - not a merge
+- The lambda is NOT restored on recovery - only the stash data is. You must re-derive what to do in `onFiberRecovered`
+- No auto-retry on throw - handle errors yourself
 - For long-running pipelines with automatic retries, use Workflows instead
 - Filter concurrent fibers by `ctx.name` in `onFiberRecovered`

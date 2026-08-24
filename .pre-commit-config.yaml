@@ -5,6 +5,45 @@
 # Run manually: pre-commit run --all-files
 
 repos:
+  - repo: local
+    hooks:
+      - id: normalize-dashes
+        name: Normalize Unicode dashes
+        entry: python scripts/pre-commit/normalize_dashes.py
+        language: python
+        language_version: python3.14
+        types: [text]
+        exclude: '(^|/)(\.git|node_modules|\.venv|venv|__pycache__|\.tox|\.mypy_cache|\.pytest_cache|\.ruff_cache)(/|$)'
+        stages: [pre-commit]
+
+      # Changed-code structural analysis for JavaScript, TypeScript, and CSS.
+      # The script skips cleanly when the repository does not use Fallow.
+      - id: fallow-audit
+        name: Fallow audit (changed code only)
+        entry: scripts/pre-commit/fallow_audit.sh
+        language: system
+        pass_filenames: false
+        files: '\.(js|jsx|mjs|cjs|ts|tsx|css|scss)$'
+        stages: [pre-commit]
+
+      # Use an installed golangci-lint binary instead of compiling the upstream
+      # Go-language hook. The script skips cleanly when Go tooling is absent.
+      - id: golangci-lint
+        name: golangci-lint (changed Go code)
+        entry: scripts/pre-commit/golangci_lint.sh
+        language: system
+        pass_filenames: false
+        files: '\.go$'
+        stages: [pre-commit]
+
+      - id: golangci-config-verify
+        name: golangci-lint configuration
+        entry: scripts/pre-commit/golangci_lint.sh --config-verify
+        language: system
+        pass_filenames: false
+        files: '(^|/)\.golangci\.ya?ml$'
+        stages: [pre-commit]
+
   # General file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0

@@ -36,7 +36,7 @@ Content-Type: application/json
 **Response includes**:
 
 - `uid`: Key identifier
-- `key`: The actual secret key (only returned on creation—save immediately)
+- `key`: The actual secret key (only returned on creation-save immediately)
 - `name`: Human-readable name
 - `created`: ISO 8601 timestamp
 - `modified`: ISO 8601 timestamp
@@ -98,7 +98,7 @@ Content-Type: application/json
 }
 ```
 
-**Port 53 Warning**: Filter port 53 URLs for browser clients—blocked by Chrome/Firefox. See [gotchas.md](./gotchas.md#using-port-53-in-browsers).
+**Port 53 Warning**: Filter port 53 URLs for browser clients-blocked by Chrome/Firefox. See [gotchas.md](./gotchas.md#using-port-53-in-browsers).
 
 ## Revoke Credentials
 
