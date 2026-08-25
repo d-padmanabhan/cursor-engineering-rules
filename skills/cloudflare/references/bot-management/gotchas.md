@@ -71,13 +71,14 @@ When `verifiedBot=true`, bot passed at least one method.
 
 | Engine | Score | Timing | Plan | Notes |
 |--------|-------|--------|------|-------|
-| Heuristics | Always 1 | Immediate | All | Known fingerprints override ML |
-| ML | 1-99 | Immediate | All | Majority of detections |
+| Heuristics | 1, occasionally 29 | Immediate | All | Uses 1 for high-confidence detections and 29 while assessing traffic overlap |
+| ML | Most scores from 2-99 | Immediate | Business and Enterprise | Determines the final Bot Score from modeled probability |
 | Anomaly Detection | Influences | After baseline | Enterprise | Optional, baseline analysis |
 | JavaScript Detections | Pass/fail | After JS | Pro+ | Headless browser detection |
 | Cloudflare Service | N/A | N/A | Enterprise | Zero Trust internal source |
 
-**Priority:** Heuristics take precedence over ML; if a heuristic matches, score=1 regardless of ML.
+Cloudflare uses multiple detection engines rather than a documented precedence
+chain. `BotScoreSrc` identifies the engine responsible for a request's score.
 
 ## Limits
 
