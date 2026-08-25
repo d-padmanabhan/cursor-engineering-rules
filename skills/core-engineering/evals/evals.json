@@ -352,6 +352,129 @@
           "pattern": "\\u2013|\\u2014"
         }
       ]
+    },
+    {
+      "id": 6,
+      "prompt": "Review a function that processes n orders and, for each order, linearly scans m blocked customer IDs. The lists can each contain hundreds of thousands of elements. Provide the smallest behavior-preserving correction, including precise time and auxiliary-space complexity and a measurement plan.",
+      "expected_output": "Define n and m, identify current O(n * m) time and O(1) auxiliary space, build a hash set once, and perform membership tests for expected O(n + m) time with O(m) auxiliary space. Qualify hash lookup as expected rather than guaranteed worst-case O(1), preserve behavior, and propose a representative benchmark.",
+      "files": [],
+      "checks": [
+        {
+          "id": "defines-input-variables",
+          "type": "contains_all",
+          "values": [
+            "n",
+            "orders",
+            "m",
+            "blocked"
+          ]
+        },
+        {
+          "id": "analyzes-current-complexity",
+          "type": "contains_all",
+          "values": [
+            "O(n * m)",
+            "O(1)",
+            "auxiliary"
+          ]
+        },
+        {
+          "id": "analyzes-corrected-complexity",
+          "type": "contains_all",
+          "values": [
+            "set",
+            "O(n + m)",
+            "O(m)",
+            "expected"
+          ]
+        },
+        {
+          "id": "requires-measurement",
+          "type": "contains_any",
+          "values": [
+            "benchmark",
+            "measure",
+            "profile"
+          ]
+        },
+        {
+          "id": "observes-core-skill",
+          "type": "loaded_skill",
+          "skill": "core-engineering",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Review these claims: (1) every hash-map lookup is guaranteed O(1), (2) every dynamic-array append is O(1), and (3) two consecutive loops over n items are O(n^2). Correct each claim and explain the relevant assumptions.",
+      "expected_output": "Hash lookup is commonly expected O(1), not an unconditional worst-case guarantee. Dynamic-array append is amortized O(1), while a resize can take O(n). Two consecutive O(n) loops are O(n + n), which simplifies to O(n), not O(n^2).",
+      "files": [],
+      "checks": [
+        {
+          "id": "qualifies-hash-lookup",
+          "type": "contains_all",
+          "values": [
+            "expected O(1)",
+            "worst case",
+            "hash"
+          ]
+        },
+        {
+          "id": "explains-amortized-append",
+          "type": "contains_all",
+          "values": [
+            "amortized O(1)",
+            "resize",
+            "O(n)"
+          ]
+        },
+        {
+          "id": "combines-sequential-loops",
+          "type": "contains_all",
+          "values": [
+            "O(n + n)",
+            "O(n)",
+            "not O(n^2)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "A clear implementation scans at most 12 configuration entries once during startup. A proposal replaces it with a custom index, cache invalidation, synchronization, and background rebuilding solely to change O(n) lookup to expected O(1). Review the proposal.",
+      "expected_output": "Reject the speculative optimization because n is tightly bounded and the startup path lacks a measured bottleneck. Keep the simple O(n) scan, state the small bound and lifecycle, and define profiling or latency evidence that would justify revisiting the design.",
+      "files": [],
+      "checks": [
+        {
+          "id": "rejects-notation-only-optimization",
+          "type": "contains_all",
+          "values": [
+            "reject",
+            "bounded",
+            "12",
+            "O(n)"
+          ]
+        },
+        {
+          "id": "keeps-simple-design",
+          "type": "contains_any",
+          "values": [
+            "keep the simple",
+            "retain the scan",
+            "simple scan"
+          ]
+        },
+        {
+          "id": "requires-bottleneck-evidence",
+          "type": "contains_all",
+          "values": [
+            "bottleneck",
+            "measure",
+            "revisit"
+          ]
+        }
+      ]
     }
   ]
 }

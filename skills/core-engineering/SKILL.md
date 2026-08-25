@@ -73,6 +73,21 @@ Organize feedback by impact:
 
 For detailed review patterns and formats, see code review reference (`${HANDBOOK_ROOT}/skills/core-engineering/references/code-review.md`).
 
+## Algorithmic Complexity Contract
+
+When input size can grow or performance is material:
+
+- Define what each variable represents, such as `n` records and `m` lookup keys. Do not write `O(n)` without naming the input.
+- Analyze worst-case time and auxiliary space by default. State average, expected, amortized, or output-sensitive complexity only when that qualification matters and its assumptions hold.
+- Account for nested and sequential work correctly: nested independent inputs are commonly `O(n * m)`, while sequential phases are `O(n + m)`.
+- Include sorting, copying, allocation, hashing, serialization, database calls, network calls, and produced output when they dominate the operation.
+- Distinguish expected hash-table lookup from guaranteed worst-case behavior. Do not claim unconditional `O(1)`.
+- Compare alternatives using both time and space. A faster lookup may require `O(n)` auxiliary memory.
+- Treat Big O as a growth model, not a benchmark. Constants, cache locality, allocation, I/O, bounded inputs, and realistic distributions still require measurement.
+- Do not optimize a clear, bounded path solely to improve notation. Require a bottleneck hypothesis and measurement plan before making performance-driven changes.
+
+Use the algorithmic complexity reference (`${HANDBOOK_ROOT}/skills/core-engineering/references/algorithmic-complexity.md`) for analysis procedure, common operations, and review examples.
+
 ## Code Generation Essentials
 
 1. Handle ambiguity proactively - proceed with minimal assumptions, list ≤3 targeted questions

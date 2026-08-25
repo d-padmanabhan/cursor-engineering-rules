@@ -115,6 +115,44 @@ Revisit this when multiple formats exist.
 
         self.assertIn("does-not-draft-class-hierarchy", failed)
 
+    def test_complexity_review_rejects_missing_tradeoffs(self) -> None:
+        """Reject a rewrite that gives unsupported bounds and omits space cost."""
+        output = """
+Use a set because every lookup is guaranteed O(1), making the whole operation O(n).
+This has no additional memory cost.
+"""
+
+        failed = self.failed_check_ids(self.cases[6], output)
+
+        self.assertIn("defines-input-variables", failed)
+        self.assertIn("analyzes-current-complexity", failed)
+        self.assertIn("analyzes-corrected-complexity", failed)
+        self.assertIn("requires-measurement", failed)
+
+    def test_complexity_eval_rejects_incorrect_big_o_rules(self) -> None:
+        """Reject common unconditional and loop-counting misconceptions."""
+        output = """
+Hash-map lookups are guaranteed O(1).
+Every append is O(1).
+Any two loops make the function O(n^2).
+"""
+
+        failed = self.failed_check_ids(self.cases[7], output)
+
+        self.assertIn("qualifies-hash-lookup", failed)
+        self.assertIn("explains-amortized-append", failed)
+        self.assertIn("combines-sequential-loops", failed)
+
+    def test_complexity_eval_rejects_notation_only_optimization(self) -> None:
+        """Reject complexity-driven machinery without workload evidence."""
+        output = "Build the index so lookup improves from O(n) to O(1)."
+
+        failed = self.failed_check_ids(self.cases[8], output)
+
+        self.assertIn("rejects-notation-only-optimization", failed)
+        self.assertIn("keeps-simple-design", failed)
+        self.assertIn("requires-bottleneck-evidence", failed)
+
 
 if __name__ == "__main__":
     unittest.main()
