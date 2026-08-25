@@ -67,6 +67,162 @@
           "pattern": "\\u2013|\\u2014"
         }
       ]
+    },
+    {
+      "id": 5,
+      "prompt": "Review a Docusaurus pipeline that downloads customer-authored .mdx files into docs/ and compiles them directly. The files may contain JSX, imports, and exports. The author says this is safe because the content is documentation and CI runs in a sandbox. Propose the smallest safe design.",
+      "expected_output": "Reject direct compilation because untrusted MDX is executable content. Accept MDX only from trusted reviewed authors. Parse customer content into a restricted Markdown schema that rejects JSX, imports, exports, raw HTML, and unsupported URLs, then render it with a non-executable pipeline. Keep the build isolated with least privilege and bounded egress.",
+      "files": [],
+      "checks": [
+        {
+          "id": "rejects-direct-untrusted-mdx",
+          "type": "contains_all",
+          "values": [
+            "untrusted",
+            "MDX",
+            "executable"
+          ]
+        },
+        {
+          "id": "restricts-active-content",
+          "type": "contains_all",
+          "values": [
+            "restricted Markdown",
+            "JSX",
+            "imports",
+            "exports"
+          ]
+        },
+        {
+          "id": "preserves-build-isolation",
+          "type": "contains_any",
+          "values": [
+            "least privilege",
+            "bounded egress",
+            "sandbox"
+          ]
+        },
+        {
+          "id": "observes-documentation-skill",
+          "type": "loaded_skill",
+          "skill": "documentation-standards",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "A Docusaurus site owner says search is built in, so no provider, crawler, index, or deployment check is needed. Review the proposal for a public production documentation site.",
+      "expected_output": "Reject the assumption that search is automatically enabled. Configure Algolia DocSearch or a reviewed compatible local-search plugin, scope the crawler or index to canonical production content, exclude previews and private content, use only a public search key in the browser, and verify indexing after deployment.",
+      "files": [],
+      "checks": [
+        {
+          "id": "rejects-automatic-search-assumption",
+          "type": "contains_any",
+          "values": [
+            "does not enable search automatically",
+            "not built in",
+            "search integration"
+          ]
+        },
+        {
+          "id": "configures-search-provider",
+          "type": "contains_any",
+          "values": [
+            "Algolia DocSearch",
+            "local-search plugin",
+            "local search plugin"
+          ]
+        },
+        {
+          "id": "verifies-production-index",
+          "type": "contains_all",
+          "values": [
+            "index",
+            "production",
+            "verify"
+          ]
+        },
+        {
+          "id": "protects-search-credentials",
+          "type": "contains_any",
+          "values": [
+            "public search key",
+            "admin key",
+            "write-capable"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Review a Docusaurus site deployed at https://acme.com/platform/. Its config uses url: \"https://acme.com/platform\", baseUrl: \"/\", leaves trailingSlash unset, and only warns on broken links. Define the smallest production validation contract.",
+      "expected_output": "Set url to https://acme.com and baseUrl to /platform/, choose trailingSlash explicitly for the host, set onBrokenLinks to throw, run the production build, and test representative routes and static assets against the generated output under the configured subpath.",
+      "files": [],
+      "checks": [
+        {
+          "id": "corrects-deployment-path",
+          "type": "contains_all",
+          "values": [
+            "url",
+            "https://acme.com",
+            "baseUrl",
+            "/platform/",
+            "trailingSlash"
+          ]
+        },
+        {
+          "id": "fails-on-broken-links",
+          "type": "contains_all",
+          "values": [
+            "onBrokenLinks",
+            "throw",
+            "production build"
+          ]
+        },
+        {
+          "id": "tests-generated-site",
+          "type": "contains_any",
+          "values": [
+            "representative routes",
+            "static assets",
+            "generated output"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "A Docusaurus team proposes creating a version snapshot for every patch release, hand-copying versioned_docs, editing historical pages alongside current docs, and loading all 40 versions in every preview build. Review the proposal.",
+      "expected_output": "Reject patch-by-patch snapshots without a support requirement. Version only supported major or material compatibility lines, create snapshots through the Docusaurus versioning CLI, keep current content in docs/, assign maintenance ownership, and use onlyIncludeVersions to bound preview builds.",
+      "files": [],
+      "checks": [
+        {
+          "id": "limits-versioning-scope",
+          "type": "contains_all",
+          "values": [
+            "supported",
+            "patch",
+            "maintenance"
+          ]
+        },
+        {
+          "id": "uses-versioning-cli",
+          "type": "contains_all",
+          "values": [
+            "versioning CLI",
+            "docs/"
+          ]
+        },
+        {
+          "id": "bounds-preview-versions",
+          "type": "contains_all",
+          "values": [
+            "onlyIncludeVersions",
+            "preview"
+          ]
+        }
+      ]
     }
   ]
 }

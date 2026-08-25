@@ -2,11 +2,12 @@
 name: documentation-standards
 description: >-
   Documentation best practices including Markdown formatting, Mermaid diagrams,
-  technical writing, ADRs, and open source standards. Use when writing
-  documentation, README files, markdown content, creating static diagrams in
-  Markdown, or when asking about documentation structure, technical writing, or
-  open source project setup. For interactive React Flow canvases in a SPA, use
-  the reactflow-architecture-diagrams skill instead.
+  technical writing, ADRs, Docusaurus and MDX documentation sites, and open
+  source standards. Use when writing documentation, README files, Markdown or
+  MDX content, creating static diagrams in Markdown, configuring Docusaurus, or
+  asking about documentation structure, technical writing, or open source
+  project setup. For interactive React Flow canvases in a SPA, use the
+  reactflow-architecture-diagrams skill instead.
 ---
 
 # Documentation Standards
@@ -42,6 +43,28 @@ Use one primary documentation mode per page:
 - **Explanation** - concepts and rationale
 
 Canonical Diataxis guidance lives in `rules/810-documentation.mdc`. Keep this skill concise and link back to the rule instead of duplicating detailed standards.
+
+## Documentation Sites and Docusaurus
+
+Use a documentation site when the content needs structured multi-page
+navigation, search, versioning, internationalization, or interactive MDX.
+Keep a README and a small set of Markdown guides when those capabilities do not
+justify a separate Node.js build and deployment lifecycle.
+
+For Docusaurus work:
+
+- Verify the current supported Docusaurus, Node.js, React, and plugin versions
+  from official sources. Pin compatible releases and commit the lockfile.
+- Treat MDX as executable React code. Never compile untrusted content as MDX.
+- Configure search explicitly. Docusaurus does not make a site searchable
+  without a search integration and index lifecycle.
+- Version only supported release lines, not every patch by default.
+- Make the production build fail on broken internal links and verify `url`,
+  `baseUrl`, and `trailingSlash` against the deployment path.
+
+Use the Docusaurus reference
+(`${HANDBOOK_ROOT}/skills/documentation-standards/references/docusaurus.md`) for
+site structure, MDX trust boundaries, versioning, search, CI, and deployment.
 
 ## README Structure
 
@@ -204,6 +227,7 @@ graph LR
 ## Detailed References
 
 - **React Flow (interactive canvases)**: See `skills/reactflow-architecture-diagrams/SKILL.md` and `rules/815-reactflow-diagrams.mdc`
+- **Docusaurus**: See Docusaurus documentation sites (`${HANDBOOK_ROOT}/skills/documentation-standards/references/docusaurus.md`)
 - **Markdown & Mermaid**: See Markdown and Mermaid (`${HANDBOOK_ROOT}/skills/documentation-standards/references/markdown-mermaid.md`)
 - **Technical Writing**: See technical writing (`${HANDBOOK_ROOT}/skills/documentation-standards/references/technical-writing.md`)
 - **Open Source**: See open source (`${HANDBOOK_ROOT}/skills/documentation-standards/references/open-source.md`)

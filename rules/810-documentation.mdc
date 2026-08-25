@@ -7,8 +7,14 @@ files:
   include:
     - "**/docs/**/*.md"
     - "**/*.md"
+    - "**/*.mdx"
     - "mkdocs.yml"
-    - "docusaurus.config.js"
+    - "**/docusaurus.config.js"
+    - "**/docusaurus.config.ts"
+    - "**/docusaurus.config.mjs"
+    - "**/docusaurus.config.cjs"
+    - "**/sidebars.js"
+    - "**/sidebars.ts"
     - "vitepress.config.js"
 ---
 
@@ -125,22 +131,23 @@ Before writing or editing docs, choose one mode first:
 
 #### Docusaurus (React-based)
 
-**Best for:** React/JavaScript projects, technical documentation
+**Best for:** React and MDX documentation portals that need structured
+navigation, versioning, internationalization, or theme customization.
 
-```bash
-npx create-docusaurus@latest my-docs classic
-```
+Mandatory gates:
 
-**Features:**
-- React-based
-- Great for technical docs
-- Versioning support
-- Search integration
-- Blog support
+- Treat MDX as executable code. Never compile untrusted content as MDX.
+- Verify current Docusaurus, Node.js, React, and plugin compatibility before
+  selecting versions. Pin compatible releases and commit the lockfile.
+- Keep all `@docusaurus/*` packages on the same compatible version.
+- Configure search explicitly; Docusaurus does not enable a search provider or
+  maintain an index automatically.
+- Make the production build fail on broken internal links and verify `url`,
+  `baseUrl`, and `trailingSlash` against the deployment path.
+- Version only supported release lines with an explicit maintenance owner.
 
-**Examples:**
-- [Langfuse Docs](https://langfuse.com/docs)
-- [TensorZero Docs](https://www.tensorzero.com/docs/)
+Canonical workflow and examples:
+`${HANDBOOK_ROOT}/skills/documentation-standards/references/docusaurus.md`.
 
 #### MkDocs (Python-based)
 
@@ -426,57 +433,23 @@ Create a new user.
 
 ### Versioning in Docusaurus
 
-```javascript
-// docusaurus.config.js
-module.exports = {
-  presets: [
-    [
-      '@docusaurus/preset-classic',
-      {
-        docs: {
-          versions: {
-            current: {
-              label: '2.0',
-              path: '2.0',
-            },
-            '1.0': {
-              label: '1.0',
-              path: '1.0',
-            },
-          },
-        },
-      },
-    ],
-  ],
-};
-```
+- Create snapshots through the Docusaurus versioning CLI instead of manually
+  copying generated directories.
+- Do not create a snapshot for every patch release by default.
+- Keep current content in `docs/` and maintain snapshots only for supported
+  release lines.
+- Use `onlyIncludeVersions` for previews when historical versions make builds
+  unnecessarily slow.
 
 ## Search Functionality
 
-### Algolia DocSearch
+### Docusaurus Search
 
-For open source projects, apply for [Algolia DocSearch](https://docsearch.algolia.com/):
-
-```javascript
-// docusaurus.config.js
-module.exports = {
-  themeConfig: {
-    algolia: {
-      appId: 'YOUR_APP_ID',
-      apiKey: 'YOUR_SEARCH_API_KEY',
-      indexName: 'YOUR_INDEX_NAME',
-    },
-  },
-};
-```
-
-### Local Search
-
-For private docs, use local search plugins:
-
-- MkDocs: `mkdocs-material` includes search
-- Docusaurus: Built-in search
-- VitePress: Built-in search
+Docusaurus does not enable search automatically. Configure
+[Algolia DocSearch](https://docusaurus.io/docs/search) or a reviewed,
+version-compatible local-search plugin. Verify indexing after production
+deployment and never expose an administrative or write-capable search key to
+the browser.
 
 ## Reading & Researching Documentation
 
