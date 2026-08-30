@@ -1,0 +1,331 @@
+{
+  "skill_name": "observability",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Design production logging for a Go service running in Kubernetes. The proposal writes one growing JSON array to /var/log/app.json and rotates it inside the application. Explain whether NDJSON is required and provide the smallest operationally safe correction.",
+      "expected_output": "Reject the growing JSON array and application-owned rotation. Emit one valid JSON object per physical line to stdout or stderr and let the container platform collect and rotate it. Explain that NDJSON is appropriate for line-oriented streams but is not mandatory when structured events are exported through OTLP or another native transport. Define blocking, buffering, and loss behavior.",
+      "files": [],
+      "checks": [
+        {
+          "id": "uses-container-streams",
+          "type": "contains_all",
+          "values": [
+            "stdout",
+            "stderr",
+            "platform",
+            "rotate"
+          ]
+        },
+        {
+          "id": "defines-one-event-per-line",
+          "type": "contains_all",
+          "values": [
+            "one",
+            "JSON object",
+            "line"
+          ]
+        },
+        {
+          "id": "does-not-mandate-ndjson-transport",
+          "type": "contains_all",
+          "values": [
+            "NDJSON",
+            "OTLP",
+            "not"
+          ]
+        },
+        {
+          "id": "defines-output-failure",
+          "type": "contains_any",
+          "values": [
+            "backpressure",
+            "blocking",
+            "buffer",
+            "loss"
+          ]
+        },
+        {
+          "id": "observes-observability-skill",
+          "type": "loaded_skill",
+          "skill": "observability",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Review a structured logger that records Authorization headers, cookies, raw request and response bodies, email addresses, IP addresses, exception strings, and caller-supplied messages containing newlines. The team says JSON makes all fields safe.",
+      "expected_output": "Reject the design. JSON encoding does not authorize sensitive-data collection. Remove credentials, cookies, and raw bodies; minimize and classify personal data; redact by schema before serialization; bound exceptions and fields; and encode newlines and control characters so untrusted values cannot forge log records. Define access, retention, and deletion.",
+      "files": [],
+      "checks": [
+        {
+          "id": "removes-secrets-and-raw-payloads",
+          "type": "contains_all",
+          "values": [
+            "Authorization",
+            "cookies",
+            "raw",
+            "remove"
+          ]
+        },
+        {
+          "id": "governs-personal-data",
+          "type": "contains_all",
+          "values": [
+            "personal",
+            "classify",
+            "retention"
+          ]
+        },
+        {
+          "id": "prevents-log-injection",
+          "type": "contains_all",
+          "values": [
+            "newlines",
+            "control characters",
+            "encode"
+          ]
+        },
+        {
+          "id": "bounds-error-context",
+          "type": "contains_any",
+          "values": [
+            "bound exceptions",
+            "cap",
+            "size limit"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "A Prometheus metric http_request_duration_seconds uses user_id, request_id, trace_id, email, raw_path, and exception_message as labels so every incident can be filtered precisely. Review it and preserve useful diagnostics.",
+      "expected_output": "Reject the unbounded labels because their Cartesian product creates cardinality and cost explosion. Keep bounded dimensions such as normalized route, method, status class, region, or cell where justified; estimate worst-case series count; and move request-level detail to correlated logs, traces, or exemplars.",
+      "files": [],
+      "checks": [
+        {
+          "id": "rejects-unbounded-labels",
+          "type": "contains_all",
+          "values": [
+            "reject",
+            "unbounded",
+            "cardinality"
+          ]
+        },
+        {
+          "id": "uses-bounded-dimensions",
+          "type": "contains_all",
+          "values": [
+            "normalized route",
+            "method",
+            "status"
+          ]
+        },
+        {
+          "id": "estimates-series-budget",
+          "type": "contains_all",
+          "values": [
+            "series",
+            "worst-case",
+            "cost"
+          ]
+        },
+        {
+          "id": "routes-high-cardinality-detail",
+          "type": "contains_any",
+          "values": [
+            "logs",
+            "traces",
+            "exemplars"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "In a microservice request, every service discards incoming trace headers and creates a new trace_id. The gateway also puts tenant_id and is_admin=true in baggage, and downstream services use those values for authorization. Correct the design.",
+      "expected_output": "Continue valid W3C trace context across service boundaries instead of creating unrelated traces. Treat trace IDs and baggage as untrusted correlation context, never authorization evidence. Authenticate and authorize from trusted identity and policy inputs, allowlist and bound baggage, and prevent caller values from overwriting trusted tenant attributes.",
+      "files": [],
+      "checks": [
+        {
+          "id": "propagates-trace-context",
+          "type": "contains_all",
+          "values": [
+            "W3C",
+            "trace context",
+            "continue"
+          ]
+        },
+        {
+          "id": "rejects-baggage-authorization",
+          "type": "contains_all",
+          "values": [
+            "baggage",
+            "untrusted",
+            "authorization"
+          ]
+        },
+        {
+          "id": "uses-trusted-identity-policy",
+          "type": "contains_all",
+          "values": [
+            "authenticate",
+            "policy",
+            "trusted"
+          ]
+        },
+        {
+          "id": "bounds-baggage",
+          "type": "contains_all",
+          "values": [
+            "allowlist",
+            "bound",
+            "overwrite"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "A service pages the on-call engineer whenever any pod CPU exceeds 80 percent for one minute. There is no SLI, SLO, owner, runbook, pending-window test, or evidence that CPU predicts user impact. Review the alerting design.",
+      "expected_output": "Do not page solely on the copied CPU threshold. Define a user-visible SLI and SLO, use multi-window burn-rate alerts for urgent budget consumption, retain CPU as diagnostic or proven capacity evidence, and require an owner, runbook, routing, recovery condition, and synthetic alert tests.",
+      "files": [],
+      "checks": [
+        {
+          "id": "rejects-cpu-only-page",
+          "type": "contains_all",
+          "values": [
+            "not page",
+            "CPU",
+            "user"
+          ]
+        },
+        {
+          "id": "uses-slo-burn-alerting",
+          "type": "contains_all",
+          "values": [
+            "SLI",
+            "SLO",
+            "multi-window",
+            "burn"
+          ]
+        },
+        {
+          "id": "requires-operational-contract",
+          "type": "contains_all",
+          "values": [
+            "owner",
+            "runbook",
+            "routing",
+            "recovery"
+          ]
+        },
+        {
+          "id": "tests-alert",
+          "type": "contains_any",
+          "values": [
+            "synthetic",
+            "test"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "An OpenTelemetry Collector uses unlimited memory queues and infinite retries. The team plans to enable a persistent queue and then advertise zero telemetry loss during any backend outage. Review the reliability claim and define safe behavior.",
+      "expected_output": "Reject the zero-loss claim. Bound memory, disk, queue capacity and age, batches, retry attempts or elapsed time, and shutdown behavior. Define backpressure and drop priorities so telemetry cannot exhaust the observed service. A persistent queue still loses data on overflow, expiry, corruption, or disk failure. Monitor accepted, refused, dropped, retried, queued, delayed, and exported telemetry.",
+      "files": [],
+      "checks": [
+        {
+          "id": "rejects-zero-loss-claim",
+          "type": "contains_all",
+          "values": [
+            "reject",
+            "zero",
+            "persistent queue",
+            "loss"
+          ]
+        },
+        {
+          "id": "bounds-pipeline-resources",
+          "type": "contains_all",
+          "values": [
+            "memory",
+            "disk",
+            "queue",
+            "age",
+            "retry"
+          ]
+        },
+        {
+          "id": "defines-overload-policy",
+          "type": "contains_all",
+          "values": [
+            "backpressure",
+            "drop",
+            "exhaust"
+          ]
+        },
+        {
+          "id": "monitors-pipeline-loss",
+          "type": "contains_all",
+          "values": [
+            "refused",
+            "dropped",
+            "queued",
+            "exported"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "A regulated service sends authorization decisions and administrative actions into the ordinary application log index. The index is mutable, retained for seven days, and samples 90 percent of events. The team calls this the audit trail. Review the claim.",
+      "expected_output": "Reject the audit claim. Required audit events need complete actor, action, target, authority, policy version, decision, result, and time fields; no probabilistic sampling; append-only or immutable storage; stricter authorization; completeness monitoring; and retention owned by the applicable policy. Keep application diagnostics separate when integrity and retention differ.",
+      "files": [],
+      "checks": [
+        {
+          "id": "rejects-application-log-as-audit",
+          "type": "contains_all",
+          "values": [
+            "reject",
+            "audit",
+            "mutable"
+          ]
+        },
+        {
+          "id": "requires-audit-fields",
+          "type": "contains_all",
+          "values": [
+            "actor",
+            "action",
+            "target",
+            "policy",
+            "decision",
+            "result"
+          ]
+        },
+        {
+          "id": "requires-audit-integrity",
+          "type": "contains_all",
+          "values": [
+            "no",
+            "sampling",
+            "immutable",
+            "retention"
+          ]
+        },
+        {
+          "id": "separates-diagnostic-logs",
+          "type": "contains_all",
+          "values": [
+            "application",
+            "separate",
+            "integrity"
+          ]
+        }
+      ]
+    }
+  ]
+}

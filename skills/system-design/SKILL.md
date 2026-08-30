@@ -96,7 +96,10 @@ Specify:
 - deployment, rollback, feature flag, and schema migration strategy;
 - runbooks, on-call and escalation ownership, operational expertise, cognitive load, and manual intervention.
 
-Use the security testing skill (`${HANDBOOK_ROOT}/skills/security-testing/SKILL.md`), Zero Trust skill (`${HANDBOOK_ROOT}/skills/zero-trust/SKILL.md`), and observability rule (`${HANDBOOK_ROOT}/rules/330-observability.mdc`) for specialist review.
+Use the security testing skill
+(`${HANDBOOK_ROOT}/skills/security-testing/SKILL.md`), Zero Trust skill
+(`${HANDBOOK_ROOT}/skills/zero-trust/SKILL.md`), and observability skill
+(`${HANDBOOK_ROOT}/skills/observability/SKILL.md`) for specialist review.
 
 ### 7. Compare alternatives
 
@@ -123,6 +126,7 @@ Route depth instead of copying domain procedures:
 - APIs: API design rule (`${HANDBOOK_ROOT}/rules/320-api-design.mdc`)
 - Domain boundaries and models: Domain-Driven Design (`${HANDBOOK_ROOT}/skills/domain-driven-design/SKILL.md`)
 - Dependency failure, overload, and isolation: service resilience (`${HANDBOOK_ROOT}/skills/service-resilience/SKILL.md`)
+- Logs, metrics, traces, SLOs, alerts, and telemetry pipelines: observability (`${HANDBOOK_ROOT}/skills/observability/SKILL.md`)
 - PostgreSQL: database PostgreSQL (`${HANDBOOK_ROOT}/skills/database-postgresql/SKILL.md`)
 - Data platforms and pipelines: data engineering (`${HANDBOOK_ROOT}/skills/data-engineering/SKILL.md`)
 - Event platforms and Kafka governance: Kafka rule (`${HANDBOOK_ROOT}/rules/483-kafka.mdc`), data engineering (`${HANDBOOK_ROOT}/skills/data-engineering/SKILL.md`), and distributed transactions (`${HANDBOOK_ROOT}/skills/distributed-transactions/SKILL.md`)

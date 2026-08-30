@@ -261,14 +261,25 @@ Deprecation:
 
 ## Observability Baseline
 
-Every production service ships with three signals: **logs, metrics, traces**. Without all three you cannot answer "what is this service doing right now".
+Every production service must expose enough evidence to answer its critical
+operational and reliability questions. Select logs, metrics, traces, and
+profiles by purpose rather than requiring every signal mechanically.
 
-- Structured logs (JSON or equivalent); one correlation id per request, propagated to every downstream call.
-- Log every authz decision (allow + deny), every external call, every state transition. Never log secrets or PII.
-- Metrics for the four golden signals: latency, traffic, errors, saturation.
-- Traces for cross-service requests; one span per logical step.
+- Use structured events with bounded fields, stable names, redaction, and
+  propagated trace context.
+- Use metrics for user-visible outcomes, rates, errors, latency distributions,
+  saturation, and bounded resource budgets.
+- Use traces for cross-service and asynchronous paths where request-level
+  causality or latency matters.
+- Keep required security audit events separate when integrity, access,
+  completeness, or retention differs from application logging.
+- Bound telemetry volume, cardinality, queues, retries, retention, and cost.
 
-For deeper guidance: `rules/330-observability.mdc` (logging/metrics/tracing patterns), `rules/210-go.mdc` Section 7 (Go logging stack with `otelslog`), and `rules/316-zero-trust.mdc` (append-only WORM audit store for trust decisions).
+For deeper guidance, use the observability skill
+(`${HANDBOOK_ROOT}/skills/observability/SKILL.md`), the Go rule
+(`${HANDBOOK_ROOT}/rules/210-go.mdc`) for Go logging integration, and the Zero
+Trust rule (`${HANDBOOK_ROOT}/rules/316-zero-trust.mdc`) for append-only audit
+requirements.
 
 ## Testing Baseline
 

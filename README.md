@@ -504,6 +504,7 @@ Skills under `skills/` cover repeatable end-to-end workflows that pair with the 
 - **[skills/system-design](skills/system-design/)** - evidence-backed production architecture, SLO and dependency budgets, overload, multi-tenancy, cellular architecture, reliability, cost, and migration
 - **[skills/domain-driven-design](skills/domain-driven-design/)** - strategic and tactical DDD, bounded contexts, context maps, aggregates, domain events, and anti-corruption layers
 - **[skills/service-resilience](skills/service-resilience/)** - deadlines, retries, circuit breakers, bulkheads, overload control, fallbacks, and recovery testing
+- **[skills/observability](skills/observability/)** - structured logging, metrics, SLOs, tracing, alerts, telemetry pipelines, security, and cost controls
 - **[skills/git-workflow](skills/git-workflow/)** - commits, branches, worktrees, signing, recovery, and remote synchronization
 - **[skills/python-development](skills/python-development/)** - Python 3.14+ patterns
 - **[skills/typescript-javascript](skills/typescript-javascript/)** - TS/JS patterns
@@ -579,6 +580,7 @@ The initial suites cover:
 - [Kubernetes containers evals](skills/kubernetes-containers/evals/evals.json)
 - [Memory architecture evals](skills/memory-architecture/evals/evals.json)
 - [Okta evals](skills/okta/evals/evals.json)
+- [Observability evals](skills/observability/evals/evals.json)
 - [Python development evals](skills/python-development/evals/evals.json)
 - [Scripting automation evals](skills/scripting-automation/evals/evals.json)
 - [Security testing evals](skills/security-testing/evals/evals.json)
