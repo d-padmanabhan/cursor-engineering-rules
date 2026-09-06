@@ -123,7 +123,7 @@ Define incremental slices, compatibility transitions, data migration, load and f
 Route depth instead of copying domain procedures:
 
 - Cloud architecture: cloud platforms (`${HANDBOOK_ROOT}/skills/cloud-platforms/SKILL.md`)
-- APIs: API design rule (`${HANDBOOK_ROOT}/rules/320-api-design.mdc`)
+- API contracts and protocol surfaces: API design (`${HANDBOOK_ROOT}/skills/api-design/SKILL.md`) and mandatory API gates (`${HANDBOOK_ROOT}/rules/320-api-design.mdc`)
 - Domain boundaries and models: Domain-Driven Design (`${HANDBOOK_ROOT}/skills/domain-driven-design/SKILL.md`)
 - Dependency failure, overload, and isolation: service resilience (`${HANDBOOK_ROOT}/skills/service-resilience/SKILL.md`)
 - Logs, metrics, traces, SLOs, alerts, and telemetry pipelines: observability (`${HANDBOOK_ROOT}/skills/observability/SKILL.md`)

@@ -1,176 +1,130 @@
-# API Design
+# API Security Testing
 
-## REST Best Practices
+Use the API design skill
+(`${HANDBOOK_ROOT}/skills/api-design/SKILL.md`) for interface semantics and
+contracts. This reference owns focused negative security testing.
 
-### Resource Naming
+## Test from the Trust Boundary
 
-```
-GET    /users           # List users
-POST   /users           # Create user
-GET    /users/{id}      # Get user
-PUT    /users/{id}      # Replace user
-PATCH  /users/{id}      # Partial update
-DELETE /users/{id}      # Delete user
+Build tests from the API's principals, resources, relationships, fields,
+actions, and state transitions. Cover both allow and deny decisions.
 
-# Nested resources
-GET    /users/{id}/orders
-POST   /users/{id}/orders
-```
+For every protected operation, vary:
 
-### HTTP Status Codes
+- unauthenticated, malformed, expired, revoked, and wrong-audience credentials;
+- principal, role, scope, tenant, organization, and ownership;
+- resource IDs, parent IDs, related IDs, and collection filters;
+- writable and readable fields;
+- operation state and concurrency version;
+- direct endpoint, batch, GraphQL, gRPC, stream, and asynchronous-status access.
 
-| Code | Meaning | Use When |
-|------|---------|----------|
-| 200 | OK | Successful GET, PUT, PATCH |
-| 201 | Created | Successful POST |
-| 204 | No Content | Successful DELETE |
-| 400 | Bad Request | Invalid input |
-| 401 | Unauthorized | Missing auth |
-| 403 | Forbidden | Insufficient permissions |
-| 404 | Not Found | Resource doesn't exist |
-| 409 | Conflict | Duplicate, conflict |
-| 422 | Unprocessable | Validation error |
-| 429 | Too Many Requests | Rate limit |
-| 500 | Server Error | Internal error |
+Do not accept a successful list filter as proof that member endpoints enforce
+the same scope.
 
-### Response Format
+## BOLA, BFLA, and Mass Assignment
 
-```json
-{
-  "data": {
-    "id": "123",
-    "name": "Alice",
-    "email": "alice@acme.com"
-  }
-}
+Test horizontal and vertical identifier substitution. Attempt access to another
+tenant's child through an authorized parent and an authorized child through
+another parent. Test guessed, stale, deleted, and malformed identifiers.
 
-// Error response
-{
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Invalid email format",
-    "details": [
-      {"field": "email", "message": "Must be valid email"}
-    ]
-  }
-}
-```
+Add authority-bearing input fields such as:
 
-## Versioning
+- `tenant_id`;
+- `owner_id`;
+- `role`;
+- `is_admin`;
+- `price`;
+- `approved`;
+- internal lifecycle state.
 
-```
-# URL path (recommended)
-GET /v1/users
-GET /v2/users
+Verify that unknown or forbidden fields are rejected or ignored according to
+the documented schema and cannot affect stored or returned state.
 
-# Header
-Accept: application/vnd.acme.v1+json
+Test field-level output filtering for personal, financial, credential, and
+administrative attributes.
 
-# Query parameter
-GET /users?version=1
-```
+## Parser and Size Abuse
 
-## Pagination
+Test:
 
-```json
-GET /users?page=2&limit=20
+- unsupported and conflicting media types;
+- duplicate JSON keys and query parameters;
+- unknown fields;
+- null versus absent values;
+- extreme numbers, strings, arrays, maps, and nesting;
+- malformed Unicode and control characters;
+- compressed-body expansion;
+- file and archive traversal;
+- batch amplification;
+- GraphQL aliases, fragments, breadth, depth, and field cost;
+- gRPC message and stream limits;
+- WebSocket frame and message limits.
 
-{
-  "data": [...],
-  "pagination": {
-    "page": 2,
-    "limit": 20,
-    "total": 100,
-    "total_pages": 5,
-    "next": "/users?page=3&limit=20",
-    "prev": "/users?page=1&limit=20"
-  }
-}
-```
+Confirm that parsing fails before business or policy side effects.
 
-## Filtering and Sorting
+## Mutation, Retry, and Concurrency
 
-```
-# Filtering
-GET /users?status=active&role=admin
+For idempotent and idempotency-protected operations, inject:
 
-# Sorting
-GET /users?sort=name        # Ascending
-GET /users?sort=-created_at # Descending
+- lost responses;
+- concurrent duplicate requests;
+- same key with a different payload;
+- crash before and after local commit;
+- dependency timeout followed by late success;
+- retry after key expiry;
+- stale `If-Match`;
+- compensation and reconciliation failure.
 
-# Field selection
-GET /users?fields=id,name,email
-```
+Verify one intended business effect, the documented replayed result, safe
+conflict behavior, and visible reconciliation.
 
-## Authentication
+## SSRF and Webhooks
 
-```python
-# JWT Bearer token
-@app.before_request
-def authenticate():
-    token = request.headers.get("Authorization", "").replace("Bearer ", "")
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        g.user = User.get(payload["sub"])
-    except jwt.InvalidTokenError:
-        abort(401)
-```
+For user-influenced destinations, test alternate IP representations, DNS
+changes, redirects, embedded credentials, disallowed ports, private and
+link-local addresses, metadata endpoints, oversized responses, and timeout
+behavior.
 
-## Rate Limiting
+For inbound webhooks, test modified raw bytes, wrong key, old and future
+timestamps, duplicate delivery IDs, schema-version mismatch, key rotation,
+acknowledgement crash windows, and repeated processing.
 
-```python
-from flask_limiter import Limiter
+## Error and Telemetry Exposure
 
-limiter = Limiter(
-    app,
-    key_func=get_remote_address,
-    default_limits=["100 per minute"]
-)
+Trigger parser, authentication, authorization, policy, database, dependency,
+timeout, and internal failures. Verify that responses and telemetry do not
+expose:
 
-@app.route("/api/search")
-@limiter.limit("10 per minute")
-def search():
-    pass
-```
+- credentials, tokens, cookies, keys, or connection strings;
+- stack traces, SQL, internal paths, or dependency payloads;
+- account or resource existence when policy requires concealment;
+- raw request or response bodies;
+- unnecessary personal or tenant data.
 
-## OpenAPI Documentation
+Validate correlation identifiers for format and length. Ensure route templates,
+not raw attacker-controlled paths, are used for metric dimensions.
 
-```yaml
-openapi: 3.0.3
-info:
-  title: User API
-  version: 1.0.0
+## Rate and Cost Controls
 
-paths:
-  /users:
-    get:
-      summary: List users
-      parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 1
-      responses:
-        200:
-          description: List of users
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
+Test limits by principal, tenant, IP where relevant, resource, operation, and
+cost. Attempt evasion through concurrency, batching, aliases, multiple
+connections, retries, pagination, and alternate credentials.
 
-components:
-  schemas:
-    User:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        email:
-          type: string
-          format: email
-```
+Verify bounded failure behavior when the limiter or identity dependency is
+unavailable. Rate limiting must not become the only authorization control.
+
+## Evidence
+
+Record:
+
+- tested principal and resource relationship;
+- request shape with secrets removed;
+- expected and actual status or protocol result;
+- authorization or policy decision identifier;
+- resulting durable state;
+- duplicate or side-effect count;
+- relevant redacted telemetry;
+- exact build and contract version.
+
+Use synthetic accounts and resources. Never run destructive security tests
+against production without explicit authorization and an isolated test plan.

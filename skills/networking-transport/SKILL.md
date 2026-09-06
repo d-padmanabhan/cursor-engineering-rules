@@ -5,7 +5,7 @@ description: Networking and transport-layer architecture for production services
 
 # Networking & Transport - Architecture Patterns
 
-The transport-and-wire-format layer underneath your API design. `320-api-design.mdc` covers the API surface (verbs, status codes, versioning). This skill covers everything below it: TCP, HTTP/n, QUIC, serialization, connection lifecycle, head-of-line, TTFB budget.
+The transport-and-wire-format layer underneath API design. The API design skill (`${HANDBOOK_ROOT}/skills/api-design/SKILL.md`) and rule (`${HANDBOOK_ROOT}/rules/320-api-design.mdc`) cover the API surface. This skill covers TCP, HTTP/n, QUIC, serialization, connection lifecycle, head-of-line blocking, and TTFB budgets.
 
 Get this layer wrong and your P99 latency, mobile UX, edge cold-start cost, and east-west microservice throughput all suffer in ways that profiling your application code can't fix.
 
@@ -471,7 +471,7 @@ For any PR adding or changing a `.proto`:
 
 ## Related
 
-- Rule: `320-api-design.mdc` - API surface (verbs, status, versioning) - the layer above this skill
+- API design: `${HANDBOOK_ROOT}/skills/api-design/SKILL.md` and `${HANDBOOK_ROOT}/rules/320-api-design.mdc` - the contract layer above this skill
 - Rule: `316-zero-trust.mdc` - Network section (mTLS, default-deny egress) - the security model on top of this transport
 - Rule: `330-observability.mdc` - Logging, metrics, tracing - including the transport-layer metrics above
 - Rule: `400-cloudflare.mdc` - CDN patterns, Workers, edge-to-origin connection lifecycle

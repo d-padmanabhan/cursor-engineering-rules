@@ -399,7 +399,7 @@ Use Pydantic at structured trust boundaries when runtime validation, explicit co
 - **Code Quality Tools**: See code quality tools (`${HANDBOOK_ROOT}/skills/python-development/references/code-quality-tools.md`) for Black, Ruff, mypy, and Pylint configuration
 - **Package Management**: See package management (`${HANDBOOK_ROOT}/skills/python-development/references/package-management.md`) for uv and dependency management
 - **Standard Library**: See standard library (`${HANDBOOK_ROOT}/skills/python-development/references/standard-library.md`)
-- **Logging & Observability**: See logging and observability (`${HANDBOOK_ROOT}/skills/python-development/references/logging-observability.md`)
+- **Observability**: Use the observability skill (`${HANDBOOK_ROOT}/skills/observability/SKILL.md`) for schemas, metrics, tracing, SLOs, alerts, and pipelines; see Python logging (`${HANDBOOK_ROOT}/skills/python-development/references/logging-observability.md`) for runtime-specific implementation
 - **Security & Validation**: See security and validation (`${HANDBOOK_ROOT}/skills/python-development/references/security-validation.md`)
 - **Error Handling**: See error handling (`${HANDBOOK_ROOT}/skills/python-development/references/error-handling.md`)
 - **Performance Optimization**: See performance optimization (`${HANDBOOK_ROOT}/skills/python-development/references/performance-optimization.md`)

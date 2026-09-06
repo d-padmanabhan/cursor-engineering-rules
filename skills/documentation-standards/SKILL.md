@@ -1,18 +1,18 @@
 ---
 name: documentation-standards
 description: >-
-  Documentation best practices including Markdown formatting, Mermaid diagrams,
-  technical writing, ADRs, Docusaurus and MDX documentation sites, and open
-  source standards. Use when writing documentation, README files, Markdown or
-  MDX content, creating static diagrams in Markdown, configuring Docusaurus, or
-  asking about documentation structure, technical writing, or open source
-  project setup. For interactive React Flow canvases in a SPA, use the
-  reactflow-architecture-diagrams skill instead.
+  Documentation best practices including Markdown formatting, generated PNG
+  diagrams, technical writing, ADRs, Docusaurus and MDX documentation sites,
+  and open source standards. Use when writing documentation, README files,
+  Markdown or MDX content, creating static diagrams for Markdown, configuring
+  Docusaurus, or asking about documentation structure, technical writing, or
+  open source project setup. For interactive React Flow canvases in a SPA, use
+  the reactflow-architecture-diagrams skill instead.
 ---
 
 # Documentation Standards
 
-Mandatory Markdown gates are owned by the Markdown rule (`${HANDBOOK_ROOT}/rules/800-markdown.mdc`). This skill owns document design, Mermaid guidance, templates, and writing workflows.
+Mandatory Markdown gates are owned by the Markdown rule (`${HANDBOOK_ROOT}/rules/800-markdown.mdc`). This skill owns document design, generated PNG guidance, templates, and writing workflows.
 
 ## Core Principles
 
@@ -154,67 +154,43 @@ Prefer clickable same-repo references:
 | Cell 1   | Cell 2   |
 ```
 
-## Interactive vs static diagrams
+## Static and Interactive Diagrams
 
-- **Static (Markdown):** Mermaid in this skill and in `rules/800-markdown.mdc`.
-- **Interactive (React SPA):** `@xyflow/react` patterns, playbook, and rule **`rules/815-reactflow-diagrams.mdc`** - use skill **`skills/reactflow-architecture-diagrams/`**. See static versus interactive diagrams (`${HANDBOOK_ROOT}/skills/reactflow-architecture-diagrams/references/static-vs-interactive.md`) for a short comparison table.
+- **Static Markdown documentation:** generate a PNG under an `images/`
+  directory beside the Markdown file and embed it with a relative path.
+- **Interactive React application:** use the React Flow rule
+  (`${HANDBOOK_ROOT}/rules/815-reactflow-diagrams.mdc`) and skill
+  (`${HANDBOOK_ROOT}/skills/reactflow-architecture-diagrams/SKILL.md`).
 
-### AI diagram tooling
+Do not author Mermaid blocks in Markdown or MDX.
 
-Prefer tools that preserve a code-owned source of truth. Mermaid text in the repo is easiest to review, diff, and maintain.
+## Generated PNG Workflow
 
-| Tool | Best fit | Round-trip / ownership guidance |
-|---|---|---|
-| **Mermaid Chart AI** | Best fit for engineering-maintained diagrams | Generates/refines standard Mermaid and can export PNG, SVG, or MMD. Keep the `.mmd` / Mermaid block in the repo as source of truth. |
-| **Eraser** | Good for nicer engineering visuals | Can import Mermaid and export PNG/SVG/PDF. Mermaid round-tripping is weaker, so treat exported Mermaid as a starting point and review manually. |
-| **Lucidchart AI** | Good for polished business-friendly diagrams | Supports Mermaid input, but generated diagrams are not ideal for code-based round-tripping. Use for stakeholder diagrams, not canonical repo-maintained architecture diagrams. |
-| **Napkin AI** | Best for presentation / infographic visuals | Exports PNG/SVG/PPT/PDF, but not Mermaid. Use for slides or narrative visuals, not engineering diagrams that must remain code-owned. |
+1. Decide whether the relationship is materially clearer as an image than as
+   short prose or a list.
+2. Create an `images/` directory in the directory containing the Markdown file.
+3. Generate a focused PNG with a descriptive kebab-case filename.
+4. Inspect the image for correctness, legibility, clipping, misleading arrows,
+   accidental sensitive data, and unnecessary decoration.
+5. Embed it with meaningful alt text and a portable relative path.
+6. Verify the image from the rendered document.
 
-Rule of thumb: if future maintainers need to edit it in Git, use Mermaid (or React Flow for interactive SPA diagrams). If the artifact is for a deck or executive narrative, exported visuals are acceptable as generated artifacts.
+For `docs/design.md`, the required layout is:
 
-## Mermaid Diagrams
-
-### Flowchart
-```mermaid
-flowchart TD
-    A[Start] --> B{Decision}
-    B -->|Yes| C[Action 1]
-    B -->|No| D[Action 2]
-    C --> E[End]
-    D --> E
+```text
+docs/
+├── design.md
+└── images/
+    └── request-flow.png
 ```
 
-### Sequence Diagram
-```mermaid
-sequenceDiagram
-    participant User
-    participant API
-    participant DB
-    
-    User->>API: Request
-    API->>DB: Query
-    DB-->>API: Result
-    API-->>User: Response
-```
+Embed the generated artifact with meaningful alt text and the portable relative
+path `images/request-flow.png`. Use the detailed Markdown images reference for
+the exact syntax.
 
-### Architecture Diagram
-```mermaid
-graph LR
-    subgraph Frontend
-        A[React App]
-    end
-    subgraph Backend
-        B[API Gateway]
-        C[Service]
-    end
-    subgraph Data
-        D[(Database)]
-    end
-    
-    A --> B
-    B --> C
-    C --> D
-```
+Do not create an empty `images/` directory when no diagram is needed. Do not
+place generated images in a repository-wide asset directory when the image is
+owned by one nearby document.
 
 ## Technical Writing Tips
 
@@ -228,6 +204,6 @@ graph LR
 
 - **React Flow (interactive canvases)**: See `skills/reactflow-architecture-diagrams/SKILL.md` and `rules/815-reactflow-diagrams.mdc`
 - **Docusaurus**: See Docusaurus documentation sites (`${HANDBOOK_ROOT}/skills/documentation-standards/references/docusaurus.md`)
-- **Markdown & Mermaid**: See Markdown and Mermaid (`${HANDBOOK_ROOT}/skills/documentation-standards/references/markdown-mermaid.md`)
+- **Markdown and images**: See Markdown images (`${HANDBOOK_ROOT}/skills/documentation-standards/references/markdown-images.md`)
 - **Technical Writing**: See technical writing (`${HANDBOOK_ROOT}/skills/documentation-standards/references/technical-writing.md`)
 - **Open Source**: See open source (`${HANDBOOK_ROOT}/skills/documentation-standards/references/open-source.md`)

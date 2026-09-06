@@ -161,6 +161,43 @@
           "value": "consumers need no idempotency"
         }
       ]
+    },
+    {
+      "id": 6,
+      "prompt": "Review this distributed transfer design: the debit service commits first, the credit service may complete hours later, and the API reports success immediately. The team says the Saga always preserves transactional integrity because a nightly job compensates failed credits.",
+      "expected_output": "Reject the global ACID claim and define the actual business invariant and externally visible states. Keep each local transition atomic, do not report terminal success before the required invariant is satisfied, make commands idempotent, persist Saga state, and provide compensation plus reconciliation for partial failure.",
+      "files": [],
+      "checks": [
+        {
+          "id": "rejects-global-acid-claim",
+          "type": "contains_all",
+          "values": [
+            "global ACID",
+            "business invariant",
+            "Saga"
+          ]
+        },
+        {
+          "id": "preserves-invariant-through-failure",
+          "type": "contains_all",
+          "values": [
+            "local",
+            "atomic",
+            "idempotent",
+            "compensation",
+            "reconciliation"
+          ]
+        },
+        {
+          "id": "does-not-report-false-success",
+          "type": "contains_any",
+          "values": [
+            "do not report",
+            "must not report",
+            "pending"
+          ]
+        }
+      ]
     }
   ]
 }

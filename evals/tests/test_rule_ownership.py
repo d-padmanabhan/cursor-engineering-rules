@@ -15,6 +15,7 @@ RULE_LINE_BUDGETS: dict[str, int] = {
     "200-python.mdc": 100,
     "225-javascript-typescript.mdc": 110,
     "310-security.mdc": 100,
+    "320-api-design.mdc": 120,
     "440-docker.mdc": 100,
     "450-kubernetes.mdc": 140,
     "460-helm.mdc": 90,
@@ -24,6 +25,7 @@ SCOPED_RULES: tuple[str, ...] = (
     "140-bash.mdc",
     "200-python.mdc",
     "225-javascript-typescript.mdc",
+    "320-api-design.mdc",
     "440-docker.mdc",
     "450-kubernetes.mdc",
     "460-helm.mdc",
@@ -99,7 +101,7 @@ class RuleOwnershipTests(unittest.TestCase):
 
     def test_handbook_has_no_user_specific_paths(self) -> None:
         personal_root: str = "/Users/" + "Devesh_Padmanabhan"
-        excluded_directories: set[str] = {".git", ".venv", "__pycache__", "tmp"}
+        excluded_directories: set[str] = {".agent", ".git", ".venv", "__pycache__", "tmp"}
 
         for file_path in REPOSITORY_ROOT.rglob("*"):
             if not file_path.is_file() or excluded_directories.intersection(file_path.parts):

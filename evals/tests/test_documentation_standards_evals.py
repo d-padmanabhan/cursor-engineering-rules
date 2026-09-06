@@ -11,7 +11,7 @@ DOCUMENTATION_SKILL_DIRECTORY = REPOSITORY_ROOT / "skills" / "documentation-stan
 
 
 class DocumentationStandardsEvalTests(unittest.TestCase):
-    """Ensure unsafe or incomplete Docusaurus guidance cannot pass evals."""
+    """Ensure unsafe or incomplete documentation guidance cannot pass evals."""
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -36,6 +36,44 @@ class DocumentationStandardsEvalTests(unittest.TestCase):
             for result in results
             if result.required and not result.passed
         }
+
+    def test_architecture_eval_rejects_mermaid_without_png(self) -> None:
+        """Reject an inline Mermaid block that omits the sibling PNG artifact."""
+        output = """
+# Architecture
+
+Client to API to Database.
+
+```mermaid
+flowchart LR
+    Client --> API --> Database
+```
+
+See the [API](docs/api.md) and [database](docs/database.md) documentation.
+"""
+
+        failed = self.failed_check_ids(self.cases[2], output)
+
+        self.assertIn("requires-sibling-png", failed)
+        self.assertIn("rejects-mermaid", failed)
+
+    def test_architecture_eval_accepts_sibling_png_reference(self) -> None:
+        """Accept a generated sibling PNG with meaningful Markdown embedding."""
+        output = """
+# Architecture
+
+Client requests pass through the API before reaching the Database.
+
+Generated and verified `docs/images/request-flow.png`.
+
+![Client requests pass through the API before reaching the database](images/request-flow.png)
+
+See the [API](docs/api.md) and [database](docs/database.md) documentation.
+"""
+
+        failed = self.failed_check_ids(self.cases[2], output)
+
+        self.assertEqual(set(), failed)
 
     def test_untrusted_mdx_rejects_sandbox_only_argument(self) -> None:
         """Reject direct compilation even when the build runs in a sandbox."""

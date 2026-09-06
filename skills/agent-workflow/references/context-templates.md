@@ -271,13 +271,9 @@ Detailed technical design for complex features.
 - [Component 2]: [responsibility]
 
 ### Data flow
-[Describe request/data flow. Add a Mermaid diagram if helpful.]
-
-```mermaid
-flowchart LR
-  A[Client] --> B[Service]
-  B --> C[(Storage)]
-```
+[Describe request/data flow. If an image materially improves understanding,
+generate `images/data-flow.png` beside this document, embed it here with
+meaningful alt text, and verify it.]
 
 ## Interfaces & contracts
 
@@ -318,6 +314,7 @@ flowchart LR
 ```
 
 **Usage with Claude Code:**
+
 - For Level 3-4 complexity tasks
 - Ask: "Create a design doc for [feature] following the template"
 - Save in `docs/designs/` or `.claude/designs/`

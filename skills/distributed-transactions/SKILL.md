@@ -10,6 +10,9 @@ Use this skill when one business operation spans services, databases, brokers, o
 ## Non-Negotiables
 
 - Prefer one local ACID transaction when the data can remain inside one ownership boundary.
+- Every design must preserve declared business invariants across success,
+  retries, concurrency, partial failure, compensation, and recovery. Never
+  imply that eventual consistency or a Saga provides global ACID semantics.
 - Never implement a database write followed by direct message publication as an unprotected dual write.
 - Assume messages can be delayed, duplicated, reordered, and redelivered.
 - Make externally visible commands and consumers idempotent at the business-effect boundary.

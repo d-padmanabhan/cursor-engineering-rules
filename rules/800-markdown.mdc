@@ -10,7 +10,7 @@ globs:
 
 # Markdown Documentation Gates
 
-This rule owns mandatory Markdown policy only. Use the documentation standards skill (`${HANDBOOK_ROOT}/skills/documentation-standards/SKILL.md`) for document design, Mermaid syntax, templates, ADRs, and writing workflows.
+This rule owns mandatory Markdown policy only. Use the documentation standards skill (`${HANDBOOK_ROOT}/skills/documentation-standards/SKILL.md`) for document design, generated PNG diagrams, templates, ADRs, and writing workflows.
 
 ## Structure and Proportionality
 
@@ -39,12 +39,16 @@ This rule owns mandatory Markdown policy only. Use the documentation standards s
 
 - Use only supported GitHub alerts: `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, and `CAUTION`.
 - Keep alerts concise and place them next to the relevant instruction.
-- Use Mermaid only when a relationship, sequence, state, hierarchy, or timeline is clearer visually than in short prose.
-- Keep diagrams focused, label nodes clearly, quote labels containing punctuation, and avoid explicit theme colors.
-- Verify Mermaid syntax in a compatible renderer before completion.
+- Do not author Mermaid diagrams in Markdown or MDX.
+- Add a diagram only when a relationship, sequence, state, hierarchy, or timeline is clearer visually than in short prose.
+- Create an `images/` directory beside the Markdown file, generate the diagram as a descriptively named PNG inside that directory, and embed it with meaningful alt text through a portable relative path such as `images/request-flow.png`.
+- Do not create an `images/` directory when the document does not need an image.
+- Keep diagrams focused and readable at the rendered size. Exclude secrets, sensitive data, internal credentials, and unnecessary production identifiers.
+- Verify that every referenced image exists, renders correctly, and matches the surrounding explanation before completion.
 
 ## Accessibility and Verification
 
 - Use descriptive link text and image alt text; do not encode meaning through color alone.
+- Alt text must communicate the diagram's purpose or key relationship, not repeat its filename.
 - Keep tables readable on narrow screens and avoid unnecessarily wide columns.
 - Run the repository's Markdown lint and link checks for changed documentation.

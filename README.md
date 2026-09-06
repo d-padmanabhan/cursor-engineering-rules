@@ -1,597 +1,489 @@
 # Agent Engineering Handbook
 
-> **Production-grade rules, skills, commands, and MCP server for AI coding agents - language, cloud, security, and AI/ML standards for 15+ stacks**
+> Rules, Agent Skills, commands, hooks, evaluation tooling, and an MCP server for AI-assisted software engineering.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/MIT)
 
-Comprehensive, battle-tested configuration for AI coding agents. Curated **rules** (`.mdc`), **Agent Skills**, a **skill evaluation harness**, **slash commands**, an **MCP server**, and **lifecycle hooks** covering languages, cloud platforms, DevOps tools, data platforms, identity systems, AI/ML, Zero Trust, and engineering patterns.
+This repository contains 52 Cursor rule files, 53 Agent Skills, 19 custom Cursor commands, and 24 behavioral eval suites covering software design, languages, cloud platforms, infrastructure, security, identity, data, AI systems, and documentation.
 
-> [!NOTE]
-> **Agent-neutral.** Originally built for Cursor; today the content ships in formats compatible with **Cursor**, **Claude Code**, and **Codex** - rules (`.cursor/rules/`, `AGENTS.md`), Agent Skills (`.cursor/skills/`, `.claude/skills/`, `.codex/skills/`), and slash commands. The MCP server works with any MCP-compatible client.
->
-> **Renamed in May 2026** from `cursor-engineering-rules` to `agent-engineering-handbook` to reflect what the repo became (rules + skills + commands + MCP server + hooks for any AI coding agent, not just Cursor). GitHub redirects old URLs, so existing clones, submodules, and bookmarks keep working.
+The content is organized for progressive disclosure:
 
----
+- **Rules** provide concise mandatory gates that apply automatically, by file scope, or when selected.
+- **Skills** provide detailed workflows, examples, references, and verification procedures.
+- **Commands** provide manually invoked Cursor workflows.
+- **Hooks** provide deterministic checks around agent activity.
+- **Evals** measure whether skills improve behavior.
+- **The MCP server** exposes handbook rules through the Model Context Protocol.
 
-## What's Included
+## Contents
 
-### Core Standards
+- [Start Here](#start-here)
+- [Rules and Skills](#rules-and-skills)
+- [Install for Cursor](#install-for-cursor)
+- [Custom Commands](#custom-commands)
+- [Hooks](#hooks)
+- [MCP Server](#mcp-server)
+- [Rule Highlights](#rule-highlights)
+- [Skill Catalog](#skill-catalog)
+- [Skill Evaluation](#skill-evaluation)
+- [Repository Utilities](#repository-utilities)
+- [Contributing](#contributing)
+- [License](#license)
 
-- **[100-core.mdc](rules/100-core.mdc)** - Core coding standards and review guidelines
-- **[015-context-engineering.mdc](rules/015-context-engineering.mdc)** - Context engineering (prompt packing, retrieval, compaction)
-- **[010-workflow.mdc](rules/010-workflow.mdc)** - Development workflow patterns
-- **[020-agent-audit.mdc](rules/020-agent-audit.mdc)** - Agent audit requirements
-- **[130-git.mdc](rules/130-git.mdc)** - Mandatory Git authorization, preservation, signing, and remote-write gates
+## Start Here
 
-### Programming Languages
+1. Clone or update this repository.
+2. Give the checkout a stable local path.
+3. Install the rules and skills needed by the target workspace.
+4. Run the repository's setup or validation commands.
+5. Keep project-specific exceptions in the target repository rather than modifying shared handbook policy.
 
-- **[200-python.mdc](rules/200-python.mdc)** - Python best practices (PEP 8, type hints, async)
-- **[210-go.mdc](rules/210-go.mdc)** - Go patterns (error handling, concurrency, generics)
-- **[225-javascript-typescript.mdc](rules/225-javascript-typescript.mdc)** - Shared JavaScript/TypeScript safety and type gates
-- **[260-frontend.mdc](rules/260-frontend.mdc)** - Frontend architecture cross-cutting non-negotiables (SSG/SSR/SPA/ISR choice, bundle budgets, state buckets, WCAG, Core Web Vitals, supply-chain); pairs with the `frontend-engineering` skill
-- **[220-rust.mdc](rules/220-rust.mdc)** - Rust (ownership, borrowing, async)
-- **[140-bash.mdc](rules/140-bash.mdc)** - Shell scripting (POSIX compliance, safety)
-
-### Cloud Platforms
-
-- **[410-aws.mdc](rules/410-aws.mdc)** - AWS (EKS, VPC Lattice, Zero Trust, IAM)
-- **[430-azure.mdc](rules/430-azure.mdc)** - Azure (Bicep, Key Vault, App Service)
-- **[420-gcp.mdc](rules/420-gcp.mdc)** - GCP (Cloud Run, GKE, Secret Manager)
-- **[400-cloudflare.mdc](rules/400-cloudflare.mdc)** - Cloudflare (Workers, Rules Engine, WAF policy)
-- **[401-cloudflare-workers.mdc](rules/401-cloudflare-workers.mdc)** - Cloudflare Workers TypeScript non-negotiables (file-scoped to wrangler.jsonc + Worker entry files)
-- **[405-cloudflare-waf-rules.mdc](rules/405-cloudflare-waf-rules.mdc)** - Cloudflare WAF rule tactical playbook for Terraform / Dashboard / API authoring (source-of-truth discipline, predicates, guards, per-interface provenance + checklist)
-
-### AI & Machine Learning
-
-- **[500-ai-ml.mdc](rules/500-ai-ml.mdc)** - LLM integration (OpenAI, Claude, Bedrock, Vertex AI)
-- **[510-mcp-servers.mdc](rules/510-mcp-servers.mdc)** - Model Context Protocol servers
-
-### DevOps & Infrastructure
-
-- **[180-terraform.mdc](rules/180-terraform.mdc)** - Terraform (modules, state, validation)
-- **[170-cloudformation.mdc](rules/170-cloudformation.mdc)** - CloudFormation templates
-- **[450-kubernetes.mdc](rules/450-kubernetes.mdc)** - Kubernetes & EKS patterns, including Podtrace runtime debugging
-- **[160-github-actions.mdc](rules/160-github-actions.mdc)** - GitHub Actions (workflows, security, OIDC)
-- **[190-ansible.mdc](rules/190-ansible.mdc)** - Ansible (playbooks, roles, idempotency)
-- **[460-helm.mdc](rules/460-helm.mdc)** - Helm charts and templating
-- **[440-docker.mdc](rules/440-docker.mdc)** - Mandatory Docker security, reproducibility, cache, and publishing gates
-- **[150-justfile.mdc](rules/150-justfile.mdc)** - Justfile patterns (modern command runner)
-
-### Security & Testing
-
-- **[310-security.mdc](rules/310-security.mdc)** - OWASP Top 10, secret management
-- **[316-zero-trust.mdc](rules/316-zero-trust.mdc)** - Distinguished Engineer - Zero Trust (identity, network, data, workload, AI/agents)
-- **[317-okta.mdc](rules/317-okta.mdc)** - Okta Workforce Identity (SSO, MFA, SCIM, policies, Workflows, ASA, terraform-provider-okta)
-- **[318-workload-identity.mdc](rules/318-workload-identity.mdc)** - Workload identity (SPIFFE/SPIRE, cloud IAM, OIDC federation)
-- **[300-testing.mdc](rules/300-testing.mdc)** - Unit/Integration/E2E testing strategies
-
-### Patterns & Best Practices
-
-- **[320-api-design.mdc](rules/320-api-design.mdc)** - REST API design patterns
-- **[325-networking.mdc](rules/325-networking.mdc)** - Networking & transport non-negotiables (file-scoped to .proto / buf.* / gRPC config); see also the `networking-transport` skill
-- **[330-observability.mdc](rules/330-observability.mdc)** - Logging, metrics, tracing
-- **[470-postgresql.mdc](rules/470-postgresql.mdc)** - PostgreSQL patterns
-- **[475-sql.mdc](rules/475-sql.mdc)** - Safe SQL patterns (transactions, destructive guardrails)
-- **[480-data-engineering.mdc](rules/480-data-engineering.mdc)** - Data engineering core (contracts, backfills, DQ, governance)
-- **[481-databricks.mdc](rules/481-databricks.mdc)** - Databricks (Spark/Delta/Unity Catalog/DLT)
-- **[482-snowflake.mdc](rules/482-snowflake.mdc)** - Snowflake (RBAC, cost/perf, ingestion, tasks)
-- **[483-kafka.mdc](rules/483-kafka.mdc)** - Kafka / Confluent (schemas, semantics, DLQ, ops)
-- **[484-teradata.mdc](rules/484-teradata.mdc)** - Teradata SQL and performance patterns
-- **[810-documentation.mdc](rules/810-documentation.mdc)** - Documentation standards
-- **[815-reactflow-diagrams.mdc](rules/815-reactflow-diagrams.mdc)** - Interactive architecture diagrams (@xyflow/react / React Flow); playbook: [skills/reactflow-architecture-diagrams/SKILL.md](skills/reactflow-architecture-diagrams/SKILL.md) (symlink into `.cursor/skills/` in consumer projects)
-- **[820-open-source.mdc](rules/820-open-source.mdc)** - Open source project patterns
-- **[250-cli.mdc](rules/250-cli.mdc)** - CLI application patterns
-- **[110-configuration.mdc](rules/110-configuration.mdc)** - Configuration management
-
-### Utilities
-
-- **[120-utilities.mdc](rules/120-utilities.mdc)** - CLI utilities (lynx, curl, jq, ripgrep, fd, fzf)
-- **[800-markdown.mdc](rules/800-markdown.mdc)** - Markdown & Mermaid diagrams
-
-### Scripts
-
-Utility scripts for Cursor maintenance:
-
-- **[cursor-maintenance.sh](scripts/cursor-maintenance.sh)** - Clean cache, logs, and temp files to reclaim disk space
-- **[cursor-hooks-install.sh](scripts/cursor-hooks-install.sh)** - Install optional deterministic Cursor hooks (guardrails + audit)
+Create the stable handbook root once:
 
 ```bash
-# Preview cleanup
-./scripts/cursor-maintenance.sh --dry-run
-
-# Run cleanup
-./scripts/cursor-maintenance.sh
+mkdir -p "${HOME}/.cursor"
+ln -s "/absolute/path/to/agent-engineering-handbook" \
+  "${HOME}/.cursor/agent-engineering-handbook"
 ```
 
-See [scripts/README.md](scripts/README.md) for details.
+Before creating the link, confirm that `${HOME}/.cursor/agent-engineering-handbook` does not already contain a different checkout or user data.
 
-### Hooks (optional)
+The handbook's cross-file references use:
 
-Deterministic lifecycle hooks to observe/control agent behavior (for example: gate destructive shell commands, block reading `.env` files).
+```bash
+HANDBOOK_ROOT="${HOME}/.cursor/agent-engineering-handbook"
+```
 
-- Docs: **[`docs/HOOKS.md`](docs/HOOKS.md)**
-- Cursor hook pack: **[`hooks/cursor/`](hooks/cursor/)**
+## Rules and Skills
 
+Cursor project rules live under `.cursor/rules/`. Current rule activation fields are `description`, `globs`, and `alwaysApply`. This repository also uses `title` and numeric `priority` as catalog metadata; do not assume Cursor uses them for activation order.
+
+Cursor project skills live in `.cursor/skills/` or `.agents/skills/`; user skills live in `~/.cursor/skills/` or `~/.agents/skills/`. Cursor also discovers compatible skill directories used by Claude Code and Codex. This repository's portable skill contract requires `name` and `description`.
+
+| Concern | Rules | Skills |
+| --- | --- | --- |
+| Purpose | Mandatory constraints and routing | Workflows, examples, references, and procedures |
+| Typical location | `.cursor/rules/*.mdc` | `.cursor/skills/*/SKILL.md` or `.agents/skills/*/SKILL.md` |
+| Selection | `alwaysApply`, `globs`, description-based selection, or explicit use | Automatic selection or `/skill-name` |
+| Context cost | Keep concise, especially when always applied | Load only when the task matches |
+| Repository policy | One canonical owner for each mandatory gate | Route to the owning rule instead of duplicating policy |
+
+Other supported instruction surfaces include:
+
+- root or nested `AGENTS.md` files;
+- local User Rules under `~/.cursor/rules`;
+- account-synced User Rules configured in Cursor;
+- Team Rules managed through the Cursor dashboard.
+
+The legacy `.cursorrules` file is still recognized during migration but is marked for deprecation. Do not use the undocumented `rulesDirectory` or `rules:` YAML shapes previously shown by this README. Migrate legacy content to `.cursor/rules/*.mdc`, `AGENTS.md`, or Agent Skills.
+
+Current Cursor references:
+
+- [Rules](https://cursor.com/docs/rules.md)
+- [Agent Skills](https://cursor.com/docs/skills.md)
+- [Customize Cursor](https://cursor.com/docs/customize-cursor.md)
+
+## Install for Cursor
+
+### Option 1: Bootstrap Rules with the Repository Script
+
+The setup script creates workspace context files and can link the repository's rule directory into a target workspace:
+
+```bash
+"${HOME}/.cursor/agent-engineering-handbook/setup-workspace.sh" \
+  --symlink-all \
+  --lightweight \
+  --ensure-gitignore \
+  .
+```
+
+This symlink layout is a handbook convention for local workspaces. Cursor documentation explicitly supports skill discovery through symlinked directories, but does not guarantee every rule-symlink topology. If rule discovery does not work in the installed Cursor version, use the copy fallback below.
+
+### Option 2: Copy Rules into a Project
+
+Copy all rules:
+
+```bash
+mkdir -p .cursor/rules
+cp "${HOME}/.cursor/agent-engineering-handbook/rules/"*.mdc .cursor/rules/
+```
+
+Or copy only the rules required by the project:
+
+```bash
+mkdir -p .cursor/rules
+cp "${HOME}/.cursor/agent-engineering-handbook/rules/100-core.mdc" .cursor/rules/
+cp "${HOME}/.cursor/agent-engineering-handbook/rules/200-python.mdc" .cursor/rules/
+cp "${HOME}/.cursor/agent-engineering-handbook/rules/310-security.mdc" .cursor/rules/
+```
+
+Copy the files again when the handbook changes, or automate a reviewed synchronization process.
+
+### Install Skills
+
+The Cursor CLI changelog documents skill discovery through symlinked directories:
+
+```bash
+mkdir -p .cursor
+ln -s "${HOME}/.cursor/agent-engineering-handbook/skills" .cursor/skills
+```
+
+Copying is the portable fallback:
+
+```bash
+mkdir -p .cursor/skills
+cp -R "${HOME}/.cursor/agent-engineering-handbook/skills/." .cursor/skills/
+```
+
+For Codex-native project discovery, use `.agents/skills/`. Claude Code commonly uses `.claude/skills/`. Verify client-specific installation and precedence against current vendor documentation.
+
+### Create a Project Rule
+
+Use supported file-scoped frontmatter:
+
+```markdown
+---
+description: Python API conventions for this project
+globs:
+  - "src/api/**/*.py"
+alwaysApply: false
 ---
 
-## Slash Commands
+# Python API Conventions
 
-Workflow commands for explicit phase transitions. Type `/command` in your agent's chat (Cursor / Claude Code / Codex) to trigger.
+- Validate request data before policy or business logic.
+- Keep project-specific exceptions narrow and documented.
+```
+
+Place the file under `.cursor/rules/`, for example `.cursor/rules/python-api.mdc`.
+
+## Custom Commands
+
+The `commands/` directory contains 19 Cursor custom command files. Copy them only when command-based workflows are desired:
+
+```bash
+mkdir -p .cursor
+cp -R "${HOME}/.cursor/agent-engineering-handbook/commands" .cursor/commands
+```
+
+Cursor still supports `.cursor/commands`, but reusable commands can be migrated to manually invoked Agent Skills with `/migrate-to-skills`. Names such as `/plan` and `/review` can collide with Cursor built-ins; confirm the selected command in the UI or rename the local file.
 
 | Command | Purpose |
 | --- | --- |
-| `/init` | Initialize task - analyze project, detect complexity |
-| `/plan` | Enter planning phase - analyze, design, document approach |
-| `/creative` | Enter creative phase - explore design options for complex tasks |
-| `/qa` | Run QA validation - check dependencies, config, environment |
-| `/build` | Enter implementation phase - write code following approved plan |
-| `/review` | Enter review phase - verify implementation, suggest improvements |
-| `/self-review` | Comprehensive local PR review (compare branch to main) |
-| `/quick-review` | Fast critical issues check (pre-commit validation) |
-| `/check-progress` | Review work progress, propose commit message |
-| `/archive` | Archive task - document lessons learned, update knowledge base |
+| `/init` | Initialize work and classify complexity |
+| `/plan` | Design an implementation before editing |
+| `/creative` | Explore alternatives for complex design decisions |
+| `/qa` | Validate dependencies, configuration, and environment |
+| `/build` | Implement an approved plan |
+| `/review` | Review completed implementation |
+| `/self-review` | Review local branch changes against the base |
+| `/quick-review` | Run a focused critical-issue review |
+| `/check-progress` | Fix clear issues and summarize progress |
+| `/code-commit` | Run the controlled commit and push workflow with approval gates |
+| `/archive` | Record lessons and archive completed complex work |
+| `/aws` | Apply AWS guidance |
+| `/bash` | Apply Bash guidance |
+| `/gha` | Apply GitHub Actions guidance |
+| `/go` | Apply Go guidance |
+| `/javascript` | Apply JavaScript and TypeScript guidance |
+| `/markdown` | Apply Markdown guidance |
+| `/python` | Apply Python guidance |
+| `/terraform` | Apply Terraform guidance |
 
-**Installation:**
+Typical workflow:
+
+```text
+Simple:  /init -> /build -> /review
+Planned: /init -> /plan -> /qa -> /build -> /review
+Complex: /init -> /plan -> /creative -> /qa -> /build -> /review -> /archive
+```
+
+See the [command reference](commands/README.md) for installation details and command-specific behavior.
+
+## Hooks
+
+Cursor hook configuration locations include:
+
+- project hooks: `.cursor/hooks.json`;
+- user hooks: `~/.cursor/hooks.json`.
+
+Install the optional local hook pack:
 
 ```bash
-# Copy to your project
-cp -r /path/to/agent-engineering-handbook/commands .cursor/commands
-
-# Or symlink
-ln -s /path/to/agent-engineering-handbook/commands .cursor/commands
+./scripts/cursor-hooks-install.sh --project .
 ```
 
-**Workflow:**
+The hook pack gates selected destructive shell behavior and records bounded audit events. Review the generated configuration and scripts before enabling them in another repository.
 
-```
-Simple:   /init -> /build -> /review
-Moderate: /init -> /plan -> /qa -> /build -> /review
-Complex:  /init -> /plan -> /creative -> /qa -> /build -> /review -> /archive
-```
-
-See [commands/README.md](commands/README.md) for detailed documentation.
-
----
+See the [hooks guide](docs/HOOKS.md) and [Cursor hook pack](hooks/cursor/).
 
 ## MCP Server
 
-Model Context Protocol (MCP) server for any MCP-compatible AI client (Cursor, Claude Desktop, Claude Code, Codex, and others).
+The repository includes a local stdio MCP server that exposes handbook rules. Build and link it:
 
 ```bash
-# Install
 cd mcp/cursor-rules-mcp
 npm install
 npm run build
 npm link
+```
 
-# Configure Claude Desktop
-# Add to ~/Library/Application Support/Claude/claude_desktop_config.json:
+Configure Cursor in `.cursor/mcp.json` or `~/.cursor/mcp.json`:
+
+```json
 {
   "mcpServers": {
     "agent-engineering-handbook": {
-      "command": "cursor-rules-mcp"
+      "command": "cursor-rules-mcp",
+      "env": {
+        "CURSOR_RULES_PATH": "/absolute/path/to/agent-engineering-handbook/rules"
+      }
     }
   }
 }
 ```
 
-**Features:**
+Claude Desktop uses the same server definition inside `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
-- Fetch workflow guide (Plan/Implement/Review)
-- Fetch specific rules by category/topic
-- List all available rules
-- Just-in-time rule loading (load only what you need)
-
-See [mcp/cursor-rules-mcp/README.md](mcp/cursor-rules-mcp/README.md) for full documentation.
-
----
-
-## Configuration Approaches
-
-Cursor supports two ways to load rules. Choose based on your needs:
-
-### Approach A: Frontmatter-based (No `.cursorrules` needed)
-
-Rules with `alwaysApply: true` in their frontmatter load automatically when placed in `.cursor/rules/`.
-
-**Best for:** Personal setup, global rules across all projects
-
-```bash
-# Create one stable handbook root, then expose rules and skills from it
-mkdir -p ~/.cursor
-ln -s /absolute/path/to/agent-engineering-handbook ~/.cursor/agent-engineering-handbook
-ln -s ~/.cursor/agent-engineering-handbook/rules ~/.cursor/rules
-ln -s ~/.cursor/agent-engineering-handbook/skills ~/.cursor/skills
-
-# Or symlink per-project
-mkdir -p .cursor
-ln -s ~/.cursor/agent-engineering-handbook/rules .cursor/rules
-ln -s ~/.cursor/agent-engineering-handbook/skills .cursor/skills
+```json
+{
+  "mcpServers": {
+    "agent-engineering-handbook": {
+      "command": "cursor-rules-mcp",
+      "env": {
+        "CURSOR_RULES_PATH": "/absolute/path/to/agent-engineering-handbook/rules"
+      }
+    }
+  }
+}
 ```
 
-The always-on workflow rule publishes the stable root to agents, so handbook references resolve correctly even when the active workspace is another repository.
-
-**Rules that auto-load (`alwaysApply: true`):**
-
-| Rule | Purpose |
-| --- | --- |
-| `010-workflow.mdc` | Plan/Implement/Review workflow |
-| `015-context-engineering.mdc` | Prompt packing, retrieval, compaction |
-| `020-agent-audit.mdc` | Agent audit requirements |
-| `100-core.mdc` | Core coding standards |
-| `110-configuration.mdc` | Configuration management |
-| `120-utilities.mdc` | CLI tools |
-| `130-git.mdc` | Mandatory Git safety and signing gates |
-| `310-security.mdc` | Security best practices |
-| `316-zero-trust.mdc` | Distinguished Engineer - Zero Trust |
-
-Other rules load based on file patterns or explicit request.
-
-### Approach B: Explicit `.cursorrules` file
-
-Use a `.cursorrules` file for explicit control over which rules load.
-
-**Best for:** Team projects, project-specific subsets, version-controlled config
-
-```yaml
-# .cursorrules - Option 1: Load all rules from directory
-rulesDirectory: .cursor/rules
-
-# .cursorrules - Option 2: Explicit rule list
-rules:
-  - .cursor/rules/100-core.mdc
-  - .cursor/rules/200-python.mdc
-  - .cursor/rules/410-aws.mdc
-```
-
-> [!NOTE]
-> When using `.cursorrules`, rules with `alwaysApply: true` still load automatically in addition to your explicit list.
-
-See [examples/.cursorrules-example](examples/.cursorrules-example) for tech-stack templates.
-
-### Multi-Repo Workspaces
-
-For workspaces with many repositories, rules load based on file patterns. Open a `.py` file and Python rules load; open a `.go` file and Go rules load. Most repos need zero per-repo configuration.
-
-See [Multi-Repo Workspaces](docs/HOW-TO-USE.md#multi-repo-workspaces) for detailed guidance.
-
----
-
-## Quick Start
-
-### Option 1: Use Individual Rules
-
-Copy specific rules to your project:
-
-```bash
-# Create Cursor rules directory
-mkdir -p .cursor/rules
-
-# Copy specific rules you need
-cp path/to/agent-engineering-handbook/rules/200-python.mdc .cursor/rules/
-cp path/to/agent-engineering-handbook/rules/410-aws.mdc .cursor/rules/
-
-# (Optional) Copy workflow templates (tasks, active-context, etc.)
-mkdir -p .cursor/rules/templates
-cp path/to/agent-engineering-handbook/rules/templates/*.template .cursor/rules/templates/
-```
-
-### Option 1.5: Use Setup Scripts (Convenience)
-
-If you keep a shared checkout of this repo, you can bootstrap a workspace with:
-
-```bash
-/path/to/agent-engineering-handbook/setup-workspace.sh -S -l .
-```
-
-Add to your `.cursorrules` file:
-
-```yaml
-rules:
-  - .cursor/rules/200-python.mdc
-  - .cursor/rules/410-aws.mdc
-```
-
-### Option 2: Use All Rules (Recommended)
-
-Symlink the entire rules directory:
-
-```bash
-# From your project root
-ln -s ~/.cursor/agent-engineering-handbook/rules .cursor/rules
-```
-
-Configure `.cursorrules`:
-
-```yaml
-# Load all rules
-rulesDirectory: .cursor/rules
-
-# Or be selective with alwaysApply rules
-rules:
-  - .cursor/rules/100-core.mdc
-  - .cursor/rules/200-python.mdc
-  - .cursor/rules/310-security.mdc
-```
-
-### Option 3: Cherry-Pick by Technology
-
-Create a custom `.cursorrules` that includes only relevant rules:
-
-```yaml
-# Python + AWS project
-rules:
-  - .cursor/rules/100-core.mdc
-  - .cursor/rules/130-git.mdc
-  - .cursor/rules/200-python.mdc
-  - .cursor/rules/410-aws.mdc
-  - .cursor/rules/180-terraform.mdc
-  - .cursor/rules/310-security.mdc
-  - .cursor/rules/300-testing.mdc
-```
-
----
-
-## Rule Priorities
-
-Rules have `alwaysApply` flags and priority levels:
-
-- **Always Apply**: Core standards (100-core, 130-git, 310-security)
-- **High Priority**: Language-specific rules for your stack
-- **Medium Priority**: Platform/tool-specific rules
-- **Low Priority**: Documentation and utility guides
-
-See [rules/INDEX.md](rules/INDEX.md) for complete categorization.
-
----
-
-## Features
-
-### Production Quality
-
-- **Battle-tested** patterns from real-world projects
-- **Security-first** approach (OWASP Top 10, secret scanning)
-- **Performance-focused** (benchmarks, optimization patterns)
-
-### Comprehensive Coverage
-
-- **6 programming languages** (Python, Go, TypeScript, JavaScript, Rust, Bash)
-- **4 major cloud platforms** (AWS, Azure, GCP, Cloudflare)
-- **10+ DevOps tools** (Terraform, K8s, Docker, Ansible, Helm, GitHub Actions)
-- **AI/ML integration** (OpenAI, Claude, Bedrock, Vertex AI)
-
-### Code Examples
-
-- **Real-world examples** for every pattern
-- **Good vs Bad** comparisons
-- **Common mistakes** and anti-patterns
-- **Quick reference** sections
-
-### Modern Standards
-
-- **Latest versions** (Python 3.14+, Go 1.25+, Node 22+)
-- **Modern patterns** (async/await, generics, type safety)
-- **Current tools** (ripgrep, fd, fzf, just, jq)
-
----
-
-## Customization
-
-### Workspace-Specific Overrides
-
-Use `999-local-overrides.mdc` for project-specific rules:
-
-```bash
-# Copy to your project
-cp rules/999-local-overrides.mdc .cursor/rules/999-local-overrides.mdc
-
-# Edit to add project-specific rules
-vim .cursor/rules/999-local-overrides.mdc
-```
-
-### Creating Custom Rules
-
-Follow the standard format:
-
-```markdown
----
-title: My Custom Rule
-description: Project-specific patterns
-priority: 900
-alwaysApply: false
-files:
-  include:
-    - "**/*.py"
----
-
-# My Custom Rule
-
-## Pattern 1
-[Your custom patterns here]
-```
-
----
-
-## Contributing
-
-Contributions are welcome! Please see [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md) for guidelines.
-
-### Areas for Contribution
-
-- Additional language support (Java, C#, Ruby, PHP)
-- More cloud platform patterns
-- Industry-specific patterns (fintech, healthcare, etc.)
-- Performance benchmarks
-- Additional code examples
-
----
-
-## License
-
-MIT License - see [LICENSE](LICENSE) for details.
-
----
-
-## Acknowledgments
-
-This project was inspired by and incorporates patterns from:
-
-- **AI Developer Guide**: <https://github.com/dwmkerr/ai-developer-guide> - Workflow patterns and context management
-- **Cursor Memory Bank**: <https://github.com/vanzan01/cursor-memory-bank> - Context file management patterns
-- **Shellwright**: <https://github.com/dwmkerr/shellwright> - Terminal automation MCP server patterns and PTY session management
-
-Thanks to [@DaKaZ](https://github.com/DaKaZ) for suggesting the commands-based workflow approach.
-
----
-
-## Related Projects
-
-- [dotcursorrules.com](https://dotcursorrules.com/) - Community directory of framework-specific cursor rules (Next.js, Laravel, React, etc.). Use dotcursorrules for **framework recipes** and this repo for **engineering discipline**.
-- [ACE-FCA](https://github.com/humanlayer/advanced-context-engineering-for-coding-agents) - Advanced Context Engineering for Coding Agents. Excellent methodology on context management, "frequent intentional compaction", and Research -> Plan -> Implement workflows.
-- [Cursor Memory Bank](https://github.com/vanzan01/cursor-memory-bank) - Command-based workflow system using Cursor's `/commands` feature for progressive rule loading.
-- [Shellwright](https://github.com/dwmkerr/shellwright) - Playwright for the shell. MCP server for terminal automation, screenshots, and GIF recording. Excellent example of MCP server implementation with PTY session management.
-- [eslint-config-airbnb](https://github.com/airbnb/javascript) - JavaScript style guide
-- [google-styleguides](https://github.com/google/styleguide) - Google's style guides
-- [uber-go-guide](https://github.com/uber-go/guide) - Uber's Go style guide
-
-> [!NOTE]
-> **Three Ways to Load Context:** This repo supports multiple approaches:
->
-> 1. **Rules** (`.mdc` files) - Auto-load based on `alwaysApply` flags and file patterns
-> 2. **Commands** (`/plan`, `/build`, etc.) - Explicit phase transitions for progressive disclosure
-> 3. **MCP Server** - On-demand rule loading via tool calls
->
-> Use all three together for maximum flexibility, or pick what works for your workflow.
-
-## Cursor rules vs Cursor skills
-
-Based on Cursor's docs:
-
-- **Cursor Rules** ([docs](https://cursor.com/docs/context/rules))
-  - **What they are**: System-level instructions included at the start of model context to provide persistent guidance
-  - **Where they live**: typically `.cursor/rules/` (project, version-controlled), plus User Rules (global) and Team Rules (dashboard). Also `AGENTS.md` as a simpler alternative
-  - **How they apply**: always apply, agent decides, file-glob scoped, or manual `@` mention
-  - **Best for**: coding standards, architectural constraints, security guardrails, "do/don't", house style
-
-- **Cursor Skills / Agent Skills** ([docs](https://cursor.com/docs/context/skills))
-  - **What they are**: portable, version-controlled packages that teach an agent a domain-specific workflow; may include executable scripts the agent runs
-  - **Where they live**: `.cursor/skills/` (project) or `~/.cursor/skills/` (user). Cursor also discovers `.claude/skills/` and `.codex/skills/` for compatibility
-  - **How they apply**: the agent can auto-select a relevant skill, or you can invoke it manually via `/skill-name`. You can force "manual only" by setting `disable-model-invocation: true`
-  - **Best for**: repeatable multi-step playbooks (release, deploy, migration, audit, generating artifacts) and "do X end-to-end" flows
-
-### Practical comparison (the parts that bite in YAML)
-
-The bullets above orient; this table is the reference for "what do I put in the frontmatter, and what is it going to cost me at runtime?"
-
-| | Rules (`.mdc`) | Skills (`SKILL.md`) |
-|---|---|---|
-| **Frontmatter fields** | `title`, `description`, `priority`, `alwaysApply`, `globs` | `name`, `description`, optionally `disable-model-invocation` |
-| **`alwaysApply` honored?** | Yes - core mechanism | **No** - not in the skills schema; silently ignored |
-| **Activation triggers** | `alwaysApply: true` (every conversation), `globs` (matching files), or agent-selected | Agent reads `description` and self-selects; user runs `/skill-name` |
-| **Cost of being "always on"** | Keep global rules concise because every line consumes context | Skill body loads when selected; references should be retrieved only as needed |
-| **How to get "always-on" semantics for skill-domain content** | Put the principles in a rule (with `alwaysApply: true`); leave the workflow in a skill. Many domains in this repo do both - `316-zero-trust.mdc` + `skills/zero-trust/`; `260-frontend.mdc` + `skills/frontend-engineering/`; `325-networking.mdc` + `skills/networking-transport/` | n/a (do not try) |
-
-Short answer to "should this skill have `alwaysApply: true`?": **no**. If the content needs to be loaded every conversation, lift the principles into a rule and keep the playbook in the skill.
-
-## Skills shipped in this repo
-
-Skills under `skills/` cover repeatable end-to-end workflows that pair with the rules above. Cursor auto-selects them based on the SKILL.md `description:` triggers; invoke manually as `/<skill-name>` when needed.
-
-### Engineering & code
-
-- **[skills/agent-workflow](skills/agent-workflow/)** - Plan/Implement/Review workflow + audit
-- **[skills/core-engineering](skills/core-engineering/)** - core engineering principles, code review
-- **[skills/system-design](skills/system-design/)** - evidence-backed production architecture, SLO and dependency budgets, overload, multi-tenancy, cellular architecture, reliability, cost, and migration
-- **[skills/domain-driven-design](skills/domain-driven-design/)** - strategic and tactical DDD, bounded contexts, context maps, aggregates, domain events, and anti-corruption layers
-- **[skills/service-resilience](skills/service-resilience/)** - deadlines, retries, circuit breakers, bulkheads, overload control, fallbacks, and recovery testing
-- **[skills/observability](skills/observability/)** - structured logging, metrics, SLOs, tracing, alerts, telemetry pipelines, security, and cost controls
-- **[skills/git-workflow](skills/git-workflow/)** - commits, branches, worktrees, signing, recovery, and remote synchronization
-- **[skills/python-development](skills/python-development/)** - Python 3.14+ patterns
-- **[skills/typescript-javascript](skills/typescript-javascript/)** - TS/JS patterns
-- **[skills/frontend-engineering](skills/frontend-engineering/)** - framework-agnostic frontend playbook (rendering, bundles, state, a11y, perf, testing, security)
-- **[skills/go-rust-systems](skills/go-rust-systems/)** - Go and Rust systems programming
-- **[skills/bash-shell-scripting](skills/bash-shell-scripting/)** - production Bash scripts
-- **[skills/scripting-automation](skills/scripting-automation/)** - advanced Bash automation
-
-### Security & identity
-
-- **[skills/security-testing](skills/security-testing/)** - OWASP Top 10 + testing strategies (overview)
-- **[skills/codebase-security-audit](skills/codebase-security-audit/)** - 8-layer audit (secrets / SAST / SCA / taint / CPG / IaC / custom / DAST) + reference CI workflow
-- **[skills/zero-trust](skills/zero-trust/)** - Distinguished-engineer Zero Trust playbook
-- **[skills/iam-security-advisor](skills/iam-security-advisor/)** - principal-level IAM, IGA, PKI, protocol, and security architecture decisions
-- **[skills/aws-iam](skills/aws-iam/)** - AWS IAM operational patterns
-- **[skills/okta](skills/okta/)** - Okta Workforce Identity playbook
-- **[skills/workload-identity](skills/workload-identity/)** - SPIFFE/SPIRE/cloud IAM/OIDC federation
-
-### Cloud, data & infrastructure
-
-- **[skills/cloud-platforms](skills/cloud-platforms/)** - AWS / Azure / GCP / Cloudflare patterns
-- **[skills/cloudflare-waf-author](skills/cloudflare-waf-author/)** - Cloudflare WAF rule authoring workflow across Terraform / Dashboard / Rulesets API (pairs with `405-cloudflare-waf-rules.mdc`)
-- **[skills/cloudflare-workers-author](skills/cloudflare-workers-author/)** - Cloudflare Workers TypeScript authoring workflow: bootstrap, bindings + storage decision matrix, Hono + RPC patterns, testing with `@cloudflare/vitest-pool-workers`, gradual deployments, common pitfalls (pairs with `401-cloudflare-workers.mdc`)
-- **[skills/infrastructure-iac](skills/infrastructure-iac/)** - Terraform / Docker / Ansible / CloudFormation
-- **[skills/containers-orchestration](skills/containers-orchestration/)** - Docker patterns
-- **[skills/kubernetes-containers](skills/kubernetes-containers/)** - Kubernetes / Helm
-- **[skills/database-postgresql](skills/database-postgresql/)** - PostgreSQL patterns
-- **[skills/data-engineering](skills/data-engineering/)** - data pipelines, contracts, quality
-- **[skills/distributed-transactions](skills/distributed-transactions/)** - Transactional Outbox/Inbox, Saga orchestration/choreography, compensation, and idempotency
-- **[skills/snowflake](skills/snowflake/)** - Snowflake operational playbook
-- **[skills/databricks](skills/databricks/)** - Databricks operational playbook
-- **[skills/cicd-github-actions](skills/cicd-github-actions/)** - GitHub Actions patterns
-- **[skills/networking-transport](skills/networking-transport/)** - TCP keepalive, HoL blocking, TTFB budget, HTTP/1.1 vs 2 vs 3, gRPC/Protobuf vs REST/JSON, connection pooling, long-lived connections
-
-### AI, MCP & analysis
-
-- **[skills/mcp-development](skills/mcp-development/)** - building MCP servers
-- **[skills/memory-architecture](skills/memory-architecture/)** - persistent agent memory and knowledge architecture with provenance, secure retrieval, lifecycle controls, and measurable quality
-- **[skills/web-research-kb-refresh](skills/web-research-kb-refresh/)** - bounded web-research KB refresh with atomic swap (general pattern)
-- **[skills/multi-perspective-review](skills/multi-perspective-review/)** - weighted multi-advisor decision review with industry-precedent pairs
-
-### Documentation & artifacts
-
-- **[skills/documentation-standards](skills/documentation-standards/)** - Markdown + Mermaid + ADR patterns
-- **[skills/reactflow-architecture-diagrams](skills/reactflow-architecture-diagrams/)** - interactive React Flow architecture canvases
-- **[skills/single-file-dashboard](skills/single-file-dashboard/)** - zero-dependency single-file HTML dashboards (emailable / airgap-safe)
-- **[skills/pdf-export](skills/pdf-export/)** - client-side PDF export for web apps via `jspdf` + `html2canvas-pro` (single-element + multi-page with TOC); no server, no Puppeteer
-
-### Workflow patterns (meta)
-
-- **[skills/independent-verification](skills/independent-verification/)** - immutable, read-only, evidence-backed verification with human escalation for consequential AI-generated changes
-- **[skills/skills-composition](skills/skills-composition/)** - patterns for chaining skills, scope resolution, graceful degradation
-- **[skills/skills-continuous-improvement](skills/skills-continuous-improvement/)** - biweekly maintenance workflow for rule/skill drift, stale examples, unsafe snippets, and missing non-negotiables
-
-## Evaluating Skills
-
-The dependency-free [Agent Skills eval harness](evals/) validates every skill and supports with-skill versus baseline comparisons through a vendor-neutral command adapter. An optional Python Cursor SDK adapter measures real behavioral lift, paired wins, latency, token use, and cost. Cursor does not expose authoritative automatic skill/rule activation events, so activation remains explicitly unknown rather than inferred. Pull-request CI runs deterministic schema and unit checks without model credentials or paid calls.
-
-The initial suites cover:
-
-- [Containers and orchestration evals](skills/containers-orchestration/evals/evals.json)
-- [Agent workflow evals](skills/agent-workflow/evals/evals.json)
-- [Bash shell scripting evals](skills/bash-shell-scripting/evals/evals.json)
-- [Core engineering evals](skills/core-engineering/evals/evals.json)
-- [Cloudflare WAF author evals](skills/cloudflare-waf-author/evals/evals.json)
-- [Documentation standards evals](skills/documentation-standards/evals/evals.json)
-- [Domain-Driven Design evals](skills/domain-driven-design/evals/evals.json)
-- [Distributed transactions evals](skills/distributed-transactions/evals/evals.json)
-- [Git workflow evals](skills/git-workflow/evals/evals.json)
-- [Go and Rust systems evals](skills/go-rust-systems/evals/evals.json)
-- [IAM security advisor evals](skills/iam-security-advisor/evals/evals.json)
-- [Independent verification evals](skills/independent-verification/evals/evals.json)
-- [Kubernetes containers evals](skills/kubernetes-containers/evals/evals.json)
-- [Memory architecture evals](skills/memory-architecture/evals/evals.json)
-- [Okta evals](skills/okta/evals/evals.json)
-- [Observability evals](skills/observability/evals/evals.json)
-- [Python development evals](skills/python-development/evals/evals.json)
-- [Scripting automation evals](skills/scripting-automation/evals/evals.json)
-- [Security testing evals](skills/security-testing/evals/evals.json)
-- [Service resilience evals](skills/service-resilience/evals/evals.json)
-- [System design evals](skills/system-design/evals/evals.json)
-- [TypeScript and JavaScript evals](skills/typescript-javascript/evals/evals.json)
-- [Zero Trust evals](skills/zero-trust/evals/evals.json)
+The server currently uses a maintained topic map rather than automatic filesystem discovery. Update and test that map when rules are added or renamed.
+
+See the [MCP server reference](mcp/cursor-rules-mcp/README.md) for tools, development commands, and troubleshooting.
+
+## Rule Highlights
+
+The repository currently contains 52 `.mdc` rule files. The following list highlights common entry points; the [rule index](rules/INDEX.md) is authoritative.
+
+### Workflow and Core Engineering
+
+- [Workflow](rules/010-workflow.mdc)
+- [Context engineering](rules/015-context-engineering.mdc)
+- [Agent audit](rules/020-agent-audit.mdc)
+- [Core engineering](rules/100-core.mdc)
+- [Configuration](rules/110-configuration.mdc)
+- [Utilities](rules/120-utilities.mdc)
+- [Git](rules/130-git.mdc)
+
+### Languages and Application Design
+
+- [Bash](rules/140-bash.mdc)
+- [Python](rules/200-python.mdc)
+- [Go](rules/210-go.mdc)
+- [Rust](rules/220-rust.mdc)
+- [JavaScript and TypeScript](rules/225-javascript-typescript.mdc)
+- [Frontend](rules/260-frontend.mdc)
+- [API design](rules/320-api-design.mdc)
+- [Networking](rules/325-networking.mdc)
+- [Observability](rules/330-observability.mdc), with detailed workflows in the [observability skill](skills/observability/)
+
+### Security and Identity
+
+- [Security](rules/310-security.mdc)
+- [IAM](rules/315-iam.mdc)
+- [Zero Trust](rules/316-zero-trust.mdc)
+- [Okta](rules/317-okta.mdc)
+- [Workload identity](rules/318-workload-identity.mdc)
+- [AWS IAM](rules/412-aws-iam.mdc)
+
+### Cloud and Infrastructure
+
+- [GitHub Actions](rules/160-github-actions.mdc)
+- [CloudFormation](rules/170-cloudformation.mdc)
+- [Terraform](rules/180-terraform.mdc)
+- [Ansible](rules/190-ansible.mdc)
+- [Cloudflare](rules/400-cloudflare.mdc)
+- [AWS](rules/410-aws.mdc)
+- [Google Cloud](rules/420-gcp.mdc)
+- [Azure](rules/430-azure.mdc)
+- [Docker](rules/440-docker.mdc)
+- [Kubernetes](rules/450-kubernetes.mdc)
+- [Helm](rules/460-helm.mdc)
+
+### Data, AI, and Documentation
+
+- [PostgreSQL](rules/470-postgresql.mdc)
+- [SQL](rules/475-sql.mdc)
+- [Data engineering](rules/480-data-engineering.mdc)
+- [Databricks](rules/481-databricks.mdc)
+- [Snowflake](rules/482-snowflake.mdc)
+- [Kafka](rules/483-kafka.mdc)
+- [Teradata](rules/484-teradata.mdc)
+- [AI and machine learning](rules/500-ai-ml.mdc)
+- [MCP servers](rules/510-mcp-servers.mdc)
+- [Markdown and generated PNG diagrams](rules/800-markdown.mdc)
+- [Documentation](rules/810-documentation.mdc)
+- [Open source](rules/820-open-source.mdc)
+
+## Skill Catalog
+
+The repository currently contains 53 skill packages. Each directory listed below contains a `SKILL.md`.
+
+### Engineering and Languages
+
+- [Agent workflow](skills/agent-workflow/)
+- [API design](skills/api-design/)
+- [Bash shell scripting](skills/bash-shell-scripting/)
+- [Core engineering](skills/core-engineering/)
+- [Distributed transactions](skills/distributed-transactions/)
+- [Domain-Driven Design](skills/domain-driven-design/)
+- [Frontend engineering](skills/frontend-engineering/)
+- [Git workflow](skills/git-workflow/)
+- [Go and Rust systems](skills/go-rust-systems/)
+- [Networking and transport](skills/networking-transport/)
+- [Observability](skills/observability/)
+- [Python development](skills/python-development/)
+- [Scripting automation](skills/scripting-automation/)
+- [Service resilience](skills/service-resilience/)
+- [System design](skills/system-design/)
+- [TypeScript and JavaScript](skills/typescript-javascript/)
+
+### Security and Identity
+
+- [AWS IAM](skills/aws-iam/)
+- [Codebase security audit](skills/codebase-security-audit/)
+- [IAM security advisor](skills/iam-security-advisor/)
+- [Okta](skills/okta/)
+- [Security testing](skills/security-testing/)
+- [Workload identity](skills/workload-identity/)
+- [Zero Trust](skills/zero-trust/)
+
+### Cloud, Infrastructure, and Delivery
+
+- [Agents SDK](skills/agents-sdk/)
+- [CI/CD with GitHub Actions](skills/cicd-github-actions/)
+- [Cloud platforms](skills/cloud-platforms/)
+- [Cloudflare](skills/cloudflare/)
+- [Cloudflare email service](skills/cloudflare-email-service/)
+- [Cloudflare WAF authoring](skills/cloudflare-waf-author/)
+- [Cloudflare Workers authoring](skills/cloudflare-workers-author/)
+- [Containers and orchestration](skills/containers-orchestration/)
+- [Durable Objects](skills/durable-objects/)
+- [Infrastructure as Code](skills/infrastructure-iac/)
+- [Kubernetes and containers](skills/kubernetes-containers/)
+- [Sandbox SDK](skills/sandbox-sdk/)
+- [Workers best practices](skills/workers-best-practices/)
+- [Wrangler](skills/wrangler/)
+
+### Data Engineering
+
+- [Data engineering](skills/data-engineering/)
+- [Databricks](skills/databricks/)
+- [PostgreSQL](skills/database-postgresql/)
+- [Snowflake](skills/snowflake/)
+
+### AI and Analysis
+
+- [MCP development](skills/mcp-development/)
+- [Memory architecture](skills/memory-architecture/)
+- [Multi-perspective review](skills/multi-perspective-review/)
+- [Web research knowledge-base refresh](skills/web-research-kb-refresh/)
+
+### Documentation and Artifacts
+
+- [Documentation standards and generated PNG diagrams](skills/documentation-standards/)
+- [PDF export](skills/pdf-export/)
+- [React Flow architecture diagrams](skills/reactflow-architecture-diagrams/)
+- [Single-file dashboard](skills/single-file-dashboard/)
+- [Web performance](skills/web-perf/)
+
+### Skill Maintenance
+
+- [Independent verification](skills/independent-verification/)
+- [Skills composition](skills/skills-composition/)
+- [Skills continuous improvement](skills/skills-continuous-improvement/)
+
+## Skill Evaluation
+
+The dependency-free [Agent Skills eval harness](evals/) validates all skill metadata and the 24 available behavioral suites. Model-backed comparisons use an external command adapter; pull-request CI runs deterministic validation and unit tests without model credentials.
+
+Current behavioral suites:
+
+- [Agent workflow](skills/agent-workflow/evals/evals.json)
+- [API design](skills/api-design/evals/evals.json)
+- [Bash shell scripting](skills/bash-shell-scripting/evals/evals.json)
+- [Cloudflare WAF authoring](skills/cloudflare-waf-author/evals/evals.json)
+- [Containers and orchestration](skills/containers-orchestration/evals/evals.json)
+- [Core engineering](skills/core-engineering/evals/evals.json)
+- [Documentation standards](skills/documentation-standards/evals/evals.json)
+- [Domain-Driven Design](skills/domain-driven-design/evals/evals.json)
+- [Distributed transactions](skills/distributed-transactions/evals/evals.json)
+- [Git workflow](skills/git-workflow/evals/evals.json)
+- [Go and Rust systems](skills/go-rust-systems/evals/evals.json)
+- [IAM security advisor](skills/iam-security-advisor/evals/evals.json)
+- [Independent verification](skills/independent-verification/evals/evals.json)
+- [Kubernetes and containers](skills/kubernetes-containers/evals/evals.json)
+- [Memory architecture](skills/memory-architecture/evals/evals.json)
+- [Observability](skills/observability/evals/evals.json)
+- [Okta](skills/okta/evals/evals.json)
+- [Python development](skills/python-development/evals/evals.json)
+- [Scripting automation](skills/scripting-automation/evals/evals.json)
+- [Security testing](skills/security-testing/evals/evals.json)
+- [Service resilience](skills/service-resilience/evals/evals.json)
+- [System design](skills/system-design/evals/evals.json)
+- [TypeScript and JavaScript](skills/typescript-javascript/evals/evals.json)
+- [Zero Trust](skills/zero-trust/evals/evals.json)
+
+Run deterministic validation:
 
 ```bash
 uv run python -m evals.skill_eval validate
 uv run python -m unittest discover -s evals/tests -v
 ```
 
-See the [eval documentation](evals/README.md) for the adapter protocol, deterministic checks, model-backed runs, artifacts, safety limits, and expansion criteria.
+See the [eval harness documentation](evals/README.md) for adapter limits, paired comparisons, output redaction, and artifact handling.
+
+## Repository Utilities
+
+Preview and run Cursor cache cleanup:
+
+```bash
+./scripts/cursor-maintenance.sh --dry-run
+./scripts/cursor-maintenance.sh
+```
+
+Run repository checks:
+
+```bash
+pre-commit run --all-files
+uv run python -m evals.skill_eval validate
+uv run python -m unittest discover -s evals/tests -v
+```
+
+Current runtime and toolchain requirements are owned by the relevant rule or skill and should be verified against the deployment target before adoption. Do not treat a version number in this README as an evergreen recommendation.
+
+## Contributing
+
+Contributions should keep mandatory rules concise, place procedures and examples in skills, update affected evals, and preserve safe runnable examples. See the [contribution guide](.github/CONTRIBUTING.md).
+
+## Acknowledgments
+
+The repository drew ideas from:
+
+- [AI Developer Guide](https://github.com/dwmkerr/ai-developer-guide) for workflow and context-management patterns;
+- [Cursor Memory Bank](https://github.com/vanzan01/cursor-memory-bank) for progressive context files;
+- [Shellwright](https://github.com/dwmkerr/shellwright) for terminal automation and PTY-oriented MCP patterns.
+
+The command-based workflow was suggested by [@DaKaZ](https://github.com/DaKaZ).
+
+Related references:
+
+- [Advanced Context Engineering for Coding Agents](https://github.com/humanlayer/advanced-context-engineering-for-coding-agents)
+- [Airbnb JavaScript Style Guide](https://github.com/airbnb/javascript)
+- [Google Style Guides](https://github.com/google/styleguide)
+- [Uber Go Style Guide](https://github.com/uber-go/guide)
+
+## License
+
+Licensed under the MIT License. See [LICENSE](LICENSE).

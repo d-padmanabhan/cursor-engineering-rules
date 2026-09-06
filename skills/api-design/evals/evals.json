@@ -1,0 +1,331 @@
+{
+  "skill_name": "api-design",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Review this endpoint: GET /orders/123?action=cancel. The team says GET is convenient because browsers and monitoring tools can call it. Provide the smallest correct API contract.",
+      "expected_output": "Reject state change through GET because GET is safe. Model cancellation as a resource such as POST /orders/123/cancellations, or use an explicit command only if needed, with authorization, idempotency, status, and result semantics.",
+      "files": [],
+      "checks": [
+        {
+          "id": "rejects-unsafe-get",
+          "type": "contains_all",
+          "values": [
+            "GET",
+            "safe",
+            "state"
+          ]
+        },
+        {
+          "id": "models-cancellation-resource",
+          "type": "contains_all",
+          "values": [
+            "POST",
+            "/orders/123/cancellations",
+            "authorization",
+            "idempotency"
+          ]
+        },
+        {
+          "id": "observes-api-design-skill",
+          "type": "loaded_skill",
+          "skill": "api-design",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "A POST /payments endpoint generates an idempotency key when the header is absent, checks Redis, charges the provider, then stores only the JSON body. Explain the failure and concurrency gaps and define a safe retry contract.",
+      "expected_output": "Require a client-stable key, scope it to the principal and operation, bind it to a request fingerprint, atomically persist in-progress and terminal command state, serialize concurrent attempts, use the provider idempotency key, replay original status, selected headers, and body, reject mismatched payloads, and reconcile partial failure.",
+      "files": [],
+      "checks": [
+        {
+          "id": "requires-client-stable-key",
+          "type": "contains_all",
+          "values": [
+            "client",
+            "stable",
+            "principal",
+            "fingerprint"
+          ]
+        },
+        {
+          "id": "requires-atomic-operation-state",
+          "type": "contains_all",
+          "values": [
+            "atomic",
+            "in-progress",
+            "concurrent",
+            "reconcile"
+          ]
+        },
+        {
+          "id": "replays-complete-result",
+          "type": "contains_all",
+          "values": [
+            "status",
+            "headers",
+            "body"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Two clients read the same profile and then PUT different replacements. The service accepts both without a version check, so the later request silently overwrites the first. Define the HTTP concurrency contract.",
+      "expected_output": "Return an ETag on reads, require a strong If-Match precondition for replacement where lost updates matter, perform the compare and mutation atomically, return 412 Precondition Failed for a stale validator, and optionally use 428 when the precondition is required but absent.",
+      "files": [],
+      "checks": [
+        {
+          "id": "uses-conditional-write",
+          "type": "contains_all",
+          "values": [
+            "ETag",
+            "If-Match",
+            "atomic"
+          ]
+        },
+        {
+          "id": "uses-stale-precondition-status",
+          "type": "contains_all",
+          "values": [
+            "412",
+            "Precondition Failed"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "POST /exports returns 202 and the text accepted, but provides no way to determine completion or failure. Define the minimum asynchronous API lifecycle.",
+      "expected_output": "Durably accept the command before returning 202, include Location for an authorized operation resource, define pending/running/succeeded/failed states, polling guidance such as Retry-After, terminal result or Problem Details, cancellation and races, expiry, retention, idempotent submission, and reconciliation.",
+      "files": [],
+      "checks": [
+        {
+          "id": "defines-operation-resource",
+          "type": "contains_all",
+          "values": [
+            "202",
+            "Location",
+            "operation",
+            "authorized"
+          ]
+        },
+        {
+          "id": "defines-terminal-lifecycle",
+          "type": "contains_all",
+          "values": [
+            "pending",
+            "succeeded",
+            "failed",
+            "Problem Details"
+          ]
+        },
+        {
+          "id": "defines-recovery-lifecycle",
+          "type": "contains_all",
+          "values": [
+            "Retry-After",
+            "cancellation",
+            "retention",
+            "reconciliation"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Design a validation error for a new public HTTP API. The proposal returns 200 with {error: true, message: database constraint users_email_key failed, stack: ...}. Correct the status, media type, shape, and disclosure.",
+      "expected_output": "Reject 200 and internal details. Return a semantic 4xx such as 422 with application/problem+json and RFC 9457 fields type, title, status, safe detail, and instance, plus stable code, correlation ID, and JSON Pointer field errors. Remove database names and stacks.",
+      "files": [],
+      "checks": [
+        {
+          "id": "uses-problem-details",
+          "type": "contains_all",
+          "values": [
+            "422",
+            "application/problem+json",
+            "RFC 9457",
+            "type",
+            "title",
+            "instance"
+          ]
+        },
+        {
+          "id": "uses-safe-field-errors",
+          "type": "contains_all",
+          "values": [
+            "code",
+            "correlation",
+            "JSON Pointer"
+          ]
+        },
+        {
+          "id": "removes-internal-details",
+          "type": "contains_all",
+          "values": [
+            "database",
+            "stack",
+            "remove"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "A busy orders collection uses offset pagination ordered only by updated_at and returns unlimited page sizes plus a base64-encoded offset called cursor. Review it for stable cursor pagination.",
+      "expected_output": "Reject the unstable unbounded design. Use deterministic ordering with an immutable tie-breaker, a maximum page size, and an opaque bounded cursor bound to principal or tenant, filters, sort, and page size. Define tamper protection, expiry, invalid cursor behavior, and changes between pages.",
+      "files": [],
+      "checks": [
+        {
+          "id": "requires-stable-order",
+          "type": "contains_all",
+          "values": [
+            "deterministic",
+            "tie-breaker",
+            "maximum page size"
+          ]
+        },
+        {
+          "id": "requires-bound-cursor",
+          "type": "contains_all",
+          "values": [
+            "opaque",
+            "tenant",
+            "filters",
+            "sort",
+            "tamper",
+            "expiry"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Review an OpenAPI change that adds a required response field, removes one enum value, changes the default page size and sort order, and immediately deletes v1 because the schema diff calls the new field additive.",
+      "expected_output": "Treat the change as potentially breaking beyond syntax. Required response fields, removed enum values, defaults, ordering, and pagination can break consumers. Run OpenAPI and semantic diffs, consumer contract and generated-client tests, preserve an overlap window, publish a migration guide, deprecate with an owner and adoption evidence, then sunset after the support policy.",
+      "files": [],
+      "checks": [
+        {
+          "id": "identifies-semantic-breaks",
+          "type": "contains_all",
+          "values": [
+            "required",
+            "enum",
+            "default",
+            "ordering",
+            "breaking"
+          ]
+        },
+        {
+          "id": "requires-compatibility-evidence",
+          "type": "contains_all",
+          "values": [
+            "consumer contract",
+            "generated-client",
+            "migration",
+            "owner",
+            "adoption"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "A webhook endpoint verifies a signature over parsed JSON, ignores timestamps and delivery IDs, processes before acknowledgement, and lets customers register any HTTP URL including redirects. Define the smallest safe inbound and outbound contract.",
+      "expected_output": "Verify inbound signatures over exact raw bytes with a bounded timestamp, constant-time comparison, durable replay or delivery-ID protection, schema validation, durable handoff before acknowledgement, and idempotent processing. For registration, allowlist HTTPS destinations and ports, reject private and metadata addresses, revalidate DNS and redirects, and bound time and response size.",
+      "files": [],
+      "checks": [
+        {
+          "id": "secures-inbound-webhook",
+          "type": "contains_all",
+          "values": [
+            "raw bytes",
+            "timestamp",
+            "delivery",
+            "durable",
+            "idempotent"
+          ]
+        },
+        {
+          "id": "prevents-webhook-ssrf",
+          "type": "contains_all",
+          "values": [
+            "HTTPS",
+            "private",
+            "metadata",
+            "DNS",
+            "redirect"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "A public GraphQL API uses one process-global DataLoader for all users, authorizes only the top-level query, and limits depth but not aliases, breadth, list sizes, batches, subscriptions, or field cost. Review it.",
+      "expected_output": "Require object, relationship, field, mutation, and subscription authorization. Scope DataLoader per request and principal context. Bound document bytes, operations, depth, breadth, aliases, list multipliers, batches, field cost, execution time, response size, and subscriptions with per-principal rate and cost limits.",
+      "files": [],
+      "checks": [
+        {
+          "id": "requires-field-authorization",
+          "type": "contains_all",
+          "values": [
+            "field",
+            "relationship",
+            "subscription",
+            "authorization"
+          ]
+        },
+        {
+          "id": "scopes-dataloader",
+          "type": "contains_all",
+          "values": [
+            "DataLoader",
+            "request",
+            "principal"
+          ]
+        },
+        {
+          "id": "bounds-graphql-demand",
+          "type": "contains_all",
+          "values": [
+            "aliases",
+            "breadth",
+            "batches",
+            "field cost",
+            "response size"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "A Protobuf change renumbers user_id from tag 3 to 8, reuses tag 3 for email, removes an enum value without reserving it, and changes a repeated field to singular. The author says generated code compiles, so it is compatible. Review it.",
+      "expected_output": "Reject the change. Never renumber or reuse field tags, reserve removed field and enum numbers and names, do not change repeated/singular cardinality incompatibly, prefer additive evolution, define unknown enum and presence behavior, and run Protobuf breaking-change checks against the supported baseline.",
+      "files": [],
+      "checks": [
+        {
+          "id": "protects-field-tags",
+          "type": "contains_all",
+          "values": [
+            "Never",
+            "renumber",
+            "reuse",
+            "tags"
+          ]
+        },
+        {
+          "id": "requires-reservation-and-checks",
+          "type": "contains_all",
+          "values": [
+            "reserve",
+            "enum",
+            "cardinality",
+            "breaking-change"
+          ]
+        }
+      ]
+    }
+  ]
+}

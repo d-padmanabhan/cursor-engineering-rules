@@ -34,6 +34,10 @@ This rule owns mandatory policy only. Use the TypeScript and JavaScript skill (`
 - Authentication and authorization are separate. Enforce resource authorization on the server for every protected operation.
 - Await or deliberately supervise every promise. Fire-and-forget work requires explicit lifecycle ownership and error reporting.
 
+Use the observability skill
+(`${HANDBOOK_ROOT}/skills/observability/SKILL.md`) for structured event schemas,
+redaction, metrics, trace propagation, SLOs, alerts, and telemetry pipelines.
+
 ## JavaScript Gates
 
 - Production JavaScript uses `// @ts-check` and JSDoc types unless the repository documents an alternative static-analysis contract.

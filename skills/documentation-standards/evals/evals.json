@@ -3,7 +3,7 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Write a three-sentence release note for a bug fix. Decide whether it needs a table of contents, Mermaid diagram, or alert.",
+      "prompt": "Write a three-sentence release note for a bug fix. Decide whether it needs a table of contents, diagram, or alert.",
       "expected_output": "Provide a concise release note without unnecessary table of contents, diagram, or alert.",
       "files": [],
       "checks": [
@@ -16,8 +16,8 @@
     },
     {
       "id": 2,
-      "prompt": "Create a concise multi-section architecture note explaining a request flow from client to API to database, with failure handling and links to the API and database docs.",
-      "expected_output": "Use one H1, logical sections, clickable descriptive links, soft-wrapped prose, and a focused Mermaid sequence or flow diagram because the interaction benefits from visualization.",
+      "prompt": "Create `docs/architecture.md`, a concise multi-section architecture note explaining a request flow from client to API to database, with failure handling and links to the API and database docs. Include a visual because the interaction benefits from one.",
+      "expected_output": "Use one H1, logical sections, clickable descriptive links, and soft-wrapped prose. Do not author Mermaid. Create a focused PNG at `docs/images/request-flow.png`, inspect it, and embed it from the Markdown file as `![Request flow](images/request-flow.png)` with meaningful alt text.",
       "files": [],
       "checks": [
         {
@@ -25,11 +25,24 @@
           "type": "contains_all",
           "values": [
             "# ",
-            "```mermaid",
             "Client",
             "API",
             "Database"
           ]
+        },
+        {
+          "id": "requires-sibling-png",
+          "type": "contains_all",
+          "values": [
+            "docs/images/request-flow.png",
+            "![",
+            "](images/request-flow.png)"
+          ]
+        },
+        {
+          "id": "rejects-mermaid",
+          "type": "not_contains",
+          "value": "```mermaid"
         },
         {
           "id": "uses-clickable-links",

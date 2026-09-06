@@ -65,6 +65,11 @@ async function fetchJson<T>(
 
 Node/Express/Fastify services need bounded request bodies, explicit CORS, security headers, request IDs, structured logging, generic 5xx responses, and graceful shutdown. Do not use direct `app.listen(...)` examples for production services without retaining and closing the server.
 
+Use the observability skill
+(`${HANDBOOK_ROOT}/skills/observability/SKILL.md`) for event schemas, redaction,
+metric cardinality, trace propagation, SLOs, alerts, and telemetry pipelines.
+Keep runtime-specific logger and OpenTelemetry integration in this skill.
+
 ### NN-4: Package manager and runtime are pinned
 
 Declare `packageManager` and Node engine policy in `package.json`; CI uses Corepack and the declared package manager.

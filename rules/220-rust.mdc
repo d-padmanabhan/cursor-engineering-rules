@@ -1213,23 +1213,36 @@ println!("User: {:?}", user);
 **Structured Logging:**
 
 ```rust
-use tracing::{info, error, warn, debug};
+use tracing::{error, info};
 
 fn process_user(user: &User) -> Result<()> {
-    info!(user_id = ?user.id, "Processing user");
+    info!(operation = "user.validate", "Processing user");
 
     match validate_user(user) {
         Ok(_) => {
-            info!(user_id = ?user.id, "User validated");
+            info!(
+                operation = "user.validate",
+                outcome = "success",
+                "User validated"
+            );
             Ok(())
         }
         Err(e) => {
-            error!(user_id = ?user.id, error = ?e, "Validation failed");
+            error!(
+                operation = "user.validate",
+                outcome = "failure",
+                error_code = "VALIDATION_FAILED",
+                "Validation failed"
+            );
             Err(e)
         }
     }
 }
 ```
+
+Use the observability skill
+(`${HANDBOOK_ROOT}/skills/observability/SKILL.md`) for event schemas, sensitive
+data, metrics, tracing, sampling, SLOs, alerts, and telemetry pipelines.
 
 **Performance Profiling:**
 

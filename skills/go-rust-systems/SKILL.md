@@ -307,6 +307,11 @@ sloglint -no-mixed-args -static-msg ./...
 
 For the full rationale, library landscape, and benchmark numbers, see Section 7 (Logging) in `rules/210-go.mdc`.
 
+Use the observability skill
+(`${HANDBOOK_ROOT}/skills/observability/SKILL.md`) for cross-language event
+schemas, sensitive-data policy, metric cardinality, SLOs, tracing, sampling,
+alerts, and telemetry pipelines. Keep this section limited to Go integration.
+
 ---
 
 ## Detailed References

@@ -1921,26 +1921,31 @@ logger.Debug("processing user", "user_id", userID, "step", "validation")
 **Structured Logging Best Practices:**
 
 ```go
-// GOOD: Include context in logs
-logger.Info("user created",
-    "user_id", userID,
-    "email", email,
+// GOOD: Include bounded operational context in logs
+logger.Info("request completed",
+    "event_name", "http.request.completed",
+    "operation", "POST /users",
+    "outcome", "success",
     "duration_ms", duration.Milliseconds(),
 )
 
 // GOOD: Use different log levels appropriately
-logger.Debug("detailed debug info", "internal_state", state)
-logger.Info("important events", "event", "user_login")
-logger.Warn("recoverable issues", "warning", "rate_limit_approaching")
-logger.Error("errors that need attention", "error", err)
+logger.Debug("request admitted", "operation", "POST /users")
+logger.Info("request completed", "event_name", "http.request.completed")
+logger.Warn("capacity approaching limit", "event_name", "capacity.warning")
+logger.Error("request failed", "error_code", "PROVIDER_TIMEOUT")
 
 // GOOD: Log errors with context
 logger.Error("failed to process request",
-    "error", err,
+    "error_code", "REQUEST_PROCESSING_FAILED",
     "request_id", requestID,
-    "user_id", userID,
 )
 ```
+
+Use the observability skill
+(`${HANDBOOK_ROOT}/skills/observability/SKILL.md`) for event schemas, sensitive
+data, metric cardinality, tracing, sampling, SLOs, alerts, and telemetry
+pipelines.
 
 ### Using Delve
 

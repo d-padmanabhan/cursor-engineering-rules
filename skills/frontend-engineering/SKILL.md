@@ -197,7 +197,7 @@ The top three that show up in every audit:
 
 - Rule: `260-frontend.mdc` - cross-cutting non-negotiables (the rule this skill backs)
 - Rule: `225-javascript-typescript.mdc` - JavaScript and TypeScript language gates
-- Rule: `320-api-design.mdc`, `325-networking.mdc` - the backend / transport layer your frontend calls
+- API design: `${HANDBOOK_ROOT}/skills/api-design/SKILL.md`, `320-api-design.mdc`, and `325-networking.mdc` - the contract and transport layers the frontend calls
 - Rule: `310-security.mdc` - OWASP context
 - Rule: `330-observability.mdc` - RUM patterns
 - Skill: `single-file-dashboard` - the anti-framework alternative for emailable analytical artifacts
