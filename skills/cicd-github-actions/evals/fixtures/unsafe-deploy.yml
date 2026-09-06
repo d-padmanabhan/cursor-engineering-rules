@@ -1,0 +1,19 @@
+name: Untrusted Production Deploy
+
+on:
+  pull_request_target:
+    types: [opened, synchronize]
+
+permissions: write-all
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Build pull request
+        run: npm ci && npm run build
+      - name: Print and deploy target
+        run: ./deploy.sh "${{ github.event.pull_request.title }}"

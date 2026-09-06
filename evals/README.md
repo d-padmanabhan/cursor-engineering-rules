@@ -15,11 +15,11 @@ The eval files follow the portable Agent Skills conventions documented by [agent
 
 The harness does not treat answer similarity, self-report, or reading `SKILL.md` as proof that a skill loaded. Automatic activation is runtime-specific and requires an authoritative runtime event. Cursor's current SDK does not expose that event, so Cursor benchmarks report `activation_telemetry_supported: false` and `activation_rate: null` while still measuring behavioral lift.
 
-## Pilot Skills
+## Coverage
 
-- [Core engineering](../skills/core-engineering/evals/evals.json)
-- [Cloudflare WAF author](../skills/cloudflare-waf-author/evals/evals.json)
-- [IAM security advisor](../skills/iam-security-advisor/evals/evals.json)
+The harness currently discovers 31 behavioral suites across 53 skills. The [root README](../README.md#skill-evaluation) contains the authoritative suite inventory.
+
+Coverage is intentionally risk-driven rather than uniform. Current suites emphasize security boundaries, identity, API and data contracts, infrastructure behavior, runtime correctness, reliability, and documentation artifacts. Skills without suites still receive metadata and schema validation.
 
 The fixtures contain only synthetic, public-safe examples. Do not add customer data, production configuration, credentials, private incident details, or proprietary source code.
 

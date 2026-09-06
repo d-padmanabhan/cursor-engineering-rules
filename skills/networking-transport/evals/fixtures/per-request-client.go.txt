@@ -1,0 +1,18 @@
+package client
+
+import (
+	"context"
+	"net/http"
+)
+
+func FetchProfile(ctx context.Context, url string) (*http.Response, error) {
+	client := &http.Client{
+		Transport: &http.Transport{},
+	}
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	return client.Do(request)
+}

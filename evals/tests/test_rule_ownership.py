@@ -20,6 +20,7 @@ RULE_LINE_BUDGETS: dict[str, int] = {
     "450-kubernetes.mdc": 140,
     "460-helm.mdc": 90,
     "800-markdown.mdc": 90,
+    "810-documentation.mdc": 90,
 }
 SCOPED_RULES: tuple[str, ...] = (
     "140-bash.mdc",
@@ -30,6 +31,7 @@ SCOPED_RULES: tuple[str, ...] = (
     "450-kubernetes.mdc",
     "460-helm.mdc",
     "800-markdown.mdc",
+    "810-documentation.mdc",
 )
 ROUTING_FILES: tuple[Path, ...] = (
     *(REPOSITORY_ROOT / "rules" / name for name in RULE_LINE_BUDGETS),
@@ -92,6 +94,23 @@ class RuleOwnershipTests(unittest.TestCase):
         ):
             with self.subTest(heading=removed_heading):
                 self.assertNotIn(removed_heading, docker_rule)
+
+    def test_documentation_rule_routes_workflows_without_stale_tutorials(self) -> None:
+        documentation_rule = (REPOSITORY_ROOT / "rules" / "810-documentation.mdc").read_text(encoding="utf-8")
+
+        self.assertIn("${HANDBOOK_ROOT}/skills/documentation-standards/SKILL.md", documentation_rule)
+        self.assertIn("${HANDBOOK_ROOT}/rules/120-utilities.mdc", documentation_rule)
+        self.assertIn("${HANDBOOK_ROOT}/rules/800-markdown.mdc", documentation_rule)
+        for stale_content in (
+            "## Reading & Researching Documentation",
+            "Default: Use Lynx",
+            "LightPanda",
+            "Puppeteer",
+            "```mermaid",
+            "(Mermaid)",
+        ):
+            with self.subTest(content=stale_content):
+                self.assertNotIn(stale_content, documentation_rule)
 
     def test_workflow_publishes_stable_handbook_root(self) -> None:
         workflow_rule: str = (REPOSITORY_ROOT / "rules" / "010-workflow.mdc").read_text(encoding="utf-8")

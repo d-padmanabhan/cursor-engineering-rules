@@ -31,11 +31,7 @@ class ApiDesignEvalTests(unittest.TestCase):
                 Path(temp_directory),
                 default_skill="api-design",
             )
-        return {
-            result.identifier
-            for result in results
-            if result.required and not result.passed
-        }
+        return {result.identifier for result in results if result.required and not result.passed}
 
     def test_expected_outputs_satisfy_required_checks(self) -> None:
         """Confirm each canonical expected response satisfies its own checks."""

@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/MIT)
 
-This repository contains 52 Cursor rule files, 53 Agent Skills, 19 custom Cursor commands, and 24 behavioral eval suites covering software design, languages, cloud platforms, infrastructure, security, identity, data, AI systems, and documentation.
+This repository contains 52 Cursor rule files, 53 Agent Skills, 19 custom Cursor commands, and 31 behavioral eval suites covering software design, languages, cloud platforms, infrastructure, security, identity, data, AI systems, and documentation.
 
 The content is organized for progressive disclosure:
 
@@ -33,26 +33,29 @@ The content is organized for progressive disclosure:
 ## Start Here
 
 1. Clone or update this repository.
-2. Give the checkout a stable local path.
-3. Install the rules and skills needed by the target workspace.
+2. Resolve the checkout's absolute path.
+3. Link each handbook surface into its matching Cursor user directory.
 4. Run the repository's setup or validation commands.
 5. Keep project-specific exceptions in the target repository rather than modifying shared handbook policy.
 
-Create the stable handbook root once:
+From the handbook checkout, resolve the absolute source path:
 
 ```bash
+cd "/absolute/path/to/agent-engineering-handbook"
+export HANDBOOK_ROOT="$(pwd -P)"
 mkdir -p "${HOME}/.cursor"
-ln -s "/absolute/path/to/agent-engineering-handbook" \
-  "${HOME}/.cursor/agent-engineering-handbook"
 ```
 
-Before creating the link, confirm that `${HOME}/.cursor/agent-engineering-handbook` does not already contain a different checkout or user data.
-
-The handbook's cross-file references use:
+On a new Cursor installation, link each repository directory to the corresponding Cursor user path:
 
 ```bash
-HANDBOOK_ROOT="${HOME}/.cursor/agent-engineering-handbook"
+ln -s "${HANDBOOK_ROOT}/rules" "${HOME}/.cursor/rules"
+ln -s "${HANDBOOK_ROOT}/skills" "${HOME}/.cursor/skills"
+ln -s "${HANDBOOK_ROOT}/commands" "${HOME}/.cursor/commands"
+ln -s "${HANDBOOK_ROOT}" "${HOME}/.cursor/agent-engineering-handbook"
 ```
+
+The first three links make rules, skills, and commands discoverable in their actual Cursor home locations. The final stable-root link supports portable `${HANDBOOK_ROOT}/...` references used inside handbook content. Before running these commands, confirm that none of the destination paths already contains user configuration. Use the merge-safe installation below when a destination already exists.
 
 ## Rules and Skills
 
@@ -85,12 +88,48 @@ Current Cursor references:
 
 ## Install for Cursor
 
-### Option 1: Bootstrap Rules with the Repository Script
+### Merge-Safe User Installation
+
+If `~/.cursor/rules`, `~/.cursor/skills`, or `~/.cursor/commands` already exists, preserve it and link individual handbook entries:
+
+```bash
+cd "/absolute/path/to/agent-engineering-handbook"
+export HANDBOOK_ROOT="$(pwd -P)"
+mkdir -p "${HOME}/.cursor/rules" \
+  "${HOME}/.cursor/skills" \
+  "${HOME}/.cursor/commands"
+shopt -s nullglob
+
+for source in "${HANDBOOK_ROOT}"/rules/*.mdc; do
+  destination="${HOME}/.cursor/rules/$(basename "${source}")"
+  test -e "${destination}" || test -L "${destination}" || ln -s "${source}" "${destination}"
+done
+
+for source in "${HANDBOOK_ROOT}"/skills/*; do
+  if [[ ! -f "${source}/SKILL.md" ]]; then
+    continue
+  fi
+  destination="${HOME}/.cursor/skills/$(basename "${source}")"
+  test -e "${destination}" || test -L "${destination}" || ln -s "${source}" "${destination}"
+done
+
+for source in "${HANDBOOK_ROOT}"/commands/*.md; do
+  if [[ "$(basename "${source}")" == "README.md" ]]; then
+    continue
+  fi
+  destination="${HOME}/.cursor/commands/$(basename "${source}")"
+  test -e "${destination}" || test -L "${destination}" || ln -s "${source}" "${destination}"
+done
+```
+
+Existing destinations are left unchanged. Review any skipped name collision manually; do not overwrite unrelated user configuration.
+
+### Bootstrap a Project Workspace
 
 The setup script creates workspace context files and can link the repository's rule directory into a target workspace:
 
 ```bash
-"${HOME}/.cursor/agent-engineering-handbook/setup-workspace.sh" \
+"${HANDBOOK_ROOT}/setup-workspace.sh" \
   --symlink-all \
   --lightweight \
   --ensure-gitignore \
@@ -105,16 +144,16 @@ Copy all rules:
 
 ```bash
 mkdir -p .cursor/rules
-cp "${HOME}/.cursor/agent-engineering-handbook/rules/"*.mdc .cursor/rules/
+cp "${HANDBOOK_ROOT}/rules/"*.mdc .cursor/rules/
 ```
 
 Or copy only the rules required by the project:
 
 ```bash
 mkdir -p .cursor/rules
-cp "${HOME}/.cursor/agent-engineering-handbook/rules/100-core.mdc" .cursor/rules/
-cp "${HOME}/.cursor/agent-engineering-handbook/rules/200-python.mdc" .cursor/rules/
-cp "${HOME}/.cursor/agent-engineering-handbook/rules/310-security.mdc" .cursor/rules/
+cp "${HANDBOOK_ROOT}/rules/100-core.mdc" .cursor/rules/
+cp "${HANDBOOK_ROOT}/rules/200-python.mdc" .cursor/rules/
+cp "${HANDBOOK_ROOT}/rules/310-security.mdc" .cursor/rules/
 ```
 
 Copy the files again when the handbook changes, or automate a reviewed synchronization process.
@@ -125,14 +164,14 @@ The Cursor CLI changelog documents skill discovery through symlinked directories
 
 ```bash
 mkdir -p .cursor
-ln -s "${HOME}/.cursor/agent-engineering-handbook/skills" .cursor/skills
+ln -s "${HANDBOOK_ROOT}/skills" .cursor/skills
 ```
 
 Copying is the portable fallback:
 
 ```bash
 mkdir -p .cursor/skills
-cp -R "${HOME}/.cursor/agent-engineering-handbook/skills/." .cursor/skills/
+cp -R "${HANDBOOK_ROOT}/skills/." .cursor/skills/
 ```
 
 For Codex-native project discovery, use `.agents/skills/`. Claude Code commonly uses `.claude/skills/`. Verify client-specific installation and precedence against current vendor documentation.
@@ -163,7 +202,7 @@ The `commands/` directory contains 19 Cursor custom command files. Copy them onl
 
 ```bash
 mkdir -p .cursor
-cp -R "${HOME}/.cursor/agent-engineering-handbook/commands" .cursor/commands
+cp -R "${HANDBOOK_ROOT}/commands" .cursor/commands
 ```
 
 Cursor still supports `.cursor/commands`, but reusable commands can be migrated to manually invoked Agent Skills with `/migrate-to-skills`. Names such as `/plan` and `/review` can collide with Cursor built-ins; confirm the selected command in the UI or rename the local file.
@@ -406,16 +445,21 @@ The repository currently contains 53 skill packages. Each directory listed below
 
 ## Skill Evaluation
 
-The dependency-free [Agent Skills eval harness](evals/) validates all skill metadata and the 24 available behavioral suites. Model-backed comparisons use an external command adapter; pull-request CI runs deterministic validation and unit tests without model credentials.
+The dependency-free [Agent Skills eval harness](evals/) validates all skill metadata and the 31 available behavioral suites. Model-backed comparisons use an external command adapter; pull-request CI runs deterministic validation and unit tests without model credentials.
 
 Current behavioral suites:
 
 - [Agent workflow](skills/agent-workflow/evals/evals.json)
 - [API design](skills/api-design/evals/evals.json)
+- [AWS IAM](skills/aws-iam/evals/evals.json)
 - [Bash shell scripting](skills/bash-shell-scripting/evals/evals.json)
+- [CI/CD with GitHub Actions](skills/cicd-github-actions/evals/evals.json)
 - [Cloudflare WAF authoring](skills/cloudflare-waf-author/evals/evals.json)
+- [Cloudflare Workers authoring](skills/cloudflare-workers-author/evals/evals.json)
 - [Containers and orchestration](skills/containers-orchestration/evals/evals.json)
 - [Core engineering](skills/core-engineering/evals/evals.json)
+- [Data engineering](skills/data-engineering/evals/evals.json)
+- [PostgreSQL](skills/database-postgresql/evals/evals.json)
 - [Documentation standards](skills/documentation-standards/evals/evals.json)
 - [Domain-Driven Design](skills/domain-driven-design/evals/evals.json)
 - [Distributed transactions](skills/distributed-transactions/evals/evals.json)
@@ -425,6 +469,7 @@ Current behavioral suites:
 - [Independent verification](skills/independent-verification/evals/evals.json)
 - [Kubernetes and containers](skills/kubernetes-containers/evals/evals.json)
 - [Memory architecture](skills/memory-architecture/evals/evals.json)
+- [Networking and transport](skills/networking-transport/evals/evals.json)
 - [Observability](skills/observability/evals/evals.json)
 - [Okta](skills/okta/evals/evals.json)
 - [Python development](skills/python-development/evals/evals.json)
@@ -433,6 +478,7 @@ Current behavioral suites:
 - [Service resilience](skills/service-resilience/evals/evals.json)
 - [System design](skills/system-design/evals/evals.json)
 - [TypeScript and JavaScript](skills/typescript-javascript/evals/evals.json)
+- [Workload identity](skills/workload-identity/evals/evals.json)
 - [Zero Trust](skills/zero-trust/evals/evals.json)
 
 Run deterministic validation:

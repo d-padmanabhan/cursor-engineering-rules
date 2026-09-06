@@ -1,0 +1,7 @@
+{
+  "pipeline": "synthetic-order-events",
+  "retry": {
+    "attempts": "unlimited"
+  },
+  "invalid_record_action": "retry"
+}

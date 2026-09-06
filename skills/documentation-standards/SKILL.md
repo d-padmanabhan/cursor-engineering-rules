@@ -12,7 +12,7 @@ description: >-
 
 # Documentation Standards
 
-Mandatory Markdown gates are owned by the Markdown rule (`${HANDBOOK_ROOT}/rules/800-markdown.mdc`). This skill owns document design, generated PNG guidance, templates, and writing workflows.
+Mandatory documentation gates are owned by the documentation rule (`${HANDBOOK_ROOT}/rules/810-documentation.mdc`), and Markdown-specific gates are owned by the Markdown rule (`${HANDBOOK_ROOT}/rules/800-markdown.mdc`). This skill owns document design, generated PNG guidance, templates, and writing workflows. External documentation research and tool selection are owned by the utilities rule (`${HANDBOOK_ROOT}/rules/120-utilities.mdc`).
 
 ## Core Principles
 

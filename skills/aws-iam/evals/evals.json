@@ -1,0 +1,164 @@
+{
+  "skill_name": "aws-iam",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "An assumed-role session has an identity policy allowing s3:GetObject, but the request is denied. The bucket policy has no applicable deny. A permissions boundary omits s3:GetObject, the session policy allows only s3:ListBucket, and an inherited SCP explicitly denies s3:GetObject. Explain the effective decision and give a deterministic debugging order.",
+      "expected_output": "The request is denied. Evaluate the runtime principal, action, resource, and context, then inspect identity and resource policies, permissions boundary, session policy, and every inherited SCP. The boundary and session policy restrict the session to their intersections and do not grant permissions; the applicable SCP explicit deny wins across policy layers. Confirm the assumed-role session ARN and exact object ARN before changing policy.",
+      "files": [],
+      "checks": [
+        {
+          "id": "states-deny-and-explicit-deny-precedence",
+          "type": "contains_all",
+          "values": [
+            "denied",
+            "explicit deny wins",
+            "SCP"
+          ]
+        },
+        {
+          "id": "covers-evaluation-inputs-and-layers",
+          "type": "contains_all",
+          "values": [
+            "runtime principal",
+            "action",
+            "resource",
+            "context",
+            "permissions boundary",
+            "session policy"
+          ]
+        },
+        {
+          "id": "observes-aws-iam-skill",
+          "type": "loaded_skill",
+          "skill": "aws-iam",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "A SaaS vendor in AWS account 111122223333 asks every customer to create a role trusting arn:aws:iam::111122223333:role/acme-monitor with no conditions. Correct the trust design for customer account 444455556666 and explain what ExternalId does and does not do. Use synthetic identifiers only.",
+      "expected_output": "Trust only arn:aws:iam::111122223333:role/acme-monitor for sts:AssumeRole and require StringEquals on sts:ExternalId with a unique customer-specific opaque value such as acme-customer-444455556666. ExternalId mitigates the cross-account confused deputy problem but is not authentication and is not a secret; the vendor principal still needs permission to call sts:AssumeRole, and the assumed role needs a separate least-privilege permissions policy.",
+      "files": [],
+      "checks": [
+        {
+          "id": "pins-vendor-and-external-id",
+          "type": "contains_all",
+          "values": [
+            "arn:aws:iam::111122223333:role/acme-monitor",
+            "sts:AssumeRole",
+            "StringEquals",
+            "sts:ExternalId",
+            "unique customer-specific"
+          ]
+        },
+        {
+          "id": "explains-external-id-boundary",
+          "type": "contains_all",
+          "values": [
+            "confused deputy",
+            "not authentication",
+            "not a secret",
+            "least-privilege permissions policy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Review a Lambda function resource policy that allows events.amazonaws.com to invoke the function with no conditions. Only EventBridge rule arn:aws:events:us-east-1:111122223333:rule/acme-orders may invoke it. State the confused-deputy fix and the compatibility check required before deployment.",
+      "expected_output": "Keep lambda:InvokeFunction scoped to the events.amazonaws.com service principal and the exact Lambda function ARN. Add ArnLike aws:SourceArn = arn:aws:events:us-east-1:111122223333:rule/acme-orders. This condition binds invocation to the expected rule and reduces cross-service confused-deputy risk. Do not add aws:SourceAccount to this Lambda resource policy because EventBridge documents that it prevents function invocation. Verify the exact source ARN shape in the current Lambda and EventBridge service documentation before deployment.",
+      "files": [],
+      "checks": [
+        {
+          "id": "requires-supported-source-condition",
+          "type": "contains_all",
+          "values": [
+            "aws:SourceArn",
+            "arn:aws:events:us-east-1:111122223333:rule/acme-orders",
+            "Do not add aws:SourceAccount",
+            "prevents function invocation"
+          ]
+        },
+        {
+          "id": "requires-service-specific-validation",
+          "type": "contains_all",
+          "values": [
+            "cross-service confused-deputy",
+            "service documentation",
+            "Lambda and EventBridge",
+            "exact source ARN"
+          ]
+        },
+        {
+          "id": "rejects-source-account-for-lambda",
+          "type": "not_regex",
+          "pattern": "(recommend(?:ed)?|should|must|need to|safe to)\\s+(?!not\\b|never\\b|avoid\\b).{0,30}(add|include|use).{0,30}aws:SourceAccount"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "A role has an IAM policy allowing kms:Decrypt on a key, yet decrypt is denied. The key policy neither enables IAM delegation nor names the role. A teammate proposes a KMS service-principal grant for lambda.amazonaws.com with no SourceArn constraint or retiring principal. Diagnose both issues and give the smallest safe correction.",
+      "expected_output": "The IAM allow is insufficient because the KMS key policy is a first-class authorization control and does not enable IAM delegation or allow the role. Add a narrowly scoped key-policy path for the role or enable account IAM delegation and retain the least-privilege IAM allow. AWS KMS supports a GranteeServicePrincipal such as lambda.amazonaws.com, but that grant must include a SourceArn grant constraint for the specific Lambda function and a RetiringServicePrincipal or RetiringPrincipal. Restrict grant operations and add an encryption context constraint when the symmetric-key operation carries one.",
+      "files": [],
+      "checks": [
+        {
+          "id": "diagnoses-key-policy",
+          "type": "contains_all",
+          "values": [
+            "IAM allow is insufficient",
+            "KMS key policy",
+            "IAM delegation",
+            "least-privilege"
+          ]
+        },
+        {
+          "id": "corrects-service-grant-design",
+          "type": "contains_all",
+          "values": [
+            "GranteeServicePrincipal",
+            "lambda.amazonaws.com",
+            "SourceArn",
+            "RetiringServicePrincipal",
+            "encryption context"
+          ]
+        },
+        {
+          "id": "rejects-wildcard-kms-access",
+          "type": "not_regex",
+          "pattern": "(recommend|allow|grant|use|add|set).{0,120}(kms:\\*|principal\\s*[:=]?\\s*[\"']?\\*)"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "An administrator attaches an identity policy allowing cloudtrail:StopLogging and says it overrides an Organizations SCP that denies the action in the workload OU. Another engineer suggests adding a second SCP Allow statement to grant the action. Correct both claims and describe the safe remediation path.",
+      "expected_output": "The action remains denied: an applicable SCP explicit deny wins even when an identity policy allows cloudtrail:StopLogging. SCPs define maximum available permissions and do not grant permissions, so another SCP Allow does not override the deny. Inspect every SCP inherited from the account through its OU hierarchy, preserve the logging invariant, and change or narrowly exempt the denying guardrail only through authorized organization governance; the identity policy must still independently allow any action left within the SCP ceiling.",
+      "files": [],
+      "checks": [
+        {
+          "id": "states-scp-semantics",
+          "type": "contains_all",
+          "values": [
+            "remains denied",
+            "SCP explicit deny wins",
+            "maximum available permissions",
+            "do not grant"
+          ]
+        },
+        {
+          "id": "requires-hierarchy-and-independent-allow",
+          "type": "contains_all",
+          "values": [
+            "OU hierarchy",
+            "preserve the logging invariant",
+            "authorized organization governance",
+            "identity policy must still independently allow"
+          ]
+        }
+      ]
+    }
+  ]
+}

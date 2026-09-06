@@ -1,0 +1,178 @@
+{
+  "skill_name": "data-engineering",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Review the attached synthetic January order backfill. Define the smallest rerunnable plan, publication boundary, and reconciliation evidence. Assume order_id is the business key and the source can be corrected after the first run.",
+      "expected_output": "Do not append directly to curated_orders. Record a run ID, the fixed inclusive-exclusive event_date window [2026-01-01, 2026-02-01), source snapshot or version, contract version, and expected partitions. Recompute into run-scoped staging, deduplicate by order_id with a deterministic correction rule, and MERGE or replace only the scoped January partitions so rerunning converges to the same result. Publish atomically after validation and advance the watermark only after publication. Reconcile source-to-target row counts, distinct order_id counts, amount_cents sums, null and duplicate counts, and partition-level checksums; retain mismatches and rollback to the prior version.",
+      "assertions": [
+        "Defines an immutable backfill scope and run metadata.",
+        "Uses deterministic deduplication plus scoped upsert or replacement for rerun safety.",
+        "Publishes only after source-to-target reconciliation and preserves rollback."
+      ],
+      "files": [
+        "evals/fixtures/order_backfill.sql"
+      ],
+      "checks": [
+        {
+          "id": "defines-rerunnable-scope",
+          "type": "contains_all",
+          "values": [
+            "run ID",
+            "[2026-01-01, 2026-02-01)",
+            "source snapshot",
+            "contract version"
+          ]
+        },
+        {
+          "id": "makes-backfill-idempotent",
+          "type": "contains_all",
+          "values": [
+            "run-scoped staging",
+            "deduplicate",
+            "order_id",
+            "MERGE",
+            "rerunning converges"
+          ]
+        },
+        {
+          "id": "requires-reconciliation",
+          "type": "contains_all",
+          "values": [
+            "row counts",
+            "distinct order_id",
+            "amount_cents sums",
+            "checksums",
+            "rollback"
+          ]
+        },
+        {
+          "id": "observes-data-engineering-skill",
+          "type": "loaded_skill",
+          "skill": "data-engineering",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "The attached synthetic curated_orders contract is changing: producers want the existing amount field to mean cents instead of whole currency units and plan an in-place update. Review the semantic compatibility and provide a migration contract.",
+      "expected_output": "Reject the in-place reinterpretation: unchanged integer syntax does not make a units change compatible. Publish curated_orders_v2 with an explicit amount_cents field, currency, rounding rules, nullability, keys, event-time meaning, owner, freshness SLO, and evolution policy. Dual publish v1 and v2 from the same validated input, reconcile values with amount_cents = amount * 100 for this synthetic contract, run consumer contract tests, migrate consumers with adoption evidence, document rollback, and deprecate then retire v1 only after the support window.",
+      "assertions": [
+        "Classifies the unit reinterpretation as a breaking semantic change.",
+        "Creates a versioned contract with explicit field and operational semantics.",
+        "Requires dual publication, reconciliation, consumer evidence, rollback, and managed retirement."
+      ],
+      "files": [
+        "evals/fixtures/order_contract.json"
+      ],
+      "checks": [
+        {
+          "id": "identifies-semantic-break",
+          "type": "contains_all",
+          "values": [
+            "Reject",
+            "in-place",
+            "units",
+            "compatible"
+          ]
+        },
+        {
+          "id": "versions-complete-contract",
+          "type": "contains_all",
+          "values": [
+            "curated_orders_v2",
+            "amount_cents",
+            "currency",
+            "event-time",
+            "owner",
+            "freshness SLO"
+          ]
+        },
+        {
+          "id": "coordinates-consumer-migration",
+          "type": "contains_all",
+          "values": [
+            "Dual publish",
+            "reconcile",
+            "consumer contract tests",
+            "adoption evidence",
+            "rollback",
+            "support window"
+          ]
+        },
+        {
+          "id": "rejects-in-place-unit-approval",
+          "type": "not_regex",
+          "pattern": "(safe|compatible|ship|approve).{0,50}(in-place|in place).{0,50}(change|units|today)"
+        },
+        {
+          "id": "observes-data-engineering-skill",
+          "type": "loaded_skill",
+          "skill": "data-engineering",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Review the attached synthetic streaming retry configuration. A malformed record currently retries forever and blocks later records in its partition. Define bounded poison-record handling, quarantine metadata, offset behavior, and replay controls.",
+      "expected_output": "Validate each record against the pinned contract version and classify deterministic schema or semantic failures as poison records. Retry only transient failures with exponential backoff, jitter, a maximum attempt count, and a maximum elapsed time. After the bound, durably write the poison record to a DLQ or quarantine with source topic, partition, offset, contract version, failure code, attempt count, and first and last failure times, while redacting sensitive fields. Advance the source offset only after the quarantine write is confirmed so the partition can progress. Alert on quarantine rate and age, and provide an authorized, audited, idempotent replay that revalidates corrected records and prevents duplicate target rows.",
+      "assertions": [
+        "Separates deterministic poison records from transient failures.",
+        "Bounds retries by attempts and elapsed time before durable quarantine.",
+        "Defines safe offset advancement, quarantine observability, and controlled idempotent replay."
+      ],
+      "files": [
+        "evals/fixtures/consumer_retry_config.json"
+      ],
+      "checks": [
+        {
+          "id": "bounds-transient-retries",
+          "type": "contains_all",
+          "values": [
+            "transient",
+            "exponential backoff",
+            "maximum attempt count",
+            "maximum elapsed time"
+          ]
+        },
+        {
+          "id": "captures-quarantine-evidence",
+          "type": "contains_all",
+          "values": [
+            "DLQ",
+            "partition",
+            "offset",
+            "contract version",
+            "failure code",
+            "attempt count"
+          ]
+        },
+        {
+          "id": "defines-progress-and-replay",
+          "type": "contains_all",
+          "values": [
+            "quarantine write is confirmed",
+            "Advance",
+            "authorized",
+            "audited",
+            "idempotent replay",
+            "duplicate target rows"
+          ]
+        },
+        {
+          "id": "rejects-unbounded-retry",
+          "type": "not_regex",
+          "pattern": "(recommend|use|keep|configure|set).{0,80}(retry forever|unlimited retries|unbounded retries)"
+        },
+        {
+          "id": "observes-data-engineering-skill",
+          "type": "loaded_skill",
+          "skill": "data-engineering",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

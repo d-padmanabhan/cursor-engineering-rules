@@ -31,11 +31,7 @@ class ObservabilityEvalTests(unittest.TestCase):
                 Path(temp_directory),
                 default_skill="observability",
             )
-        return {
-            result.identifier
-            for result in results
-            if result.required and not result.passed
-        }
+        return {result.identifier for result in results if result.required and not result.passed}
 
     def test_container_logging_rejects_growing_json_file(self) -> None:
         """Reject an application-owned array and rotation design."""

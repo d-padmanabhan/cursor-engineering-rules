@@ -89,7 +89,7 @@ Quick lookup table for all Cursor rules files in `rules/`.
 | File | Description | Priority | Always Apply |
 |------|-------------|----------|--------------|
 | [800-markdown.mdc](800-markdown.mdc) | Mandatory file-scoped Markdown structure, wrapping, navigation, diagram, and accessibility gates. | 800 | No |
-| [810-documentation.mdc](810-documentation.mdc) | Patterns for creating effective documentation including documentation websites and markdown best practices. | 810 | No |
+| [810-documentation.mdc](810-documentation.mdc) | Mandatory documentation strategy, correctness, security, accessibility, and verification gates; routes workflows to the documentation skill. | 810 | No |
 | [815-reactflow-diagrams.mdc](815-reactflow-diagrams.mdc) | Interactive architecture canvases with @xyflow/react: nodes, edges, Cloudflare shell grouping, readability, verification. | 815 | No |
 | [820-open-source.mdc](820-open-source.mdc) | Best practices for open source projects including contribution guidelines, documentation, and community management. | 820 | No |
 

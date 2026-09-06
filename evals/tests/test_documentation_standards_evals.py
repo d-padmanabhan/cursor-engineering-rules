@@ -31,11 +31,7 @@ class DocumentationStandardsEvalTests(unittest.TestCase):
                 Path(temp_directory),
                 default_skill="documentation-standards",
             )
-        return {
-            result.identifier
-            for result in results
-            if result.required and not result.passed
-        }
+        return {result.identifier for result in results if result.required and not result.passed}
 
     def test_architecture_eval_rejects_mermaid_without_png(self) -> None:
         """Reject an inline Mermaid block that omits the sibling PNG artifact."""

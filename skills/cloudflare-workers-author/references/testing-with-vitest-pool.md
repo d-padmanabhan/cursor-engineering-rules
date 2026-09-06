@@ -1,17 +1,17 @@
-# Testing with `@cloudflare/vitest-pool-workers`
+# Testing with `@cloudflare/vitest-plugin`
 
 The canonical testing path for Cloudflare Workers. Runs your tests inside the Workers runtime via Miniflare, with bindings mocked or real (your choice), HMR for fast reruns, and isolated per-test storage.
 
 **Versions (as of 2026):**
 
-- `@cloudflare/vitest-pool-workers` v0.16.x stable
+- `@cloudflare/vitest-plugin` v1.x stable
 - Requires `vitest` 4.1+ and `@vitest/runner` 4.1+
-- Wrangler 4.x (bundled with vitest-pool-workers as a dep)
+- Wrangler 4.x
 
-**Don't use** `unstable_dev` for new tests - it's deprecated; vitest-pool-workers replaces it.
+**Don't use** `unstable_dev` for new tests; the Vitest plugin replaces it.
 
 > [!IMPORTANT]
-> **v0.16 removed `defineWorkersConfig` and the `@cloudflare/vitest-pool-workers/config` subpath.** Configure with the `cloudflareTest()` Vite plugin instead (shown below). If you see `Missing "./config" specifier in "@cloudflare/vitest-pool-workers"`, you're on 0.16+ with the old config import.
+> **Cloudflare renamed `@cloudflare/vitest-pool-workers` to `@cloudflare/vitest-plugin` in v1.** The configuration API is unchanged, but dependencies, imports, and TypeScript `types` entries must use the new package. The earlier `defineWorkersConfig` helper remains removed.
 
 ---
 
@@ -20,13 +20,13 @@ The canonical testing path for Cloudflare Workers. Runs your tests inside the Wo
 ### Install
 
 ```bash
-npm install --save-dev @cloudflare/vitest-pool-workers vitest
+npm install --save-dev @cloudflare/vitest-plugin vitest
 ```
 
 ### `vitest.config.ts`
 
 ```typescript
-import { cloudflareTest } from "@cloudflare/vitest-pool-workers";
+import { cloudflareTest } from "@cloudflare/vitest-plugin";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -53,7 +53,7 @@ Create a tests-specific tsconfig (e.g., `test/tsconfig.json`) or extend the main
   "compilerOptions": {
     // `/types` declares the `cloudflare:test` module; the Workers runtime
     // globals come from the included worker-configuration.d.ts.
-    "types": ["@cloudflare/vitest-pool-workers/types"]
+    "types": ["@cloudflare/vitest-plugin/types"]
   },
   "include": [
     "./**/*.ts",
@@ -62,7 +62,7 @@ Create a tests-specific tsconfig (e.g., `test/tsconfig.json`) or extend the main
 }
 ```
 
-`@cloudflare/vitest-pool-workers/types` provides types for the `cloudflare:test` module (the `SELF` fetcher, `env`, `runInDurableObject`, etc.).
+`@cloudflare/vitest-plugin/types` provides types for the `cloudflare:test` module (the `SELF` fetcher, `env`, `runInDurableObject`, etc.).
 
 ---
 
@@ -268,9 +268,9 @@ In `package.json`:
 
 ## Anti-patterns specific to Workers testing
 
-- **Using `unstable_dev`** (deprecated; the `vitest-pool-workers` path replaces it).
-- **Testing the Worker against a deployed environment** (slow; flaky; shared state across runs). Use `vitest-pool-workers` for local in-runtime tests.
+- **Using `unstable_dev`** (deprecated; the Vitest plugin replaces it).
+- **Testing the Worker against a deployed environment** (slow; flaky; shared state across runs). Use `@cloudflare/vitest-plugin` for local in-runtime tests.
 - **Mocking `Request` / `Response` with libraries built for Node.js** (Workers uses standard `Request` / `Response` constructors; just use them).
-- **Sharing storage across tests** without explicit `beforeAll` seeding (creates order dependencies; vitest-pool-workers gives you isolated storage per test for a reason).
+- **Sharing storage across tests** without explicit `beforeAll` seeding (creates order dependencies; the Vitest plugin gives you isolated storage per test for a reason).
 - **Not running `wrangler types` before tests** (the typed `Env` interface drifts from `wrangler.jsonc` bindings; tests pass locally but break in CI).
 - **Skipping integration tests because unit tests are easier** (most Worker bugs are at the binding boundary - KV TTL, D1 prepared-statement binding, R2 metadata - which only integration tests catch).

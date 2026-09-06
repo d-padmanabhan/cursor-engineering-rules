@@ -6,7 +6,7 @@ A copy-paste-ready setup for a new Cloudflare Worker project in TypeScript using
 
 - Wrangler v4.x (any 4.x; Wrangler 3.91+ supports `wrangler.jsonc`, but 4.x is the current major).
 - TypeScript strict mode.
-- Vitest 4.1+ with `@cloudflare/vitest-pool-workers` v0.16+ for testing (covered in `testing-with-vitest-pool.md`).
+- Vitest 4.1+ with `@cloudflare/vitest-plugin` v1+ for testing (covered in `testing-with-vitest-pool.md`).
 - `wrangler types` generates `worker-configuration.d.ts` (the global `Env` **and** the Workers runtime types) from your `wrangler.jsonc`. This supersedes `@cloudflare/workers-types` - do not add that package.
 
 ---
@@ -31,7 +31,7 @@ A copy-paste-ready setup for a new Cloudflare Worker project in TypeScript using
     "typecheck": "wrangler types && tsc --noEmit"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.16.0",
+    "@cloudflare/vitest-plugin": "^1.0.0",
     "typescript": "^5.6.0",
     "vitest": "^4.1.0",
     "wrangler": "^4.0.0"

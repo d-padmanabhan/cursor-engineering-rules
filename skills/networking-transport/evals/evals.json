@@ -1,0 +1,234 @@
+{
+  "skill_name": "networking-transport",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Review the attached Go outbound client. Requests are high-volume and target one upstream service. Correct the connection-lifecycle defect and name the minimum transport settings that must be explicit.",
+      "expected_output": "Do not create an http.Client and http.Transport per request because each new transport owns a separate connection pool and defeats reuse. Inject or create one shared long-lived client for the upstream. Configure an overall request timeout, DialContext connect timeout and TCP KeepAlive, IdleConnTimeout, MaxIdleConns, and MaxIdleConnsPerHost, while preserving request context cancellation and closing response bodies at the call site.",
+      "assertions": [
+        "The response identifies per-request Transport creation, not Go's package helper alone, as the pooling defect.",
+        "The corrected ownership model reuses one bounded client and preserves cancellation and response cleanup."
+      ],
+      "files": [
+        "evals/fixtures/per-request-client.go.txt"
+      ],
+      "checks": [
+        {
+          "id": "reuses-client-and-pool",
+          "type": "contains_all",
+          "values": [
+            "per request",
+            "separate connection pool",
+            "shared",
+            "long-lived client"
+          ]
+        },
+        {
+          "id": "sets-transport-lifecycle",
+          "type": "contains_all",
+          "values": [
+            "overall request timeout",
+            "DialContext",
+            "TCP KeepAlive",
+            "IdleConnTimeout",
+            "MaxIdleConnsPerHost"
+          ]
+        },
+        {
+          "id": "preserves-call-lifecycle",
+          "type": "contains_all",
+          "values": [
+            "context cancellation",
+            "closing response bodies"
+          ]
+        },
+        {
+          "id": "observes-networking-skill",
+          "type": "loaded_skill",
+          "skill": "networking-transport",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "A streaming client crosses an ingress proxy with a 60-second idle timeout, then a service-mesh hop at 45 seconds, then an upstream load balancer at 75 seconds. The client has a 5-second connect timeout but no request deadline, TCP keepalive starts after 2 hours, and the stream may be quiet for 50 seconds. Correct the timeout and keepalive topology.",
+      "expected_output": "The effective idle limit is the minimum hop timeout, 45 seconds. Set application heartbeats below 45 seconds, for example 20 to 30 seconds, because they are the portable way to keep an otherwise quiet stream active. Configure TCP keepalive below 45 seconds to detect half-open peers, but do not confuse it with an end-to-end request deadline. Keep the 5-second connect timeout and add an explicit stream or operation deadline based on the user contract, then align or raise hop idle timeouts so expected 50-second silence is not silently cut.",
+      "assertions": [
+        "The response computes the minimum timeout across all hops instead of tuning only the client or final load balancer.",
+        "It separates connect timeout, operation deadline, TCP dead-peer detection, and application heartbeat responsibilities."
+      ],
+      "files": [],
+      "checks": [
+        {
+          "id": "finds-minimum-hop-timeout",
+          "type": "contains_all",
+          "values": [
+            "minimum",
+            "45 seconds",
+            "idle limit"
+          ]
+        },
+        {
+          "id": "adds-portable-heartbeat",
+          "type": "contains_all",
+          "values": [
+            "application heartbeats",
+            "below 45 seconds",
+            "20 to 30 seconds"
+          ]
+        },
+        {
+          "id": "separates-timeout-purposes",
+          "type": "contains_all",
+          "values": [
+            "TCP keepalive",
+            "half-open",
+            "end-to-end request deadline",
+            "connect timeout"
+          ]
+        },
+        {
+          "id": "aligns-hop-policy",
+          "type": "contains_all",
+          "values": [
+            "align or raise",
+            "hop idle timeouts",
+            "50-second"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "A browser-based operations console needs ordinary JSON queries plus a server-to-browser live event feed. The team proposes native gRPC for both because internal services already use it. Choose the browser-facing protocol without changing the internal service protocol.",
+      "expected_output": "Keep internal east-west calls on gRPC/Protobuf if that contract already fits. Browsers do not natively speak gRPC, so expose browser-facing JSON queries as REST/JSON and the one-way live feed as Server-Sent Events with text/event-stream. Use WebSocket only if the console needs bidirectional messaging, or Connect/gRPC-Web only when schema reuse justifies their browser library and proxy requirements.",
+      "assertions": [
+        "The response chooses protocols by caller and directionality rather than forcing the internal transport onto browsers.",
+        "The live-feed recommendation is SSE unless bidirectional communication is actually required."
+      ],
+      "files": [],
+      "checks": [
+        {
+          "id": "preserves-fitting-internal-grpc",
+          "type": "contains_all",
+          "values": [
+            "internal",
+            "gRPC/Protobuf"
+          ]
+        },
+        {
+          "id": "uses-browser-native-contracts",
+          "type": "contains_all",
+          "values": [
+            "Browsers do not natively speak gRPC",
+            "REST/JSON",
+            "Server-Sent Events",
+            "text/event-stream"
+          ]
+        },
+        {
+          "id": "rejects-native-grpc-for-browser",
+          "type": "not_regex",
+          "pattern": "(use|choose|recommend).{0,50}native\\s+gRPC.{0,50}(browser|console)"
+        },
+        {
+          "id": "conditions-alternatives",
+          "type": "contains_all",
+          "values": [
+            "WebSocket",
+            "bidirectional",
+            "Connect",
+            "gRPC-Web",
+            "proxy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Mobile users on lossy networks load a page with many concurrent resources over HTTP/2. Packet captures show one lost TCP packet stalling unrelated streams. The origin is healthy. Evaluate HTTP/3 and define the deployment evidence and fallback.",
+      "expected_output": "This is TCP-level head-of-line blocking: HTTP/2 multiplexes streams over one TCP connection, so packet loss can stall every stream. HTTP/3 uses QUIC with per-stream loss recovery and is a strong candidate for this mobile edge path. Verify UDP/443 reachability, advertise h3 with alt-svc, retain HTTP/2 fallback for blocked middleboxes, and compare protocol-segmented P95/P99 TTFB, completion latency, loss, and fallback rates before rollout.",
+      "assertions": [
+        "The response ties the observed cross-stream stall to HTTP/2 over TCP and explains why QUIC changes loss recovery.",
+        "The rollout preserves HTTP/2 fallback and requires protocol-segmented field evidence."
+      ],
+      "files": [],
+      "checks": [
+        {
+          "id": "diagnoses-h2-hol",
+          "type": "contains_all",
+          "values": [
+            "TCP-level head-of-line blocking",
+            "HTTP/2",
+            "packet loss",
+            "every stream"
+          ]
+        },
+        {
+          "id": "explains-h3-fit",
+          "type": "contains_all",
+          "values": [
+            "HTTP/3",
+            "QUIC",
+            "per-stream loss recovery",
+            "mobile"
+          ]
+        },
+        {
+          "id": "requires-path-and-fallback-evidence",
+          "type": "contains_all",
+          "values": [
+            "UDP/443",
+            "alt-svc",
+            "HTTP/2 fallback",
+            "P95/P99 TTFB",
+            "fallback rates"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "An SSE client reconnects immediately after any disconnect and the server always restarts the feed from the newest event. During a proxy restart, clients miss events; during a regional flap, they reconnect in lockstep. Define the transport-level recovery contract.",
+      "expected_output": "Give every event a stable monotonic ID and send it in the SSE id field. Persist a bounded replay window, honor the browser's Last-Event-ID on reconnect, resume strictly after that cursor, and deduplicate by event ID. Send heartbeat comments more frequently than the minimum proxy idle timeout. Use capped exponential backoff with jitter for reconnects, and return an explicit resync-required response when the cursor is invalid or older than retention.",
+      "assertions": [
+        "The response defines loss-free resume within a bounded replay window and an explicit contract outside that window.",
+        "Heartbeats prevent idle disconnects while jittered reconnects prevent a synchronized recovery surge."
+      ],
+      "files": [],
+      "checks": [
+        {
+          "id": "defines-resumable-sse",
+          "type": "contains_all",
+          "values": [
+            "monotonic ID",
+            "SSE id field",
+            "Last-Event-ID",
+            "resume strictly after",
+            "deduplicate"
+          ]
+        },
+        {
+          "id": "bounds-replay-contract",
+          "type": "contains_all",
+          "values": [
+            "bounded replay window",
+            "resync-required",
+            "older than retention"
+          ]
+        },
+        {
+          "id": "controls-idle-and-reconnect",
+          "type": "contains_all",
+          "values": [
+            "heartbeat comments",
+            "proxy idle timeout",
+            "exponential backoff",
+            "jitter"
+          ]
+        }
+      ]
+    }
+  ]
+}

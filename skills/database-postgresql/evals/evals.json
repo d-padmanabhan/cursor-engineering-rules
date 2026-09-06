@@ -1,0 +1,209 @@
+{
+  "skill_name": "database-postgresql",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Review the attached synthetic tenant_orders RLS policy. Explain its current write behavior, make the read and write intent explicit, and harden tenant isolation against role and pooled-session bypass. Include INSERT and tenant_id-change tests.",
+      "expected_output": "Because this FOR ALL policy omits WITH CHECK, PostgreSQL implicitly reuses its USING expression for new rows, so the fixture already constrains INSERT and tenant_id changes. Keep RLS enabled but make the contract explicit and auditable: CREATE POLICY tenant_orders_access ON tenant_orders FOR ALL USING (tenant_id = current_setting('app.tenant_id')::bigint) WITH CHECK (tenant_id = current_setting('app.tenant_id')::bigint). Set app.tenant_id from trusted authenticated context with SET LOCAL inside each transaction, reset pooled sessions, grant the application a non-owner role without BYPASSRLS, and use FORCE ROW LEVEL SECURITY if the table owner can execute application queries. Add negative tests for cross-tenant SELECT, INSERT, and UPDATE.",
+      "assertions": [
+        "Requires matching tenant predicates in USING and WITH CHECK.",
+        "Prevents privileged application roles and pooled session state from bypassing isolation.",
+        "Includes negative cross-tenant read and write tests."
+      ],
+      "files": [
+        "evals/fixtures/tenant_orders.sql"
+      ],
+      "checks": [
+        {
+          "id": "requires-read-and-write-policy",
+          "type": "contains_all",
+          "values": [
+            "USING",
+            "WITH CHECK",
+            "tenant_id",
+            "app.tenant_id"
+          ]
+        },
+        {
+          "id": "explains-implicit-write-check",
+          "type": "contains_all",
+          "values": [
+            "omits WITH CHECK",
+            "implicitly reuses",
+            "USING",
+            "already constrains"
+          ]
+        },
+        {
+          "id": "bounds-role-and-session-context",
+          "type": "contains_all",
+          "values": [
+            "SET LOCAL",
+            "transaction",
+            "BYPASSRLS",
+            "pooled"
+          ]
+        },
+        {
+          "id": "tests-cross-tenant-denials",
+          "type": "contains_all",
+          "values": [
+            "cross-tenant",
+            "SELECT",
+            "INSERT",
+            "UPDATE"
+          ]
+        },
+        {
+          "id": "observes-postgresql-skill",
+          "type": "loaded_skill",
+          "skill": "database-postgresql",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Review the attached synthetic Python lookup. Provide the smallest injection-safe correction while preserving tenant scoping. Use the driver's parameter style and explain what must not be interpolated.",
+      "expected_output": "Use one parameterized statement: cursor.execute(\"SELECT id, status FROM tenant_orders WHERE tenant_id = %s AND id = %s\", (tenant_id, order_id)). Bind both values through the driver; do not use an f-string, concatenation, quoting, or interpolation for tenant_id or order_id. Validate identifier choices separately if identifiers ever become dynamic because value placeholders cannot represent SQL identifiers.",
+      "assertions": [
+        "Provides a canonical psycopg-style parameterized query and separate parameter tuple.",
+        "Keeps tenant_id and order_id in the SQL predicate.",
+        "Rejects interpolation for untrusted values."
+      ],
+      "files": [
+        "evals/fixtures/unsafe_tenant_lookup.py"
+      ],
+      "checks": [
+        {
+          "id": "uses-driver-parameters",
+          "type": "contains_all",
+          "values": [
+            "tenant_id = %s",
+            "id = %s",
+            "(tenant_id, order_id)"
+          ]
+        },
+        {
+          "id": "rejects-value-interpolation",
+          "type": "contains_all",
+          "values": [
+            "do not",
+            "f-string",
+            "interpolation"
+          ]
+        },
+        {
+          "id": "observes-postgresql-skill",
+          "type": "loaded_skill",
+          "skill": "database-postgresql",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "The attached maintenance file is proposed for deleting synthetic cancelled orders. Replace the destructive DML workflow with a narrowly scoped, reviewable procedure for tenant 42 and records older than 2025-01-01. Do not execute anything.",
+      "expected_output": "Do not run the broad DELETE. First SELECT id FROM tenant_orders WHERE tenant_id = 42 AND status = 'cancelled' AND created_at < DATE '2025-01-01' ORDER BY id to verify the exact rowset, expected row count, and sample immutable IDs. Then start a short transaction, set lock_timeout and statement_timeout, run the same scoped DELETE with RETURNING id, compare the affected count and IDs to the approved preview, verify post-conditions, and COMMIT only on a match; otherwise ROLLBACK. Take the required backup or recovery checkpoint before production execution.",
+      "assertions": [
+        "Previews the exact tenant, status, and date-scoped rowset before mutation.",
+        "Uses a short transaction with bounded lock and statement waits.",
+        "Verifies DELETE RETURNING results before commit and rolls back on mismatch."
+      ],
+      "files": [
+        "evals/fixtures/order_maintenance.sql"
+      ],
+      "checks": [
+        {
+          "id": "previews-scoped-rowset",
+          "type": "contains_all",
+          "values": [
+            "SELECT id",
+            "tenant_id = 42",
+            "created_at < DATE '2025-01-01'",
+            "expected row count"
+          ]
+        },
+        {
+          "id": "bounds-and-verifies-delete",
+          "type": "contains_all",
+          "values": [
+            "lock_timeout",
+            "statement_timeout",
+            "DELETE",
+            "RETURNING id",
+            "ROLLBACK"
+          ]
+        },
+        {
+          "id": "rejects-unreviewed-delete",
+          "type": "contains_all",
+          "values": [
+            "Do not run",
+            "broad DELETE"
+          ]
+        },
+        {
+          "id": "rejects-broad-delete-approval",
+          "type": "not_regex",
+          "pattern": "(safe|approved|okay|acceptable).{0,40}(broad|unscoped).{0,20}DELETE"
+        },
+        {
+          "id": "observes-postgresql-skill",
+          "type": "loaded_skill",
+          "skill": "database-postgresql",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Review only the index portion of the attached synthetic maintenance migration for a busy PostgreSQL table. Provide a production-safe index creation plan that avoids a transaction-block failure and bounds lock risk.",
+      "expected_output": "Replace CREATE INDEX with CREATE INDEX CONCURRENTLY idx_tenant_orders_created_at ON tenant_orders (created_at), executed as its own migration step outside BEGIN/COMMIT because PostgreSQL prohibits CREATE INDEX CONCURRENTLY inside a transaction block. Set a short lock_timeout for the session, run during a controlled window, monitor progress and cancellation, and verify pg_index.indisvalid afterward. If the operation fails and leaves an invalid index, drop that invalid index with DROP INDEX CONCURRENTLY before a reviewed retry.",
+      "assertions": [
+        "Uses CREATE INDEX CONCURRENTLY outside an explicit transaction.",
+        "Bounds lock acquisition and calls for progress monitoring.",
+        "Verifies index validity and safely handles an invalid artifact."
+      ],
+      "files": [
+        "evals/fixtures/order_maintenance.sql"
+      ],
+      "checks": [
+        {
+          "id": "uses-concurrent-index-outside-transaction",
+          "type": "contains_all",
+          "values": [
+            "CREATE INDEX CONCURRENTLY",
+            "outside",
+            "BEGIN/COMMIT",
+            "transaction block"
+          ]
+        },
+        {
+          "id": "bounds-lock-risk",
+          "type": "contains_all",
+          "values": [
+            "lock_timeout",
+            "monitor",
+            "controlled window"
+          ]
+        },
+        {
+          "id": "handles-invalid-index",
+          "type": "contains_all",
+          "values": [
+            "pg_index.indisvalid",
+            "invalid index",
+            "DROP INDEX CONCURRENTLY"
+          ]
+        },
+        {
+          "id": "observes-postgresql-skill",
+          "type": "loaded_skill",
+          "skill": "database-postgresql",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

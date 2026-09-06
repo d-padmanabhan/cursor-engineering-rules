@@ -1,0 +1,11 @@
+{
+  "dataset": "curated_orders",
+  "version": 1,
+  "fields": {
+    "order_id": "string",
+    "amount": "integer"
+  },
+  "semantics": {
+    "amount": "whole currency units"
+  }
+}

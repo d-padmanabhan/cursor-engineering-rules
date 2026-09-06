@@ -1,0 +1,170 @@
+{
+  "skill_name": "workload-identity",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Choose an identity substrate for two workloads: an AWS-only Lambda calling an AWS service, and a portable Kubernetes service deployed across AWS and GCP that requires image-level attestation. The platform team can operate SPIRE. Make a decision per workload and define the boundary.",
+      "expected_output": "Choose AWS cloud IAM with the Lambda execution role and short-lived credentials for the AWS-only Lambda. Choose SPIFFE/SPIRE for the multi-cloud Kubernetes service because it needs portability and image-digest attestation. Use one substrate per workload, while allowing both at the platform level for different workload classes. Document the boundary and alternatives in an ADR, including SPIRE HA, CA, observability, and operational ownership.",
+      "files": [],
+      "checks": [
+        {
+          "id": "selects-substrate-per-workload",
+          "type": "contains_all",
+          "values": [
+            "AWS cloud IAM",
+            "Lambda execution role",
+            "SPIFFE/SPIRE",
+            "image-digest attestation"
+          ]
+        },
+        {
+          "id": "defines-platform-boundary",
+          "type": "contains_all",
+          "values": [
+            "one substrate per workload",
+            "platform level",
+            "ADR",
+            "operational ownership"
+          ]
+        },
+        {
+          "id": "observes-workload-identity-skill",
+          "type": "loaded_skill",
+          "skill": "workload-identity",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Review a SPIRE registration proposal for production that maps every pod with k8s:ns:payments and k8s:container-image:registry.acme.com/checkout:latest to spiffe://shared.acme.com/checkout. Production and development use the same trust domain. Provide the minimum corrected identity and selectors.",
+      "expected_output": "Use a production-specific trust domain such as prod.acme.com and a logical SPIFFE ID such as spiffe://prod.acme.com/ns/payments/sa/checkout. Require selectors k8s:ns:payments, k8s:sa:checkout, and k8s:container-image:registry.acme.com/checkout@sha256:<synthetic-digest>. Reject the mutable :latest tag and the shared production/development trust domain. The image digest binds identity to immutable workload evidence, while namespace and service account narrow the registration entry.",
+      "files": [],
+      "checks": [
+        {
+          "id": "separates-trust-domain",
+          "type": "contains_all",
+          "values": [
+            "prod.acme.com",
+            "spiffe://prod.acme.com/ns/payments/sa/checkout",
+            "shared production/development trust domain"
+          ]
+        },
+        {
+          "id": "requires-narrow-immutable-selectors",
+          "type": "contains_all",
+          "values": [
+            "k8s:ns:payments",
+            "k8s:sa:checkout",
+            "@sha256:",
+            "Reject the mutable :latest tag"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "A team enables SPIFFE mTLS for the inventory service and concludes that every workload with a valid SVID may call POST /inventory/adjust. Correct the design with an explicit authorization contract.",
+      "expected_output": "mTLS authenticates who the peer is but does not authorize POST /inventory/adjust. Extract the SPIFFE ID from the X.509-SVID URI SAN, not the CN, and apply a default-deny Istio AuthorizationPolicy or OPA policy. Explicitly allow only the required source principal, method, and path, for example spiffe://prod.acme.com/ns/orders/sa/worker with POST /inventory/adjust; deny other valid SVIDs and audit allow and deny decisions.",
+      "files": [],
+      "checks": [
+        {
+          "id": "separates-authentication-authorization",
+          "type": "contains_all",
+          "values": [
+            "mTLS authenticates",
+            "does not authorize",
+            "default-deny",
+            "AuthorizationPolicy"
+          ]
+        },
+        {
+          "id": "binds-explicit-principal-and-operation",
+          "type": "contains_all",
+          "values": [
+            "URI SAN",
+            "not the CN",
+            "spiffe://prod.acme.com/ns/orders/sa/worker",
+            "POST",
+            "/inventory/adjust"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "A SPIRE OIDC Discovery Provider is registered in AWS. The proposed role trust policy accepts any token from that issuer and then calls AssumeRoleWithWebIdentity. Harden the binding for spiffe://prod.acme.com/ns/billing/sa/reconciler and state the token lifecycle and audit requirements.",
+      "expected_output": "Keep sts:AssumeRoleWithWebIdentity but require exact issuer trust plus StringEquals conditions using the provider-prefixed <issuer-host-and-path>:aud and <issuer-host-and-path>:sub keys. Pin :sub to spiffe://prod.acme.com/ns/billing/sa/reconciler and :aud to the AWS STS audience. Never trust the issuer alone or use a wildcard subject. Request a short-lived JWT-SVID, exchange it for short-lived role credentials, validate issuer, audience, subject, signature, and expiry, and correlate SPIRE issuance with AWS CloudTrail token-exchange events.",
+      "files": [],
+      "checks": [
+        {
+          "id": "pins-oidc-subject-and-audience",
+          "type": "contains_all",
+          "values": [
+            "sts:AssumeRoleWithWebIdentity",
+            "StringEquals",
+            ":aud",
+            ":sub",
+            "spiffe://prod.acme.com/ns/billing/sa/reconciler"
+          ]
+        },
+        {
+          "id": "requires-short-lived-validated-audited-flow",
+          "type": "contains_all",
+          "values": [
+            "short-lived JWT-SVID",
+            "signature",
+            "expiry",
+            "CloudTrail"
+          ]
+        },
+        {
+          "id": "rejects-broad-oidc-trust",
+          "type": "not_regex",
+          "pattern": "(recommend|safe to|should|can).{0,80}(wildcard subject|issuer alone)"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Plan migration of a Kubernetes service that reads a long-lived AWS access key from an environment variable and uses it for S3. The team wants to delete the key immediately after deploying IRSA. Provide a reversible migration sequence and regression controls without using real credentials.",
+      "expected_output": "Inventory the synthetic key reference and its consumers without exposing the value, then provision a least-privilege IRSA role bound to the exact cluster OIDC issuer, sts.amazonaws.com audience, namespace, and service account. Deploy the service to use the default credential chain and short-lived STS credentials. Validate IRSA in shadow mode, cut over with rollback criteria, revoke the old access key after a bounded grace period, and confirm through audit evidence that it is unused before deleting the secret entry. Add secret scanning and policy controls that block new static IAM users or long-lived keys.",
+      "files": [],
+      "checks": [
+        {
+          "id": "replaces-static-key-with-bound-irsa",
+          "type": "contains_all",
+          "values": [
+            "without exposing the value",
+            "least-privilege IRSA role",
+            "sts.amazonaws.com audience",
+            "namespace",
+            "service account",
+            "short-lived STS credentials"
+          ]
+        },
+        {
+          "id": "requires-reversible-cutover-and-evidence",
+          "type": "contains_all",
+          "values": [
+            "shadow mode",
+            "rollback criteria",
+            "bounded grace period",
+            "audit evidence",
+            "unused"
+          ]
+        },
+        {
+          "id": "prevents-static-secret-regression",
+          "type": "contains_all",
+          "values": [
+            "secret scanning",
+            "policy controls",
+            "static IAM users",
+            "long-lived keys"
+          ]
+        }
+      ]
+    }
+  ]
+}

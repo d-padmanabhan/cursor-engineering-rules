@@ -1,0 +1,209 @@
+{
+  "skill_name": "cloudflare-workers-author",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "A new TypeScript Worker uses Service Worker event listeners and a hand-written `interface Env` that duplicates bindings from wrangler.jsonc. Give the current minimal entry-point and type-generation contract.",
+      "expected_output": "Use Module Workers syntax with `export default { async fetch(request, env, ctx) { ... } } satisfies ExportedHandler<Env>`. Treat wrangler.jsonc as the binding source of truth, run `wrangler types` to generate worker-configuration.d.ts, include that file in tsconfig with `\"types\": []`, and do not hand-author Env or add @cloudflare/workers-types.",
+      "assertions": [
+        "The response migrates the handler to Module Workers syntax.",
+        "Env and runtime types come from current Wrangler-generated declarations rather than duplicated interfaces."
+      ],
+      "files": [],
+      "checks": [
+        {
+          "id": "uses-module-worker",
+          "type": "contains_all",
+          "values": [
+            "Module Workers",
+            "export default",
+            "satisfies ExportedHandler<Env>"
+          ]
+        },
+        {
+          "id": "uses-generated-types",
+          "type": "contains_all",
+          "values": [
+            "wrangler types",
+            "worker-configuration.d.ts",
+            "\"types\": []",
+            "wrangler.jsonc"
+          ]
+        },
+        {
+          "id": "observes-workers-skill",
+          "type": "loaded_skill",
+          "skill": "cloudflare-workers-author",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Review the attached Worker for the two runtime-lifecycle bugs that can leak account state or lose telemetry. Provide the smallest correction; do not redesign telemetry storage.",
+      "expected_output": "The module-scope mutable `currentAccount` is shared across requests in a reused isolate and can bleed account data. Move it into request scope. Convert to a Module Worker fetch handler with an ExecutionContext and pass the telemetry promise to `ctx.waitUntil(...)` so fire-and-forget work can complete after the response instead of being cancelled.",
+      "assertions": [
+        "The response identifies isolate reuse as the reason module mutable state is unsafe for request data.",
+        "The response uses waitUntil to attach non-critical asynchronous work to the Worker lifecycle."
+      ],
+      "files": [
+        "evals/fixtures/stateful-worker.ts"
+      ],
+      "checks": [
+        {
+          "id": "removes-request-state-from-isolate",
+          "type": "contains_all",
+          "values": [
+            "module-scope",
+            "reused isolate",
+            "request scope",
+            "bleed"
+          ]
+        },
+        {
+          "id": "attaches-background-work",
+          "type": "contains_all",
+          "values": [
+            "ExecutionContext",
+            "ctx.waitUntil",
+            "telemetry promise",
+            "cancelled"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "A chat room Worker stores membership in KV and broadcasts from whichever isolate receives a request. Concurrent joins race and users connected to different isolates see inconsistent membership. Choose the smallest Cloudflare primitive and routing shape.",
+      "expected_output": "Use one Durable Object instance per room because room membership and fan-out need a strongly consistent coordination owner. Declare a Durable Object binding and migration, derive the instance with `env.ROOM.idFromName(roomId)`, call `env.ROOM.get(id)`, and keep authoritative membership in Durable Object storage. KV may hold cold or eventually consistent data, but must not coordinate joins.",
+      "assertions": [
+        "The response selects a Durable Object for per-room coordination and explains the ownership boundary.",
+        "Requests for the same room deterministically reach the same named object and authoritative storage."
+      ],
+      "files": [],
+      "checks": [
+        {
+          "id": "selects-room-coordinator",
+          "type": "regex",
+          "pattern": "one\\s+Durable Object\\s+(instance\\s+)?per\\s+room.{0,120}strongly consistent"
+        },
+        {
+          "id": "defines-binding-route-and-storage",
+          "type": "contains_all",
+          "values": [
+            "binding",
+            "migration",
+            "env.ROOM.idFromName(roomId)",
+            "env.ROOM.get(id)",
+            "Durable Object storage"
+          ]
+        },
+        {
+          "id": "rejects-kv-coordination",
+          "type": "contains_all",
+          "values": [
+            "KV",
+            "must not coordinate"
+          ]
+        },
+        {
+          "id": "rejects-kv-as-coordinator",
+          "type": "not_regex",
+          "pattern": "(use|keep|choose|recommend).{0,40}KV.{0,60}(coordinate|membership|room)"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Update this obsolete Workers test setup: it imports `defineWorkersConfig` from `@cloudflare/vitest-pool-workers/config`, uses `unstable_dev` for integration tests, and lists the bare package in test tsconfig types. State the current config, types, and integration-test APIs.",
+      "expected_output": "Use @cloudflare/vitest-plugin v1+: import cloudflareTest from @cloudflare/vitest-plugin and defineConfig from vitest/config, then register cloudflareTest({ wrangler: { configPath: \"./wrangler.jsonc\" } }) in plugins. Use @cloudflare/vitest-plugin/types in the test tsconfig and SELF.fetch() from cloudflare:test for in-process integration tests. Do not use the renamed @cloudflare/vitest-pool-workers package, the removed defineWorkersConfig helper, or deprecated unstable_dev.",
+      "assertions": [
+        "The response uses the current v1 plugin package and configuration API.",
+        "The integration path runs in the Workers runtime without unstable_dev."
+      ],
+      "files": [],
+      "checks": [
+        {
+          "id": "uses-current-config-api",
+          "type": "contains_all",
+          "values": [
+            "cloudflareTest",
+            "@cloudflare/vitest-plugin",
+            "defineConfig",
+            "vitest/config",
+            "wrangler.jsonc"
+          ]
+        },
+        {
+          "id": "uses-current-types-and-runtime",
+          "type": "contains_all",
+          "values": [
+            "@cloudflare/vitest-plugin/types",
+            "SELF.fetch()",
+            "cloudflare:test",
+            "in-process"
+          ]
+        },
+        {
+          "id": "rejects-removed-testing-paths",
+          "type": "contains_all",
+          "values": [
+            "removed",
+            "defineWorkersConfig",
+            "deprecated",
+            "unstable_dev"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Define a production rollout for a customer-facing HTTP Worker. The current proposal runs `wrangler deploy` and immediately sends 100% of traffic to the new code. Include pre-traffic testing, staged traffic, promotion evidence, and rollback.",
+      "expected_output": "Use `wrangler versions upload` to create the new version without serving traffic. Put the new version in a deployment at 0%, smoke-test it through the `Cloudflare-Workers-Version-Overrides` header, then use `wrangler versions deploy` for explicit stages such as 1%, 10%, 50%, and 100%. Require a defined soak window and version-specific error, latency, and CPU acceptance thresholds before promotion. Roll back by deploying the previous version at 100%.",
+      "assertions": [
+        "The response separates version upload from traffic deployment and supports a zero-percent smoke test.",
+        "Promotion is evidence-gated and rollback reassigns all traffic to the previous immutable version."
+      ],
+      "files": [],
+      "checks": [
+        {
+          "id": "uploads-without-traffic",
+          "type": "contains_all",
+          "values": [
+            "wrangler versions upload",
+            "without serving traffic",
+            "0%"
+          ]
+        },
+        {
+          "id": "smoke-tests-specific-version",
+          "type": "contains",
+          "value": "Cloudflare-Workers-Version-Overrides"
+        },
+        {
+          "id": "stages-and-gates-promotion",
+          "type": "contains_all",
+          "values": [
+            "wrangler versions deploy",
+            "1%",
+            "10%",
+            "50%",
+            "100%",
+            "soak window",
+            "error",
+            "latency"
+          ]
+        },
+        {
+          "id": "defines-version-rollback",
+          "type": "contains_all",
+          "values": [
+            "Roll back",
+            "previous version",
+            "100%"
+          ]
+        }
+      ]
+    }
+  ]
+}

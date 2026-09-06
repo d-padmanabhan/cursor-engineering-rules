@@ -1,0 +1,188 @@
+{
+  "skill_name": "cicd-github-actions",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Review the attached workflow's event and checkout trust boundary. It is intended to validate pull requests from forks and must not deploy or use privileged infrastructure.",
+      "expected_output": "Reject pull_request_target combined with checkout of the pull request head because untrusted fork code then runs in the privileged base-repository context. Use pull_request on a GitHub-hosted runner with read-only contents permission, no secrets, and no deployment capability. Keep any later privileged workflow separate and consume only explicitly validated artifacts.",
+      "assertions": [
+        "The response identifies the privileged-event plus untrusted-checkout combination as the primary vulnerability.",
+        "The replacement runs fork validation with pull_request on unprivileged GitHub-hosted infrastructure."
+      ],
+      "files": [
+        "evals/fixtures/unsafe-deploy.yml"
+      ],
+      "checks": [
+        {
+          "id": "finds-event-trust-confusion",
+          "type": "contains_all",
+          "values": [
+            "pull_request_target",
+            "pull request head",
+            "untrusted",
+            "privileged"
+          ]
+        },
+        {
+          "id": "moves-fork-validation-to-safe-context",
+          "type": "contains_all",
+          "values": [
+            "pull_request",
+            "GitHub-hosted",
+            "read-only",
+            "no secrets"
+          ]
+        },
+        {
+          "id": "rejects-privileged-event-recommendation",
+          "type": "not_regex",
+          "pattern": "(keep|use|recommend|choose).{0,60}pull_request_target"
+        },
+        {
+          "id": "observes-cicd-skill",
+          "type": "loaded_skill",
+          "skill": "cicd-github-actions",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "A workflow step runs `./release.sh \"${{ github.event.release.name }}\" \"${{ inputs.environment }}\"`. The author says the quotes make both values safe. Correct only this expression-injection boundary and show the safe shape.",
+      "expected_output": "GitHub expressions are expanded before the shell parses the generated script, so shell quotes do not prevent expression injection. Put each untrusted expression in step-level env, validate the environment against an allowlist, and pass quoted shell variables such as \"$RELEASE_NAME\" and \"$TARGET_ENVIRONMENT\" to release.sh.",
+      "assertions": [
+        "The response explains expression expansion order instead of claiming shell quoting is sufficient.",
+        "The safe shape uses step-level environment variables and validates constrained deployment input."
+      ],
+      "files": [],
+      "checks": [
+        {
+          "id": "explains-expansion-order",
+          "type": "contains_all",
+          "values": [
+            "expanded before",
+            "shell",
+            "expression injection"
+          ]
+        },
+        {
+          "id": "uses-env-and-validation",
+          "type": "contains_all",
+          "values": [
+            "step-level env",
+            "allowlist",
+            "\"$RELEASE_NAME\"",
+            "\"$TARGET_ENVIRONMENT\""
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "A monorepo CI workflow has root `permissions: write-all`. Its test job checks out source, while a separate release job publishes a package and creates a release. Define the smallest permission model without redesigning the jobs.",
+      "expected_output": "Set root permissions: {} so every job starts with no token access. Give the test job only contents: read. Give the release job only contents: write and packages: write if both are required, and do not grant id-token: write unless that job actually performs OIDC authentication.",
+      "assertions": [
+        "The response defaults the workflow token to no permissions and grants capabilities per job.",
+        "The release job receives only permissions justified by its two stated mutations."
+      ],
+      "files": [],
+      "checks": [
+        {
+          "id": "defaults-to-no-permissions",
+          "type": "contains_all",
+          "values": [
+            "permissions: {}",
+            "test job",
+            "contents: read"
+          ]
+        },
+        {
+          "id": "scopes-release-job",
+          "type": "contains_all",
+          "values": [
+            "release job",
+            "contents: write",
+            "packages: write"
+          ]
+        },
+        {
+          "id": "does-not-grant-unused-oidc",
+          "type": "contains_all",
+          "values": [
+            "id-token: write",
+            "unless",
+            "OIDC"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Pushes to main trigger a 45-minute integration workflow. Five rapid pushes currently run concurrently, consume all runners, and older commits can finish after newer ones. Add only the workflow controls that bound this behavior.",
+      "expected_output": "Set timeout-minutes: 60 for the 45-minute job. Add workflow concurrency with a group containing github.workflow and github.ref, and set cancel-in-progress: true so a newer push cancels the older in-progress run for the same ref without coupling unrelated branches.",
+      "assertions": [
+        "The response bounds job runtime with a concrete timeout.",
+        "The concurrency key serializes only equivalent workflow and ref executions and cancels stale runs."
+      ],
+      "files": [],
+      "checks": [
+        {
+          "id": "sets-job-timeout",
+          "type": "regex",
+          "pattern": "timeout-minutes\\s*:\\s*(4[6-9]|[5-8][0-9]|90)\\b"
+        },
+        {
+          "id": "sets-narrow-concurrency",
+          "type": "contains_all",
+          "values": [
+            "concurrency",
+            "github.workflow",
+            "github.ref",
+            "cancel-in-progress: true"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Design the authorization boundary for a production deploy job that currently uses a long-lived cloud key. Deploys must come from main, require human approval, and receive short-lived cloud credentials. Focus on GitHub Actions controls, not provider-specific policy syntax.",
+      "expected_output": "Use a protected GitHub Environment named production with required reviewers and deployment-branch restrictions for main. Scope production credentials to that environment. Grant id-token: write only on the deploy job, exchange the GitHub OIDC token for short-lived cloud credentials whose trust is bound to the repository, main ref, audience, and production environment, and remove the long-lived cloud key.",
+      "assertions": [
+        "The response uses a protected environment as the human authorization gate.",
+        "OIDC trust and workflow permissions are narrowly scoped to the production deploy job and main."
+      ],
+      "files": [],
+      "checks": [
+        {
+          "id": "uses-protected-environment",
+          "type": "contains_all",
+          "values": [
+            "GitHub Environment",
+            "production",
+            "required reviewers",
+            "deployment-branch restrictions",
+            "main"
+          ]
+        },
+        {
+          "id": "uses-job-scoped-oidc",
+          "type": "contains_all",
+          "values": [
+            "id-token: write",
+            "deploy job",
+            "OIDC",
+            "short-lived"
+          ]
+        },
+        {
+          "id": "removes-static-credential",
+          "type": "contains_all",
+          "values": [
+            "remove",
+            "long-lived cloud key"
+          ]
+        }
+      ]
+    }
+  ]
+}

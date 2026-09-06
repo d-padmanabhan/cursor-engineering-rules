@@ -1,6 +1,6 @@
 ---
 name: cloudflare-workers-author
-description: Workflow for building production-grade Cloudflare Workers in TypeScript - bootstrap, bindings and storage choice, routing (Hono + RPC via WorkerEntrypoint), testing with @cloudflare/vitest-pool-workers, gradual deployments, and common pitfalls. Use when adding a new Worker, adding endpoints to an existing Worker, choosing between KV / R2 / D1 / Durable Objects / Hyperdrive, setting up testing, configuring deployment, or reviewing a Worker PR.
+description: Workflow for building production-grade Cloudflare Workers in TypeScript - bootstrap, bindings and storage choice, routing (Hono + RPC via WorkerEntrypoint), testing with @cloudflare/vitest-plugin, gradual deployments, and common pitfalls. Use when adding a new Worker, adding endpoints to an existing Worker, choosing between KV / R2 / D1 / Durable Objects / Hyperdrive, setting up testing, configuring deployment, or reviewing a Worker PR.
 ---
 
 # Cloudflare Workers Author
@@ -96,19 +96,19 @@ For Hono patterns (typed env via `Hono<{ Bindings: Env, Variables: ... }>`, midd
 
 ### Step 4 - Test
 
-The canonical testing path is `@cloudflare/vitest-pool-workers` (current stable v0.16.x; requires Vitest 4.1+). It runs tests inside the Workers runtime via Miniflare, with bindings mocked or real (your choice), HMR for fast reruns, and isolated per-test storage.
+The canonical testing path is `@cloudflare/vitest-plugin` v1+ with Vitest 4.1+. It runs tests inside the Workers runtime via Miniflare, with bindings mocked or real (your choice), HMR for fast reruns, and isolated per-test storage.
 
 See [references/testing-with-vitest-pool.md](references/testing-with-vitest-pool.md) for setup details. The pattern:
 
-- `vitest.config.ts` registers the `cloudflareTest()` Vite plugin (exported from `@cloudflare/vitest-pool-workers`) inside a standard `defineConfig` from `vitest/config`, pointing at your `wrangler.jsonc`
-- `tsconfig.json` for tests includes `"@cloudflare/vitest-pool-workers/types"` in `types` (declares the `cloudflare:test` module)
+- `vitest.config.ts` registers the `cloudflareTest()` Vite plugin (exported from `@cloudflare/vitest-plugin`) inside a standard `defineConfig` from `vitest/config`, pointing at your `wrangler.jsonc`
+- `tsconfig.json` for tests includes `"@cloudflare/vitest-plugin/types"` in `types` (declares the `cloudflare:test` module)
 - **Unit tests:** import the handler, call `worker.fetch(request, env, ctx)` directly with mocked env
 - **Integration tests:** use `SELF.fetch()` from `cloudflare:test` (in-process) or auxiliary Workers (fresh isolate)
 
 > [!IMPORTANT]
-> **The `defineWorkersConfig` helper and the `@cloudflare/vitest-pool-workers/config` subpath were removed in v0.16.** Older guidance (`import { defineWorkersConfig } from "@cloudflare/vitest-pool-workers/config"`) fails on 0.16+ with `Missing "./config" specifier`. The current API is the `cloudflareTest()` Vite plugin from the package root: `cloudflareTest({ wrangler: { configPath: "./wrangler.jsonc" } })` added to `plugins` in a `vitest/config` `defineConfig`. The `cloudflare:test` module types now come from the `@cloudflare/vitest-pool-workers/types` subpath (not the bare package name).
+> **Cloudflare renamed `@cloudflare/vitest-pool-workers` to `@cloudflare/vitest-plugin` in v1.** Migrate the dependency, package imports, and TypeScript `types` entry. The configuration API remains `cloudflareTest({ wrangler: { configPath: "./wrangler.jsonc" } })` inside `plugins` in a `vitest/config` `defineConfig`; do not restore the removed `defineWorkersConfig` helper.
 
-**Reject in review:** new tests using `unstable_dev` (deprecated; the `vitest-pool-workers` path replaces it).
+**Reject in review:** new tests using `unstable_dev` or the renamed `@cloudflare/vitest-pool-workers` package.
 
 ### Step 5 - Deploy and roll out gradually
 
@@ -144,7 +144,7 @@ Before merge:
 - `wrangler types` regenerated; `worker-configuration.d.ts` matches `wrangler.jsonc`
 - `tsc --noEmit` clean
 - `wrangler deploy --dry-run` clean (catches binding misconfigurations)
-- Vitest pool-workers tests pass
+- `@cloudflare/vitest-plugin` tests pass
 - PR description names the rejected storage alternatives and why
 - PR description names the soak plan for the gradual rollout (e.g., "10% for 1h, then 50% for 1h, then 100%")
 - Reviewer checklist from `401-cloudflare-workers.mdc` ticked
@@ -164,7 +164,7 @@ The high-leverage subset of the `401-cloudflare-workers.mdc` reviewer checklist:
 - [ ] No top-level await, no module-scope mutable state, no module-scope `fetch()`
 - [ ] `compatibility_date` set; `compatibility_flags` minimal and justified
 - [ ] `wrangler.jsonc` is source of truth; deployment from CI (not Dashboard "Edit code")
-- [ ] Tests use `@cloudflare/vitest-pool-workers` (not deprecated `unstable_dev`)
+- [ ] Tests use `@cloudflare/vitest-plugin` (not deprecated `unstable_dev`)
 
 See [references/common-pitfalls.md](references/common-pitfalls.md) for the full list of failure modes observed across many Workers teams, organized by symptom (cold-start regressions, intermittent state pollution, secret leaks, subrequest budget exhaustion, deployment drift).
 
